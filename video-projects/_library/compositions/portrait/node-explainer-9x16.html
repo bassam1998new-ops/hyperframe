@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="ar" data-composition-variables='[{"id":"theme","type":"string","label":"Theme (neon | midnight | light)","default":"neon"}]'>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <title>node-explainer 9:16 (AR)</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/DrawSVGPlugin.min.js"></script>
+    <link rel="stylesheet" href="../../assets/kits/node-explainer/nx.css" />
+    <style>
+      /* Fonts live HERE, not in nx.css: `vid use` copies files the block HTML
+         references, but does not read url()s inside a linked CSS file. */
+      @font-face { font-family: "Alexandria"; src: url("https://cdn.jsdelivr.net/fontsource/fonts/alexandria@latest/arabic-800-normal.woff2") format("woff2"); font-weight: 800; font-display: block;
+        unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+08A0-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FEFF; }
+      @font-face { font-family: "Alexandria"; src: url("https://cdn.jsdelivr.net/fontsource/fonts/alexandria@latest/latin-800-normal.woff2") format("woff2"); font-weight: 800; font-display: block;
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215; }
+      /* Cairo: the Arabic face of the light example theme */
+      @font-face { font-family: "Cairo"; src: url("https://cdn.jsdelivr.net/fontsource/fonts/cairo@latest/arabic-700-normal.woff2") format("woff2"); font-weight: 700 800; font-display: block;
+        unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF; }
+      @font-face { font-family: "Cairo"; src: url("https://cdn.jsdelivr.net/fontsource/fonts/cairo@latest/latin-700-normal.woff2") format("woff2"); font-weight: 700 800; font-display: block;
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215; }
+      @font-face { font-family: "JetBrains Mono"; src: url("https://cdn.jsdelivr.net/fontsource/fonts/jetbrains-mono@latest/latin-500-normal.woff2") format("woff2"); font-weight: 500; font-display: block; }
+      @font-face { font-family: "JetBrains Mono"; src: url("https://cdn.jsdelivr.net/fontsource/fonts/jetbrains-mono@latest/latin-700-normal.woff2") format("woff2"); font-weight: 700; font-display: block; }
+
+      *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1080px; height: 1920px; overflow: hidden; background: transparent; }
+
+      /* ====================================================================
+         node-explainer-9x16 — demo of the node-explainer kit (v2)
+         Colours: NOT fixed. Variable "theme" = neon (reference) | midnight |
+         light — or call NX.theme(root, {…brand tokens…}).
+
+         LAYOUT (1080 x 1920)
+              0 ..  260   platform chrome — empty
+            300 ..  520   headline (max 2 lines)
+            620 .. 1420   diagram zone
+           1536 .. 1920   bottom 20% — empty for captions / platform UI
+           x 60 .. 960    safe band (Reels/TikTok buttons cover the right 120px)
+
+         SCENES (hard cuts, the old diagram vanishes like the reference)
+            0.0 ..  3.6   AI model -> MCP -> APIs, packet, check, 200 OK
+            3.6 ..  7.9   user request -> AI model -> goal (typed plan)
+            7.9 .. 11.9   MCP server calls 3 APIs: hot path, status dots, CALLS counter
+           11.9 .. 15.0   split comparison APIs | MCP, divider, "?" badge
+           15.0 .. 20.0   terminal: services -> exposed tools; steps row
+         ==================================================================== */
+      #nx9-root { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; overflow: hidden; }
+      .nx9-scene { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; }
+      .nx9-scene .nx-head { top: 300px; }
+
+      /* scene 1 */
+      .nx9-chain { left: 340px; width: 340px; height: 150px; }
+      #nx9-ai { top: 620px; }
+      #nx9-mcp { top: 870px; }
+      #nx9-api { top: 1120px; }
+      #nx9-ok { left: 378px; top: 1316px; }
+      #nx9-200 { position: absolute; left: 474px; top: 1326px; }
+
+      /* scene 2 */
+      #nx9-user { left: 60px; width: 900px; top: 640px; }
+      #nx9-ai2 { left: 340px; top: 880px; width: 340px; height: 150px; }
+      #nx9-goal { left: 60px; width: 900px; top: 1130px; }
+      #nx9-goal .nx-type { font-size: 28px; font-weight: 700; color: var(--nx-ok-text); }
+
+      /* scene 3 */
+      #nx9-op { left: 60px; top: 610px; width: 360px; }
+      #nx9-hub { left: 60px; top: 800px; width: 280px; height: 190px; }
+      #nx9-cnt { left: 60px; top: 1030px; }
+      .nx9-api { left: 420px; width: 540px; height: 96px; font-size: 25px; }
+      .nx9-api .nx-ico { font-size: 34px; }
+      #nx9-a1 { top: 720px; }
+      #nx9-a2 { top: 847px; border-color: var(--nx-hot); --r: var(--nx-hot); } /* the highlighted path's row (reference: yellow border) */
+      #nx9-a3 { top: 974px; }
+
+      /* scene 4 */
+      #nx9-split { left: 60px; top: 690px; width: 900px; height: 360px; }
+      #nx9-q { left: 418px; top: 148px; }
+
+      /* scene 5 */
+      #nx9-term { left: 60px; top: 630px; width: 900px; }
+      #nx9-term .nx-name { width: 330px; }
+      #nx9-steps { left: 110px; top: 1220px; width: 800px; }
+      #nx9-steps .nx-bubble .nx-ico { font-size: 36px; }
+
+      #nx9-drv { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+    </style>
+  </head>
+  <body>
+    <div id="nx9-root" class="nx" data-composition-id="node-explainer-9x16" data-start="0" data-duration="20" data-width="1080" data-height="1920">
+      <!-- ============ 1 — how the AI reaches your tools ============ -->
+      <div class="nx9-scene" id="nx9-s1">
+        <svg class="nx-lines" id="nx9-l1"></svg>
+        <h1 class="nx-head" dir="rtl">الـ<span class="nx-accent nx-ltr" dir="ltr">AI</span> بيكلّم <span class="nx-accent">أدواتك</span> إزاي؟</h1>
+        <div class="nx-tile nx-tile--ai nx9-chain" id="nx9-ai"><i data-nx-icon="cpu"></i>AI MODEL</div>
+        <div class="nx-tile nx-tile--mcp nx9-chain" id="nx9-mcp"><i data-nx-icon="server"></i>MCP</div>
+        <div class="nx-tile nx-tile--api nx9-chain" id="nx9-api"><i data-nx-icon="globe"></i>APIs</div>
+        <div class="nx-check" id="nx9-ok"><i data-nx-icon="check" data-nx-stroke="3"></i></div>
+        <span class="nx-chip nx-chip--big" id="nx9-200">200 OK</span>
+      </div>
+
+      <!-- ============ 2 — the model understands the goal ============ -->
+      <div class="nx9-scene" id="nx9-s2">
+        <svg class="nx-lines" id="nx9-l2"></svg>
+        <h1 class="nx-head" dir="rtl">الموديل بيفهم <span class="nx-accent">الهدف</span> من كلامك</h1>
+        <div class="nx-note" id="nx9-user" dir="rtl"><div class="nx-note-label">user</div>ابعتلي رقم تتبّع آخر أوردر على الإيميل</div>
+        <div class="nx-tile nx-tile--ai" id="nx9-ai2"><i data-nx-icon="cpu"></i>AI MODEL</div>
+        <div class="nx-note nx-note--ok" id="nx9-goal"><div class="nx-note-label">goal</div><span class="nx-type">get_latest_order + send_email</span></div>
+      </div>
+
+      <!-- ============ 3 — the server calls your APIs ============ -->
+      <div class="nx9-scene" id="nx9-s3">
+        <svg class="nx-lines" id="nx9-l3"></svg>
+        <h1 class="nx-head" dir="rtl">السيرفر بيكلّم <span class="nx-keep">الـ<span class="nx-accent nx-ltr" dir="ltr">APIs</span></span> بتاعتك</h1>
+        <div class="nx-note nx-note--role" id="nx9-op"><div class="nx-note-label">operation</div><span class="nx-type">cancel latest order</span></div>
+        <div class="nx-tile nx-tile--mcp" id="nx9-hub"><i data-nx-icon="server"></i>MCP SERVER</div>
+        <div class="nx-counter" id="nx9-cnt"><span class="nx-num">0</span><span class="nx-unit">calls</span></div>
+        <div class="nx-node nx9-api" id="nx9-a1"><i data-nx-icon="user"></i>CUSTOMER API<i class="nx-dot"></i></div>
+        <div class="nx-node nx9-api" id="nx9-a2"><i data-nx-icon="shopping-cart"></i>ORDERS API<i class="nx-dot"></i></div>
+        <div class="nx-node nx9-api" id="nx9-a3"><i data-nx-icon="mail"></i>EMAIL API<i class="nx-dot"></i></div>
+      </div>
+
+      <!-- ============ 4 — the biggest difference ============ -->
+      <div class="nx9-scene" id="nx9-s4">
+        <h1 class="nx-head" dir="rtl">أكبر <span class="nx-accent">فرق</span> بينهم</h1>
+        <div class="nx-split" id="nx9-split">
+          <div class="nx-panel"><div class="nx-panel-fill nx-r3">APIs</div></div>
+          <div class="nx-divider"></div>
+          <div class="nx-panel"><div class="nx-panel-fill nx-r2">MCP</div></div>
+          <div class="nx-badge" id="nx9-q">?</div>
+        </div>
+      </div>
+
+      <!-- ============ 5 — the model finds the tools ============ -->
+      <div class="nx9-scene" id="nx9-s5">
+        <h1 class="nx-head" dir="rtl">الموديل بيلاقي الأدوات <span class="nx-accent">لوحده</span></h1>
+        <div class="nx-card" id="nx9-term">
+          <div class="nx-card-bar"><span class="nx-dots"><i></i><i></i><i></i></span>mcp-server - bash</div>
+          <div class="nx-card-body nx-term">
+            <div class="nx-tl"><span class="nx-prompt">$</span><span class="nx-cmd nx-type">services list</span></div>
+            <div class="nx-tl nx-tl--out"><span class="nx-name">customer-api</span><span class="nx-ok">running</span></div>
+            <div class="nx-tl nx-tl--out"><span class="nx-name">orders-api</span><span class="nx-ok">running</span></div>
+            <div class="nx-tl nx-tl--out"><span class="nx-name">email-api</span><span class="nx-ok">running</span></div>
+            <div class="nx-tl" data-nx-pause="0.15"><span class="nx-prompt">$</span><span class="nx-cmd nx-type">mcp expose --all</span></div>
+            <div class="nx-tl nx-tl--out"><span class="nx-name nx-fn">get_customer</span><i class="nx-arrow" data-nx-icon="arrow-right"></i><span class="nx-chip nx-chip--tool nx-chip--solid nx-chip--role">TOOL</span></div>
+            <div class="nx-tl nx-tl--out"><span class="nx-name nx-fn">get_latest_order</span><i class="nx-arrow" data-nx-icon="arrow-right"></i><span class="nx-chip nx-chip--tool nx-chip--solid nx-chip--warn">TOOL</span></div>
+            <div class="nx-tl nx-tl--out"><span class="nx-name nx-fn">send_email</span><i class="nx-arrow" data-nx-icon="arrow-right"></i><span class="nx-chip nx-chip--tool nx-chip--solid nx-chip--danger">TOOL</span></div>
+            <div class="nx-tl nx-tl--done"><span>✓</span><span>3 tools available to the model</span></div>
+          </div>
+        </div>
+        <div class="nx-steps" id="nx9-steps">
+          <div class="nx-step"><div class="nx-bubble nx-bubble--done"><i data-nx-icon="check" data-nx-stroke="3"></i></div><div class="nx-step-label">expose</div></div>
+          <div class="nx-track"><div class="nx-fill"></div></div>
+          <div class="nx-step"><div class="nx-bubble">1</div><div class="nx-step-label">discover</div></div>
+          <div class="nx-track"><div class="nx-fill"></div></div>
+          <div class="nx-step"><div class="nx-bubble">2</div><div class="nx-step-label">call</div></div>
+        </div>
+      </div>
+
+      <!-- UI sounds (subtle, optional). STATIC tags on purpose: the renderer mixes only <audio> that is
+           in the HTML — audio added by script is NOT rendered. Tick = a part lights, pop = check / badge /
+           click. Move a cue = edit its data-start. No sound = delete these lines. -->
+      <div id="nx9-drv" class="clip" data-start="0" data-duration="20" data-track-index="0"></div>
+    </div>
+
+    <script src="../../assets/kits/node-explainer/nx.js"></script>
+    <script>
+      (function () {
+        window.__timelines = window.__timelines || {};
+        gsap.registerPlugin(DrawSVGPlugin);
+
+        var root = document.getElementById("nx9-root");
+        var $ = function (id) { return document.getElementById(id); };
+        var V = readProps("node-explainer-9x16", { theme: "neon" });
+        NX.theme(root, V.theme); // brand colours: the ONLY thing that changes per brand
+        NX.icons(root);
+
+        var DUR = 20;
+        var tl = gsap.timeline({ paused: true });
+
+        /* ---------- 1 (0 – 3.6) ---------- */
+        NX.scene(tl, $("nx9-s1"), 0, 3.6);
+        var l1 = NX.connect($("nx9-l1"), $("nx9-ai"), $("nx9-mcp"), { from: "bottom", to: "top" });
+        var l2 = NX.connect($("nx9-l1"), $("nx9-mcp"), $("nx9-api"), { from: "bottom", to: "top" });
+        NX.lit($("nx9-ai"));   // cover frame: first part already lit,
+        NX.ghost($("nx9-api")); // far end waits as a ghost (reference)
+        NX.draw(tl, l1, 0.35);
+        NX.ignite(tl, $("nx9-mcp"), 0.75);
+        NX.draw(tl, l2, 1.1);
+        NX.ignite(tl, $("nx9-api"), 1.5, { fromGhost: true });
+        NX.packet(tl, l1, 1.95);
+        NX.packet(tl, l2, 2.27);
+        NX.check(tl, $("nx9-ok"), 2.65);
+        NX.chip(tl, $("nx9-200"), 2.85);
+
+        /* ---------- 2 (3.6 – 7.9) ---------- */
+        NX.scene(tl, $("nx9-s2"), 3.6, 7.9);
+        var u = NX.connect($("nx9-l2"), $("nx9-user"), $("nx9-ai2"), { from: "bottom", to: "top", cls: "nx-line nx-line--hot" });
+        var g = NX.connect($("nx9-l2"), $("nx9-ai2"), $("nx9-goal"), { from: "bottom", to: "top" });
+        NX.ignite(tl, $("nx9-ai2"), 3.75);
+        NX.ignite(tl, $("nx9-user"), 4.35, { glow: 0.25 });
+        NX.draw(tl, u, 4.75);
+        NX.packet(tl, u, 5.1, 0.3, { hot: true });
+        NX.draw(tl, g, 5.7);
+        NX.ignite(tl, $("nx9-goal"), 6.05, { glow: 0.25 });
+        NX.type(tl, $("nx9-goal").querySelector(".nx-type"), 6.12);
+
+        /* ---------- 3 (7.9 – 11.9) ---------- */
+        NX.scene(tl, $("nx9-s3"), 7.9, 11.9);
+        NX.ignite(tl, $("nx9-hub"), 8.05);
+        NX.ignite(tl, $("nx9-op"), 8.5, { glow: 0.2 });
+        NX.type(tl, $("nx9-op").querySelector(".nx-type"), 8.58);
+        NX.rise(tl, $("nx9-cnt"), 8.6);
+        var apis = [$("nx9-a1"), $("nx9-a2"), $("nx9-a3")], arrive = [];
+        apis.forEach(function (a, i) {
+          var hot = i === 1; // the order API is the highlighted (yellow) path
+          var p = NX.connect($("nx9-l3"), $("nx9-hub"), a, { from: "right", to: "left", curve: 0.4, cls: hot ? "nx-line nx-line--hot" : "nx-line" });
+          var s = 9.45 + i * 0.5;
+          NX.draw(tl, p, s);
+          NX.packet(tl, p, s + 0.1, 0.3, { hot: hot });
+          NX.ignite(tl, a, s + 0.25, { glow: hot ? 0.35 : 0 });
+          NX.okDot(tl, a.querySelector(".nx-dot"), s + 0.42);
+          arrive.push(s + 0.38);
+        });
+        NX.count(tl, $("nx9-cnt").querySelector(".nx-num"), arrive);
+
+        /* ---------- 4 (11.9 – 15.0) ---------- */
+        NX.scene(tl, $("nx9-s4"), 11.9, 15.0);
+        NX.split(tl, $("nx9-split"), 12.05, { left: 0.6, right: 1.3 });
+        NX.pop(tl, $("nx9-q"), 13.9, { glow: 0.55 });
+
+        /* ---------- 5 (15.0 – 20.0) ---------- */
+        NX.scene(tl, $("nx9-s5"), 15.0);
+        var tEnd = NX.term(tl, $("nx9-term"), 15.15, { cps: 34, lineGap: 0.12 });
+        NX.steps(tl, $("nx9-steps"), Math.min(tEnd, 18.0));
+
+        /* ---------- optional UI sounds: soft tick per lit part, pop on checks ---------- */
+        tl.set({}, {}, DUR);
+        window.__timelines["node-explainer-9x16"] = tl;
+
+        function readProps(id, defaults) {
+          // Mounted: the runtime defines __hfTimelineCompId and puts the host's
+          // data-variable-values in __hfVariablesByComp. Standalone: getVariables().
+          var w = window, src = null;
+          var key = typeof __hfTimelineCompId !== "undefined" && __hfTimelineCompId ? __hfTimelineCompId : null;
+          var byComp = w.__hfVariablesByComp || {};
+          if (key) src = byComp[key] || null;
+          else if (byComp[id]) src = byComp[id];
+          else if (w.__hyperframes && typeof w.__hyperframes.getVariables === "function") {
+            try { src = w.__hyperframes.getVariables(); } catch (e) { src = null; }
+          }
+          var out = {};
+          for (var k in defaults) out[k] = defaults[k];
+          if (src && typeof src === "object") for (var j in src) if (j in defaults) out[j] = src[j];
+          return out;
+        }
+      })();
+    </script>
+  </body>
+</html>

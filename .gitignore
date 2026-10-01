@@ -1,0 +1,19 @@
+# Never commit these here (see the workspace rule "Never leak to online git")
+*.local.txt
+private-terms*
+.env
+.env.*
+*.key
+*.pem
+node_modules/
+renders/
+director/
+brand/
+*.mp4
+*.mov
+*.wav
+*.mp3
+*.m4a
+*.webm
+*.flac
+*.log

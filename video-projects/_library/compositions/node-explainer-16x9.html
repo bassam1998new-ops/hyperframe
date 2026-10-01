@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="ar" data-composition-variables='[{"id":"theme","type":"string","label":"Theme (neon | midnight | light)","default":"neon"}]'>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>node-explainer 16:9 (AR)</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/DrawSVGPlugin.min.js"></script>
+    <link rel="stylesheet" href="../assets/kits/node-explainer/nx.css" />
+    <style>
+      /* Fonts live HERE, not in nx.css (`vid use` does not read url()s inside a linked CSS). */
+      @font-face { font-family: "Alexandria"; src: url("https://cdn.jsdelivr.net/fontsource/fonts/alexandria@latest/arabic-800-normal.woff2") format("woff2"); font-weight: 800; font-display: block;
+        unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+08A0-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FEFF; }
+      @font-face { font-family: "Alexandria"; src: url("https://cdn.jsdelivr.net/fontsource/fonts/alexandria@latest/latin-800-normal.woff2") format("woff2"); font-weight: 800; font-display: block;
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215; }
+      @font-face { font-family: "Cairo"; src: url("https://cdn.jsdelivr.net/fontsource/fonts/cairo@latest/arabic-700-normal.woff2") format("woff2"); font-weight: 700 800; font-display: block;
+        unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF; }
+      @font-face { font-family: "Cairo"; src: url("https://cdn.jsdelivr.net/fontsource/fonts/cairo@latest/latin-700-normal.woff2") format("woff2"); font-weight: 700 800; font-display: block;
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215; }
+      @font-face { font-family: "JetBrains Mono"; src: url("https://cdn.jsdelivr.net/fontsource/fonts/jetbrains-mono@latest/latin-500-normal.woff2") format("woff2"); font-weight: 500; font-display: block; }
+      @font-face { font-family: "JetBrains Mono"; src: url("https://cdn.jsdelivr.net/fontsource/fonts/jetbrains-mono@latest/latin-700-normal.woff2") format("woff2"); font-weight: 700; font-display: block; }
+
+      *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; background: transparent; }
+
+      /* ====================================================================
+         node-explainer-16x9 — the kit's HORIZONTAL layouts (v2)
+         Colours: NOT fixed. Variable "theme" = neon (reference) | midnight |
+         light — or NX.theme(root, {…brand tokens…}).
+
+         LAYOUT (1920 x 1080)
+             90 .. 250   headline (1 line, 2 max), x 120 .. 1800
+            300 .. 980   diagram zone, x 120 .. 1800 (title-safe ~6%)
+
+         SCENES (hard cuts)
+            0.0 ..  3.6  docs browser: sidebar, cursor moves + clicks, page fills
+            3.6 ..  7.2  mini-card trail: search / format / auth(lock) / code + yellow dots
+            7.2 .. 10.8  AI app (white tile) -> Gmail tile, signal arcs, 2 typed tool pills
+           10.8 .. 13.4  myth speech bubble: typed claim, struck through
+           13.4 .. 15.8  big "No" verdict over MCP + APIs
+           15.8 .. 20.5  foundation: APIs layer -> services -> MCP server layer -> AI apps
+         ==================================================================== */
+      #nx16-root { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; }
+      .nx16-scene { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+      .nx16-scene .nx-head { top: 96px; left: 120px; right: 120px; font-size: 66px; }
+
+      /* A — docs */
+      #nx16-doc { left: 170px; top: 300px; width: 960px; height: 620px; }
+      #nx16-doc .nx-side { width: 290px; }
+      #nx16-ep { left: 1210px; top: 470px; width: 540px; }
+      #nx16-ep .nx-type { font-size: 26px; font-weight: 700; }
+      #nx16-key { position: absolute; left: 1210px; top: 640px; }
+
+      /* B — trail */
+      .nx16-mini { top: 360px; width: 340px; height: 250px; padding: 22px 24px; }
+      .nx16-mini .nx-mini-label { font-size: 18px; margin-bottom: 18px; }
+      .nx16-mini .nx-ico { font-size: 56px; display: block; margin-bottom: 22px; color: var(--nx-role-2-text); }
+      .nx16-mini.nx-mini--lock .nx-ico { color: var(--nx-warn-text); }
+      .nx16-mini code { font-family: var(--nx-mono); font-size: 27px; }
+      #nx16-m1 { left: 170px; } #nx16-m2 { left: 580px; } #nx16-m3 { left: 990px; } #nx16-m4 { left: 1400px; }
+      .nx16-dot { top: 690px; }
+      #nx16-d1 { left: 324px; } #nx16-d2 { left: 734px; } #nx16-d3 { left: 1144px; } #nx16-d4 { left: 1554px; }
+
+      /* C — Gmail */
+      #nx16-app { left: 170px; top: 520px; width: 440px; height: 170px; }
+      #nx16-gm { left: 830px; top: 495px; width: 220px; height: 220px; }
+      #nx16-gm .nx-ico { font-size: 104px; }
+      #nx16-arc { left: 900px; top: 370px; width: 80px; height: 120px; transform: rotate(-90deg); } /* signal goes UP: the right side is for the tool lines */
+      #nx16-p1 { left: 1280px; top: 455px; width: 470px; }
+      #nx16-p2 { left: 1280px; top: 671px; width: 470px; }
+
+      /* D — myth */
+      #nx16-myth { left: 450px; top: 430px; width: 1020px; }
+      #nx16-myth .nx-speech-text { font-size: 56px; }
+      #nx16-strike { left: 26px; top: 112px; width: 960px; }
+
+      /* E — No */
+      #nx16-no { position: absolute; left: 640px; top: 350px; --r: var(--nx-ok); }
+      #nx16-mcp { left: 470px; top: 520px; width: 440px; height: 230px; }
+      #nx16-api { left: 1050px; top: 520px; width: 440px; height: 230px; }
+
+      /* F — foundation */
+      .nx16-app { top: 300px; width: 300px; height: 76px; justify-content: center; font-size: 22px; }
+      #nx16-a1 { left: 400px; } #nx16-a2 { left: 810px; } #nx16-a3 { left: 1220px; }
+      #nx16-mcpl { left: 300px; top: 450px; width: 1320px; height: 110px; }
+      .nx16-svc { top: 640px; width: 120px; height: 120px; }
+      .nx16-svc .nx-ico { font-size: 54px; }
+      #nx16-s1 { left: 450px; } #nx16-s2 { left: 750px; } #nx16-s3 { left: 1050px; } #nx16-s4 { left: 1350px; }
+      #nx16-apil { left: 300px; top: 840px; width: 1320px; height: 110px; }
+
+      #nx16-drv { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+    </style>
+  </head>
+  <body>
+    <div id="nx16-root" class="nx" data-composition-id="node-explainer-16x9" data-start="0" data-duration="20.5" data-width="1920" data-height="1080">
+      <!-- ============ A — every API has its own docs ============ -->
+      <div class="nx16-scene" id="nx16-sA">
+        <svg class="nx-lines" id="nx16-lA"></svg>
+        <h1 class="nx-head" dir="rtl">كل <span class="nx-accent nx-ltr" dir="ltr">API</span> ليها <span class="nx-accent">docs</span> لازم تقراها</h1>
+        <div class="nx-card nx-browser" id="nx16-doc">
+          <div class="nx-card-bar"><span class="nx-dots"><i></i><i></i><i></i></span>docs.example-store.dev/api</div>
+          <div class="nx-browser-body">
+            <div class="nx-side">
+              <div class="nx-side-item"><i class="nx-hl"></i><span>Authentication</span></div>
+              <div class="nx-side-item" id="nx16-orders"><i class="nx-hl"></i><span>Orders</span></div>
+              <div class="nx-side-item"><i class="nx-hl"></i><span>Customers</span></div>
+              <div class="nx-side-item"><i class="nx-hl"></i><span>Webhooks</span></div>
+              <div class="nx-side-item"><i class="nx-hl"></i><span>Rate limits</span></div>
+            </div>
+            <div class="nx-page" id="nx16-page">
+              <div class="nx-skel nx-skel--title"></div>
+              <div class="nx-skel" style="width: 92%"></div>
+              <div class="nx-skel" style="width: 78%"></div>
+              <div class="nx-skel" style="width: 85%"></div>
+              <div class="nx-skel nx-skel--box"></div>
+              <div class="nx-skel" style="width: 60%; margin-top: 18px"></div>
+            </div>
+          </div>
+          <i class="nx-cursor" id="nx16-cur"></i>
+        </div>
+        <div class="nx-note nx-note--role" id="nx16-ep"><div class="nx-note-label">endpoint</div><span class="nx-type">GET /v1/orders/latest</span></div>
+        <span class="nx-chip nx-chip--big nx-chip--warn" id="nx16-key"><i data-nx-icon="lock"></i>API KEY</span>
+      </div>
+
+      <!-- ============ B — every step by hand ============ -->
+      <div class="nx16-scene" id="nx16-sB">
+        <svg class="nx-lines" id="nx16-lB"></svg>
+        <h1 class="nx-head" dir="rtl">وكل خطوة بتكتبها <span class="nx-accent">بإيدك</span></h1>
+        <div class="nx-mini nx16-mini" id="nx16-m1"><div class="nx-mini-label">search</div><i data-nx-icon="search"></i><code>?q=latest</code></div>
+        <div class="nx-mini nx16-mini" id="nx16-m2"><div class="nx-mini-label">format</div><i data-nx-icon="file-text"></i><code>to json</code></div>
+        <div class="nx-mini nx16-mini nx-mini--lock" id="nx16-m3"><div class="nx-mini-label">auth</div><i data-nx-icon="lock"></i><code>Bearer sk_***</code></div>
+        <div class="nx-mini nx16-mini" id="nx16-m4"><div class="nx-mini-label">code</div><i data-nx-icon="code"></i><code>fetch(url)</code></div>
+        <i class="nx-ptdot nx16-dot" id="nx16-d1"></i><i class="nx-ptdot nx16-dot" id="nx16-d2"></i>
+        <i class="nx-ptdot nx16-dot" id="nx16-d3"></i><i class="nx-ptdot nx16-dot" id="nx16-d4"></i>
+      </div>
+
+      <!-- ============ C — the AI reaches Gmail by itself ============ -->
+      <div class="nx16-scene" id="nx16-sC">
+        <svg class="nx-lines" id="nx16-lC"></svg>
+        <h1 class="nx-head" dir="rtl">الـ<span class="nx-accent nx-ltr" dir="ltr">AI</span> بيستخدم <span class="nx-accent nx-ltr" dir="ltr">Gmail</span> لوحده</h1>
+        <div class="nx-tile nx-tile--app nx-tile--row" id="nx16-app"><i data-nx-icon="app-window"></i>AI APPLICATION</div>
+        <div class="nx-tile nx-tile--logo" id="nx16-gm"><i data-nx-logo="gmail"></i></div>
+        <svg class="nx-arcs" id="nx16-arc" viewBox="0 0 80 120">
+          <path d="M14 42 A 26 26 0 0 1 14 78" /><path d="M32 26 A 46 46 0 0 1 32 94" /><path d="M50 10 A 66 66 0 0 1 50 110" />
+        </svg>
+        <div class="nx-pill nx-r2" id="nx16-p1"><i data-nx-icon="search"></i><span class="nx-label">SEARCH EMAILS</span></div>
+        <div class="nx-pill nx-r2" id="nx16-p2"><i data-nx-icon="file-pen"></i><span class="nx-label">CREATE DRAFT</span></div>
+      </div>
+
+      <!-- ============ D — the myth ============ -->
+      <div class="nx16-scene" id="nx16-sD">
+        <h1 class="nx-head" dir="rtl">كلام <span class="nx-accent">منتشر</span> بس مش مظبوط</h1>
+        <div class="nx-speech" id="nx16-myth">
+          <span class="nx-chip nx-chip--danger">myth</span>
+          <div class="nx-speech-text"><span class="nx-type">MCP IS REPLACING APIS</span></div>
+          <i class="nx-strike" id="nx16-strike"></i>
+        </div>
+      </div>
+
+      <!-- ============ E — No ============ -->
+      <div class="nx16-scene" id="nx16-sE">
+        <svg class="nx-lines" id="nx16-lE"></svg>
+        <h1 class="nx-head" dir="rtl"><span class="nx-accent nx-ltr" dir="ltr">MCP</span> مش بديل للـ<span class="nx-accent nx-ltr" dir="ltr">APIs</span></h1>
+        <span class="nx-chip nx-chip--xl nx-chip--solid" id="nx16-no">No</span>
+        <div class="nx-tile nx-tile--mcp" id="nx16-mcp"><i class="nx-pip"></i><i data-nx-icon="server"></i>MCP</div>
+        <div class="nx-tile nx-tile--api" id="nx16-api"><i data-nx-icon="globe"></i>APIs</div>
+      </div>
+
+      <!-- ============ F — the foundation ============ -->
+      <div class="nx16-scene" id="nx16-sF">
+        <svg class="nx-lines" id="nx16-lF"></svg>
+        <h1 class="nx-head" dir="rtl">الـ<span class="nx-accent nx-ltr" dir="ltr">MCP</span> مبني فوق الـ<span class="nx-accent nx-ltr" dir="ltr">APIs</span></h1>
+        <div class="nx-pill nx-r4 nx16-app" id="nx16-a1"><span class="nx-label">CHAT APP</span></div>
+        <div class="nx-pill nx-r4 nx16-app" id="nx16-a2"><span class="nx-label">AGENT</span></div>
+        <div class="nx-pill nx-r4 nx16-app" id="nx16-a3"><span class="nx-label">CODE EDITOR</span></div>
+        <div class="nx-layer nx-r2" id="nx16-mcpl">MCP SERVER</div>
+        <div class="nx-tile nx-tile--logo nx16-svc" id="nx16-s1"><i data-nx-logo="gmail"></i></div>
+        <div class="nx-tile nx-tile--logo nx16-svc" id="nx16-s2"><i data-nx-logo="github"></i></div>
+        <div class="nx-tile nx-tile--logo nx16-svc nx-r3" id="nx16-s3"><i data-nx-icon="database"></i></div>
+        <div class="nx-tile nx-tile--logo nx16-svc nx-r1" id="nx16-s4"><i data-nx-icon="shopping-cart"></i></div>
+        <div class="nx-layer nx-r3" id="nx16-apil">APIs</div>
+      </div>
+
+      <!-- UI sounds (subtle, optional). STATIC tags on purpose: the renderer mixes only <audio> that is
+           in the HTML — audio added by script is NOT rendered. Tick = a part lights, pop = check / badge /
+           click. Move a cue = edit its data-start. No sound = delete these lines. -->
+      <div id="nx16-drv" class="clip" data-start="0" data-duration="20.5" data-track-index="0"></div>
+    </div>
+
+    <script src="../assets/kits/node-explainer/nx.js"></script>
+    <script>
+      (function () {
+        window.__timelines = window.__timelines || {};
+        gsap.registerPlugin(DrawSVGPlugin);
+
+        var root = document.getElementById("nx16-root");
+        var $ = function (id) { return document.getElementById(id); };
+        var V = readProps("node-explainer-16x9", { theme: "neon" });
+        NX.theme(root, V.theme);
+        NX.icons(root);
+
+        var DUR = 20.5;
+        var tl = gsap.timeline({ paused: true });
+
+        /* ---------- A docs (0 – 3.6) ---------- */
+        NX.scene(tl, $("nx16-sA"), 0, 3.6);
+        NX.lit($("nx16-doc"), 0); // cover frame: the docs window is already there
+
+        var orders = $("nx16-orders");
+        var cEnd = NX.cursor(tl, $("nx16-cur"), 0.25, [
+          { el: $("nx16-page"), fx: 0.55, fy: 0.75, jump: true },
+          { el: orders, fx: 0.35, dur: 0.45, click: true, wait: 0.1 },
+        ]);
+        NX.skel(tl, $("nx16-page"), cEnd, { keep: true }); // old page shown on the cover, reloads on the click
+        NX.ignite(tl, $("nx16-ep"), 1.9, { glow: 0.2 });
+        NX.type(tl, $("nx16-ep").querySelector(".nx-type"), 1.98);
+        NX.chip(tl, $("nx16-key"), 2.95);
+
+        /* ---------- B trail (3.6 – 7.2) ---------- */
+        NX.scene(tl, $("nx16-sB"), 3.6, 7.2);
+        var items = [1, 2, 3, 4].map(function (i) { return { card: $("nx16-m" + i), dot: $("nx16-d" + i) }; });
+        items.forEach(function (it) { NX.ghost(it.card); });
+        NX.trail(tl, items, $("nx16-lB"), 3.75, { gap: 0.75 });
+
+        /* ---------- C Gmail (7.2 – 10.8) ---------- */
+        NX.scene(tl, $("nx16-sC"), 7.2, 10.8);
+        NX.lit($("nx16-app"), 0.3);
+        NX.ghost($("nx16-gm"));
+        var g = NX.connect($("nx16-lC"), $("nx16-app"), $("nx16-gm"), { from: "right", to: "left" });
+        NX.draw(tl, g, 7.45);
+        NX.ignite(tl, $("nx16-gm"), 7.8, { fromGhost: true, glow: 0.35 });
+        NX.packet(tl, g, 8.05);
+        NX.arcs(tl, $("nx16-arc"), 8.35);
+        var fo = NX.fanout(tl, $("nx16-gm"), [$("nx16-p1"), $("nx16-p2")], $("nx16-lC"), 9.0,
+          { from: "right", to: "left", curve: 0.45, pill: true, stagger: 0.45, dx: -20, cls: "nx-line" });
+
+        /* ---------- D myth (10.8 – 13.4) ---------- */
+        NX.scene(tl, $("nx16-sD"), 10.8, 13.4);
+        NX.rise(tl, $("nx16-myth"), 10.95, 0.25);
+        var mEnd = NX.type(tl, $("nx16-myth").querySelector(".nx-type"), 11.3);
+        NX.strike(tl, $("nx16-strike"), mEnd + 0.45);
+
+        /* ---------- E No (13.4 – 15.8) ---------- */
+        NX.scene(tl, $("nx16-sE"), 13.4, 15.8);
+        NX.lit($("nx16-mcp"), 0.35);
+        NX.lit($("nx16-api"), 0.35);
+        var l = NX.connect($("nx16-lE"), $("nx16-mcp"), $("nx16-api"), { from: "right", to: "left" });
+        gsap.set(l, { drawSVG: "100%" });
+        NX.packet(tl, l, 13.7);
+        NX.pop(tl, $("nx16-no"), 14.25, { glow: 0.5, blur: 40 });
+
+        /* ---------- F foundation (15.8 – 20.5) ---------- */
+        NX.scene(tl, $("nx16-sF"), 15.8);
+        var t = NX.ignite(tl, $("nx16-apil"), 15.95, { glow: 0.3 });
+        var svcs = [1, 2, 3, 4].map(function (i) { return $("nx16-s" + i); });
+        svcs.forEach(function (s, i) {
+          var p = NX.connect($("nx16-lF"), s, $("nx16-apil"), { from: "bottom", to: "top", align: "from" });
+          NX.draw(tl, p, 16.45 + i * 0.12, 0.25);
+          NX.ignite(tl, s, 16.4 + i * 0.12, { glow: 0.25 });
+        });
+
+        NX.ignite(tl, $("nx16-mcpl"), 17.45, { glow: 0.35 });
+        svcs.forEach(function (s, i) {
+          var p = NX.connect($("nx16-lF"), $("nx16-mcpl"), s, { from: "bottom", to: "top", align: "to" });
+          NX.draw(tl, p, 17.75 + i * 0.1, 0.22);
+        });
+        [1, 2, 3].forEach(function (i, k) {
+          NX.pill(tl, $("nx16-a" + i), 18.6 + k * 0.3, { dx: 0, glow: 0.3 });
+          var p = NX.connect($("nx16-lF"), $("nx16-a" + i), $("nx16-mcpl"), { from: "bottom", to: "top", align: "from" });
+          NX.draw(tl, p, 18.75 + k * 0.3, 0.2);
+        });
+
+        tl.set({}, {}, DUR);
+        window.__timelines["node-explainer-16x9"] = tl;
+
+        function readProps(id, defaults) {
+          var w = window, src = null;
+          var key = typeof __hfTimelineCompId !== "undefined" && __hfTimelineCompId ? __hfTimelineCompId : null;
+          var byComp = w.__hfVariablesByComp || {};
+          if (key) src = byComp[key] || null;
+          else if (byComp[id]) src = byComp[id];
+          else if (w.__hyperframes && typeof w.__hyperframes.getVariables === "function") {
+            try { src = w.__hyperframes.getVariables(); } catch (e) { src = null; }
+          }
+          var out = {};
+          for (var k in defaults) out[k] = defaults[k];
+          if (src && typeof src === "object") for (var j in src) if (j in defaults) out[j] = src[j];
+          return out;
+        }
+      })();
+    </script>
+  </body>
+</html>

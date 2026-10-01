@@ -1,0 +1,451 @@
+/* =====================================================================
+   node-explainer kit — nx.css  (v2, 2026-10-01)
+
+   THE STYLE IS THE QUALITY, NOT THE COLOURS. Every colour below comes from
+   a small set of ROLE TOKENS. A brand fills those (~14 hex values, see
+   NX.theme / README "brandToNx"); gradients, glows, borders, chip fills,
+   terminal colours and the headline gradient are all DERIVED from them.
+
+   Scope: every rule hangs off `.nx` (put it on your composition root).
+   Light brands: NX.theme sets data-nx-mode="light" when --nx-bg is light —
+   glow turns into a soft shadow, ghost = faded instead of darkened.
+
+   FONTS ARE NOT DECLARED HERE. `vid use` copies files that the block HTML
+   references, but does not read url()s inside this CSS file. Put the
+   @font-face rules in the block HTML.
+
+   ANTI-SLOP (§2, §4): glow = "this part is active", tweened on the part
+   itself by NX.ignite, so it has a source and moves with it. Gradients
+   encode a part's ROLE (and depth); the headline gradient marks key words.
+   ===================================================================== */
+
+.nx {
+  /* ---- ROLE TOKENS — a brand sets these ------------------------------ */
+  --nx-bg: #000000;          /* stage */
+  --nx-surface: #0d1117;     /* cards, rows */
+  --nx-border: #1f2630;      /* hairlines */
+  --nx-text: #ffffff;        /* headline + main text */
+  --nx-dim: #8b95a5;         /* secondary text */
+  --nx-accent: #9d4dff;      /* headline key words (gradient start) */
+  --nx-accent-2: #d946ef;    /* gradient end — set = accent for a flat brand */
+  --nx-role-1: #26d892;      /* model / "the brain"      (tile family 1) */
+  --nx-role-2: #45d9e3;      /* server / connector       (tile family 2) — lines use it */
+  --nx-role-3: #4a8df5;      /* systems / APIs           (tile family 3) */
+  --nx-role-4: #eef1f5;      /* app / client             (tile family 4) */
+  --nx-ok: #34e89e;
+  --nx-warn: #ffc531;        /* highlighted path, "?" badge, user request */
+  --nx-danger: #ff5a47;
+  --nx-depth: 1;             /* gradient depth: 0 = flat, 1 = reference */
+  /* text ON a filled role colour — NX.theme computes these for contrast */
+  --nx-on-1: #04121a; --nx-on-2: #04121a; --nx-on-3: #04121a; --nx-on-4: #04121a;
+  --nx-on-ok: #04121a; --nx-on-warn: #1a1203; --nx-on-danger: #1a0503;
+  /* type */
+  --nx-head-font: "Alexandria", system-ui, sans-serif;
+  --nx-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* ---- DERIVED — never set these per brand --------------------------- */
+  --nx-surface-2: color-mix(in oklab, var(--nx-surface), var(--nx-text) 4%);
+  --nx-bar: color-mix(in oklab, var(--nx-surface), var(--nx-text) 3%);
+  --nx-line: color-mix(in oklab, var(--nx-role-2) 82%, var(--nx-text));
+  --nx-line-ghost: color-mix(in oklab, var(--nx-role-2) 18%, var(--nx-bg));
+  --nx-hot: var(--nx-warn);
+  --nx-ok-text: color-mix(in oklab, var(--nx-ok) 72%, var(--nx-text));
+  --nx-warn-text: color-mix(in oklab, var(--nx-warn) 72%, var(--nx-text));
+  --nx-danger-text: color-mix(in oklab, var(--nx-danger) 72%, var(--nx-text));
+  --nx-role-2-text: color-mix(in oklab, var(--nx-role-2) 72%, var(--nx-text));
+  --nx-card-shadow: none;
+  --nx-radius: 16px;
+
+  position: relative;
+  isolation: isolate;
+  background: var(--nx-bg);
+  color: var(--nx-text);
+  font-family: var(--nx-head-font);
+  -webkit-font-smoothing: antialiased;
+}
+/* the stage colour is ALSO painted by a layer: a mounted sub-composition root
+   can lose its own background, and a light brand on a black host looks broken */
+.nx::before { content: ""; position: absolute; inset: 0; background: var(--nx-bg); z-index: -1; pointer-events: none; }
+/* light brands: text-tinted colours must go DARKER, cards float on shadow */
+.nx[data-nx-mode="light"] {
+  --nx-ok-text: color-mix(in oklab, var(--nx-ok) 62%, var(--nx-text));
+  --nx-warn-text: color-mix(in oklab, var(--nx-warn) 55%, var(--nx-text));
+  --nx-danger-text: color-mix(in oklab, var(--nx-danger) 62%, var(--nx-text));
+  --nx-role-2-text: color-mix(in oklab, var(--nx-role-2) 60%, var(--nx-text));
+  --nx-line: color-mix(in oklab, var(--nx-role-2) 75%, var(--nx-text));
+  --nx-line-ghost: color-mix(in oklab, var(--nx-role-2) 22%, var(--nx-bg));
+  --nx-card-shadow: 0 18px 40px -18px rgba(15, 23, 42, 0.22), 0 2px 6px rgba(15, 23, 42, 0.05);
+}
+
+/* ---- headline ------------------------------------------------------ */
+.nx-head {
+  position: absolute;
+  left: 60px;
+  right: 120px; /* reel safe band x 60..960 */
+  text-align: center;
+  font-family: var(--nx-head-font);
+  font-weight: 800;
+  font-size: 78px;
+  line-height: 1.32;
+  letter-spacing: -0.005em;
+  color: var(--nx-text);
+  text-wrap: balance;
+}
+.nx-head[dir="rtl"] { direction: rtl; } /* element-scoped — never <html dir> */
+.nx-accent {
+  background: linear-gradient(90deg, var(--nx-accent), var(--nx-accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  padding: 0 0.03em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+.nx-ltr { direction: ltr; unicode-bidi: isolate; display: inline-block; }
+.nx-keep { white-space: nowrap; }
+
+/* ---- stage + lines --------------------------------------------------- */
+.nx-stage { position: absolute; left: 0; top: 0; width: 100%; height: 100%; direction: ltr; }
+.nx-lines { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.nx-line { fill: none; stroke: var(--nx-line); stroke-width: 3; stroke-linecap: round; }
+.nx-line--hot { stroke: var(--nx-hot); }
+.nx-line--dim { stroke: var(--nx-line-ghost); }
+.nx-packet { fill: none; stroke: color-mix(in oklab, var(--nx-role-2) 30%, var(--nx-text)); stroke-width: 5; stroke-linecap: round; }
+.nx-packet--hot { stroke: color-mix(in oklab, var(--nx-hot) 55%, var(--nx-text)); }
+/* slop-ok: the packet's halo IS the packet — it travels the line with it */
+.nx-packet-halo { fill: none; stroke: color-mix(in srgb, var(--nx-role-2) 38%, transparent); stroke-width: 14; stroke-linecap: round; }
+.nx-packet-halo--hot { stroke: color-mix(in srgb, var(--nx-hot) 40%, transparent); }
+
+/* ---- icons / logos ------------------------------------------------------ */
+.nx-ico { display: inline-block; width: 1em; height: 1em; flex: none; }
+.nx-ico svg { width: 100%; height: 100%; display: block; overflow: visible; }
+
+/* ---- tiles --------------------------------------------------------------- */
+.nx-tile {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border-radius: 20px;
+  --r: var(--nx-role-2);
+  --on: var(--nx-on-2);
+  background: linear-gradient(135deg,
+    color-mix(in oklab, var(--r), white calc(var(--nx-depth) * 24%)),
+    color-mix(in oklab, var(--r), black calc(var(--nx-depth) * 16%)));
+  border: 1px solid color-mix(in oklab, var(--r), var(--nx-text) 14%);
+  color: var(--on);
+  font-family: var(--nx-mono);
+  font-weight: 700;
+  font-size: 24px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.nx-tile .nx-ico { font-size: 54px; }
+.nx-tile--row { flex-direction: row; gap: 18px; }
+.nx-tile--big { font-family: var(--nx-head-font); font-weight: 800; letter-spacing: 0.01em; text-transform: none; font-size: 64px; }
+/* a dark "logo" tile: surface fill, the mark in its own colour (--r) */
+.nx-tile--logo { background: var(--nx-surface-2); border-color: color-mix(in oklab, var(--r) 45%, var(--nx-border)); color: var(--r); }
+/* small status dot in a tile corner (the reference's "live" pip) */
+.nx-pip { position: absolute; top: 10px; right: 10px; width: 10px; height: 10px; border-radius: 50%; background: var(--on); opacity: 0.9; }
+
+/* ---- pills (tools) ------------------------------------------------------- */
+.nx-pill {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  height: 84px;
+  padding: 0 28px;
+  border-radius: 14px;
+  --r: var(--nx-role-2);
+  --on: var(--nx-on-2);
+  background: linear-gradient(90deg,
+    color-mix(in oklab, var(--r), white calc(var(--nx-depth) * 20%)),
+    color-mix(in oklab, var(--r), black calc(var(--nx-depth) * 12%)));
+  border: 1px solid color-mix(in oklab, var(--r), var(--nx-text) 14%);
+  color: var(--on);
+  font-family: var(--nx-mono);
+  font-weight: 700;
+  font-size: 26px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.nx-pill .nx-ico { font-size: 32px; }
+.nx-pill .nx-chip { margin-left: auto; }
+/* dark row with a coloured left edge (--e): cyan / yellow / red / green */
+.nx-pill--dark {
+  background: var(--nx-surface-2);
+  border: 1px solid var(--nx-border);
+  border-left: 5px solid var(--e, var(--nx-role-2));
+  color: color-mix(in oklab, var(--nx-text) 88%, var(--nx-surface));
+  font-weight: 500;
+  font-style: italic;
+  --r: var(--e, var(--nx-role-2));
+}
+.nx-pill--dark .nx-ico { color: var(--e, var(--nx-role-2)); }
+.nx-edge--1 { --e: var(--nx-role-2); }
+.nx-edge--warn { --e: var(--nx-warn); }
+.nx-edge--danger { --e: var(--nx-danger); }
+.nx-edge--ok { --e: var(--nx-ok); }
+/* highlighted (hot) row / pill: lit border in the hot colour */
+.nx-pill--hot { border-color: var(--nx-hot); --r: var(--nx-hot); }
+.nx-pill--new { border-color: var(--nx-ok); background: color-mix(in oklab, var(--nx-surface-2), var(--nx-ok) 8%); color: var(--nx-text); font-style: normal; font-weight: 700; --r: var(--nx-ok); }
+
+/* ---- dark node (system / API card with a status dot) -------------------- */
+.nx-node {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 70px;
+  padding: 0 20px;
+  border-radius: 12px;
+  background: var(--nx-surface-2);
+  border: 1px solid var(--nx-border);
+  box-shadow: var(--nx-card-shadow);
+  color: color-mix(in oklab, var(--nx-text) 90%, var(--nx-surface));
+  font-family: var(--nx-mono);
+  font-weight: 700;
+  font-style: italic;
+  font-size: 21px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  --r: var(--nx-role-3);
+}
+.nx-node .nx-ico { font-size: 28px; color: var(--nx-role-2-text); }
+.nx-dot { width: 12px; height: 12px; border-radius: 50%; margin-left: auto; background: var(--nx-border); flex: none; }
+.nx-dot.is-ok { background: var(--nx-ok); }
+
+/* ---- chips (status) ---------------------------------------------------------- */
+.nx-chip {
+  --c: var(--nx-ok);
+  --ct: var(--nx-ok-text);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-family: var(--nx-mono);
+  font-weight: 700;
+  font-size: 18px;
+  font-style: normal;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  background: color-mix(in srgb, var(--c) 16%, transparent);
+  color: var(--ct);
+  border: 1px solid color-mix(in srgb, var(--c) 40%, transparent);
+}
+.nx-chip--warn { --c: var(--nx-warn); --ct: var(--nx-warn-text); }
+.nx-chip--danger { --c: var(--nx-danger); --ct: var(--nx-danger-text); }
+.nx-chip--role { --c: var(--nx-role-2); --ct: var(--nx-role-2-text); }
+.nx-chip--live::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
+/* solid chips: filled with the colour, text from the computed on-colour */
+.nx-chip--solid { background: var(--c); color: var(--con, var(--nx-on-ok)); border-color: transparent; }
+.nx-chip--solid.nx-chip--warn { --con: var(--nx-on-warn); }
+.nx-chip--solid.nx-chip--danger { --con: var(--nx-on-danger); }
+.nx-chip--solid.nx-chip--role { --con: var(--nx-on-2); }
+.nx-chip--tool { height: 30px; font-size: 16px; padding: 0 10px; }
+.nx-chip--big { height: 56px; font-size: 28px; padding: 0 22px; border-radius: 12px; }
+/* the big "No" — a word-sized verdict badge */
+.nx-chip--xl { height: 96px; padding: 0 34px; border-radius: 20px; font-family: var(--nx-head-font); font-weight: 800; font-size: 60px; letter-spacing: 0; text-transform: none; }
+
+/* ---- pops: check circle + square badge ("?") ------------------------------- */
+.nx-check {
+  position: absolute;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  --r: var(--nx-ok);
+  background: radial-gradient(circle at 35% 30%, color-mix(in oklab, var(--nx-ok), white 30%), color-mix(in oklab, var(--nx-ok), black 18%));
+  color: var(--nx-on-ok);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.nx-check .nx-ico { font-size: 42px; }
+.nx-badge {
+  position: absolute;
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  --r: var(--nx-warn);
+  background: var(--nx-warn);
+  color: var(--nx-on-warn);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--nx-head-font);
+  font-weight: 800;
+  font-size: 40px;
+}
+
+/* ---- UI card (terminal / docs / list) --------------------------------------- */
+.nx-card {
+  position: absolute;
+  background: var(--nx-surface);
+  border: 1px solid var(--nx-border);
+  border-radius: var(--nx-radius);
+  box-shadow: var(--nx-card-shadow);
+  overflow: hidden;
+  direction: ltr;
+  font-family: var(--nx-mono);
+  color: color-mix(in oklab, var(--nx-text) 82%, var(--nx-surface));
+}
+.nx-card-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 56px;
+  padding: 0 22px;
+  background: var(--nx-bar);
+  border-bottom: 1px solid var(--nx-border);
+  font-size: 20px;
+  color: var(--nx-dim);
+  letter-spacing: 0.04em;
+}
+.nx-dots { display: flex; gap: 9px; margin-right: 10px; }
+.nx-dots i { width: 14px; height: 14px; border-radius: 50%; background: #ff5f57; }
+.nx-dots i:nth-child(2) { background: #febc2e; }
+.nx-dots i:nth-child(3) { background: #28c840; } /* macOS chrome — fixed by design */
+.nx-card-body { padding: 26px 30px; }
+.nx-card-label { font-size: 17px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--nx-dim); margin-bottom: 16px; }
+
+/* terminal */
+.nx-term { font-size: 27px; line-height: 46px; white-space: nowrap; }
+.nx-tl { display: flex; align-items: center; gap: 14px; height: 46px; }
+.nx-tl--out { padding-left: 34px; }
+.nx-tl .nx-prompt { color: var(--nx-ok-text); }
+.nx-tl .nx-cmd { color: var(--nx-text); }
+.nx-tl .nx-ok { color: var(--nx-ok-text); }
+.nx-tl .nx-name { color: color-mix(in oklab, var(--nx-text) 88%, var(--nx-surface)); }
+.nx-tl .nx-fn { color: var(--nx-warn-text); }
+.nx-tl .nx-arrow { color: var(--nx-dim); font-size: 26px; margin-right: 6px; }
+.nx-tl--done { color: var(--nx-ok-text); }
+
+/* docs / browser mock: sidebar + skeleton page + cursor */
+.nx-browser .nx-card-bar { font-size: 19px; }
+.nx-browser-body { display: flex; height: calc(100% - 56px); }
+.nx-side { width: 34%; padding: 22px 16px; border-right: 1px solid var(--nx-border); background: color-mix(in oklab, var(--nx-surface), var(--nx-bg) 30%); }
+.nx-side-item { height: 44px; display: flex; align-items: center; padding: 0 14px; border-radius: 8px; font-size: 19px; color: var(--nx-dim); letter-spacing: 0.02em; margin-bottom: 6px; position: relative; }
+.nx-side-item .nx-hl { position: absolute; inset: 0; border-radius: 8px; background: color-mix(in srgb, var(--nx-role-2) 18%, transparent); border: 1px solid color-mix(in srgb, var(--nx-role-2) 40%, transparent); opacity: 0; }
+.nx-side-item span { position: relative; }
+.nx-page { flex: 1; padding: 28px 30px; }
+.nx-skel { height: 16px; border-radius: 6px; background: color-mix(in oklab, var(--nx-surface), var(--nx-text) 14%); margin-bottom: 16px; transform-origin: 0 50%; }
+.nx-skel--title { height: 24px; width: 46%; background: color-mix(in oklab, var(--nx-surface), var(--nx-text) 24%); margin-bottom: 26px; }
+.nx-skel--box { height: 120px; background: color-mix(in oklab, var(--nx-surface), var(--nx-text) 6%); border: 1px solid var(--nx-border); }
+.nx-cursor { position: absolute; width: 34px; height: 34px; left: 0; top: 0; z-index: 5; color: var(--nx-text); filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.5)); }
+.nx-cursor svg { width: 100%; height: 100%; display: block; }
+
+/* mini cards (search / format / auth / code) + a dotted path under them */
+.nx-mini {
+  position: absolute;
+  border-radius: 12px;
+  background: var(--nx-surface);
+  border: 1px solid var(--nx-border);
+  box-shadow: var(--nx-card-shadow);
+  padding: 14px 16px;
+  font-family: var(--nx-mono);
+  font-size: 17px;
+  color: color-mix(in oklab, var(--nx-text) 80%, var(--nx-surface));
+  direction: ltr;
+  overflow: hidden;
+}
+.nx-mini-label { font-size: 13px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--nx-dim); margin-bottom: 12px; }
+.nx-mini--lock { border-color: color-mix(in oklab, var(--nx-warn) 45%, var(--nx-border)); background: color-mix(in oklab, var(--nx-surface), var(--nx-warn) 7%); color: var(--nx-warn-text); }
+.nx-ptdot { position: absolute; width: 22px; height: 22px; border-radius: 50%; background: var(--nx-hot); --r: var(--nx-hot); }
+
+/* signal arcs ")))" next to a tile */
+.nx-arcs { position: absolute; overflow: visible; }
+.nx-arcs path { fill: none; stroke: var(--nx-line); stroke-width: 4; stroke-linecap: round; }
+
+/* notes: user request / goal / myth — a labelled text card tinted by --c */
+.nx-note {
+  position: absolute;
+  --c: var(--nx-warn);
+  --r: var(--nx-warn);
+  border-radius: 14px;
+  padding: 16px 22px;
+  background: color-mix(in oklab, var(--nx-surface), var(--c) 9%);
+  border: 1px solid color-mix(in oklab, var(--c) 45%, var(--nx-border));
+  box-shadow: var(--nx-card-shadow);
+  font-family: var(--nx-mono);
+  color: var(--nx-text);
+  font-size: 22px;
+  line-height: 1.4;
+}
+.nx-note--ok { --c: var(--nx-ok); --r: var(--nx-ok); }
+.nx-note--role { --c: var(--nx-role-2); --r: var(--nx-role-2); }
+.nx-note-label { font-size: 14px; letter-spacing: 0.22em; text-transform: uppercase; color: color-mix(in oklab, var(--c) 70%, var(--nx-text)); margin-bottom: 8px; }
+.nx-note[dir="rtl"] { direction: rtl; font-family: var(--nx-head-font); font-weight: 800; font-size: 34px; }
+.nx-note[dir="rtl"] .nx-note-label { font-family: var(--nx-mono); direction: ltr; text-align: right; font-weight: 500; }
+/* speech-bubble (myth) card: outline + tail */
+.nx-speech { position: absolute; border: 2px solid color-mix(in oklab, var(--nx-text) 30%, var(--nx-bg)); border-radius: 18px; background: var(--nx-bg); padding: 26px 32px; font-family: var(--nx-mono); }
+.nx-speech::after { content: ""; position: absolute; left: 70px; bottom: -17px; width: 30px; height: 30px; background: var(--nx-bg); border-right: 2px solid color-mix(in oklab, var(--nx-text) 30%, var(--nx-bg)); border-bottom: 2px solid color-mix(in oklab, var(--nx-text) 30%, var(--nx-bg)); transform: rotate(45deg); }
+.nx-speech-text { font-size: 40px; font-weight: 700; letter-spacing: 0.08em; color: color-mix(in oklab, var(--nx-text) 70%, var(--nx-bg)); margin-top: 14px; white-space: nowrap; }
+.nx-strike { position: absolute; height: 6px; border-radius: 3px; background: var(--nx-danger); transform-origin: 0 50%; }
+
+/* split comparison: two panels + a hot divider */
+.nx-split { position: absolute; display: flex; gap: 0; align-items: stretch; }
+.nx-panel { position: relative; flex: 1; border-radius: 18px; background: var(--nx-surface-2); border: 1px solid var(--nx-border); overflow: hidden; }
+.nx-panel-fill { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, color-mix(in oklab, var(--r), white calc(var(--nx-depth) * 24%)), color-mix(in oklab, var(--r), black calc(var(--nx-depth) * 16%)));
+  color: var(--on); font-family: var(--nx-head-font); font-weight: 800; font-size: 76px; }
+.nx-divider { position: relative; width: 8px; margin: 0 22px; border-radius: 4px; background: var(--nx-hot); transform-origin: 50% 0; --r: var(--nx-hot); }
+
+/* counter: big number + small label ("3 CALLS") */
+.nx-counter { position: absolute; display: flex; align-items: baseline; gap: 14px; padding: 12px 22px; border-radius: 12px; background: var(--nx-surface-2); border: 1px solid var(--nx-border); font-family: var(--nx-mono); }
+.nx-counter .nx-num { font-size: 46px; font-weight: 700; color: var(--nx-text); min-width: 0.7em; }
+.nx-counter .nx-unit { font-size: 17px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--nx-dim); }
+
+/* row scan: a bar that sweeps a row while it "runs" */
+.nx-scan { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--nx-line); transform-origin: 0 50%; }
+
+/* steps row */
+.nx-steps { position: absolute; display: flex; align-items: flex-start; direction: ltr; }
+.nx-step { display: flex; flex-direction: column; align-items: center; gap: 14px; width: 150px; flex: none; }
+.nx-bubble {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--nx-mono);
+  font-weight: 700;
+  font-size: 28px;
+  --r: var(--nx-role-2);
+  color: var(--nx-on-2);
+  background: radial-gradient(circle at 35% 30%, color-mix(in oklab, var(--r), white 30%), color-mix(in oklab, var(--r), black 15%));
+}
+.nx-bubble--done { --r: var(--nx-ok); color: var(--nx-on-ok); }
+.nx-bubble .nx-ico { font-size: 34px; }
+.nx-step-label { font-family: var(--nx-mono); font-weight: 500; font-size: 19px; letter-spacing: 0.16em; color: var(--nx-dim); text-transform: uppercase; }
+.nx-track { position: relative; flex: 1; height: 4px; margin-top: 32px; background: var(--nx-line-ghost); border-radius: 2px; min-width: 60px; }
+.nx-fill { position: absolute; inset: 0; background: var(--nx-line); border-radius: 2px; transform-origin: 0 50%; }
+
+/* wide bar (stacked foundation layers) */
+.nx-layer { position: absolute; display: flex; align-items: center; justify-content: center; gap: 18px; border-radius: 16px;
+  --r: var(--nx-role-3); --on: var(--nx-on-3);
+  background: linear-gradient(90deg, color-mix(in oklab, var(--r), white calc(var(--nx-depth) * 20%)), color-mix(in oklab, var(--r), black calc(var(--nx-depth) * 14%)));
+  border: 1px solid color-mix(in oklab, var(--r), var(--nx-text) 14%);
+  color: var(--on); font-family: var(--nx-head-font); font-weight: 800; font-size: 46px; }
+.nx-layer .nx-chip { font-size: 14px; height: 28px; background: color-mix(in srgb, var(--on) 14%, transparent); color: var(--on); border-color: color-mix(in srgb, var(--on) 30%, transparent); }
+.nx-slot { position: absolute; height: 6px; border-radius: 3px; background: color-mix(in srgb, var(--nx-on-2) 70%, transparent); transform-origin: 50% 50%; }
+
+/* role families LAST so they win over each part's default --r:
+   any part takes .nx-r1..r4 (or rok / rwarn / rdanger) and uses --r / --on */
+.nx-r1, .nx-tile--ai  { --r: var(--nx-role-1); --on: var(--nx-on-1); }
+.nx-r2, .nx-tile--mcp { --r: var(--nx-role-2); --on: var(--nx-on-2); }
+.nx-r3, .nx-tile--api { --r: var(--nx-role-3); --on: var(--nx-on-3); }
+.nx-r4, .nx-tile--app { --r: var(--nx-role-4); --on: var(--nx-on-4); }
+.nx-rok     { --r: var(--nx-ok); --on: var(--nx-on-ok); }
+.nx-rwarn   { --r: var(--nx-warn); --on: var(--nx-on-warn); }
+.nx-rdanger { --r: var(--nx-danger); --on: var(--nx-on-danger); }
+
