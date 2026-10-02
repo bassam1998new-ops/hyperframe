@@ -15,6 +15,7 @@ All paths are from the repo root. `styles/` = `video-projects/_library/styles/`,
 | [Hatch Cosmos](#hatch-cosmos) | music-led teaser, mascot intro, channel bumper | 9:16 + 16:9 | kit + 2 demo blocks + 4 frames |
 | [Neon Node Explainer](#neon-node-explainer) | AI / concept explainer with voice-over | 9:16 + 16:9 | kit + 2 demo blocks + 3 frames |
 | [Versus Board](#versus-board) | "X vs Y" AI model comparison, two contenders | 9:16 | demo block on the node kit + 6 frames (draft) |
+| [Laptop Desk Zoom](#laptop-desk-zoom) | beginner tutorial / app walkthrough with real screenshots | 9:16 | demo block + laptop kit + 7 frames (draft) |
 | [Midnight Kinetic Type](#midnight-kinetic-type) | direct offer, results reel, AI news told in type | 9:16 | card + skill only |
 | [Swiss Motion Reel](#swiss-motion-reel) | brand sizzle, launch teaser, graphics-only | 16:9 (9:16 not built) | card + skill only |
 | [Amber Grid Newsroom](#amber-grid-newsroom) | "breaking" AI news from a screen recording | 9:16 | card + skill only |
@@ -23,7 +24,7 @@ All paths are from the repo root. `styles/` = `video-projects/_library/styles/`,
 | [Mint Lecture Room](#mint-lecture-room) | lecture clip with a quiz card | 9:16 | card + skill only |
 | [Warm Glass Face-cam](#warm-glass-facecam) | presenter on camera with glass overlays | 16:9 (9:16 not built) | card + skill only |
 
-Nine cards are `status: approved`; Versus Board is `status: draft` until the owner approves it. Colours in every card are **roles**; your brand fills the hex.
+Nine cards are `status: approved`; Versus Board and Laptop Desk Zoom are `status: draft` until the owner approves them. Colours in every card are **roles**; your brand fills the hex.
 
 ## How to reuse any look
 
@@ -97,6 +98,25 @@ names a winner. The mascot points at the verdict. Snap punch-ins, no drift.
 **Reuse:** copy the three kit folders and the demo block into your project. Set `--vb-a` / `--vb-b`
 to two equally strong brand colours and theme the rest with `NX.theme`. One round per compared task;
 same prompt on both sides; no logos.
+
+## Laptop Desk Zoom
+`laptop-desk-zoom`
+
+**Looks like:** a laptop on a warm paper desk showing the real app. The camera hard-cuts in on the
+exact click, a cursor travels and clicks with a ring, a selection box sweeps the files, then the camera
+glides out. Concept beats slide the laptop aside for a small LLM → AGENT diagram. Aurora reacts with
+^ ^, and the result lands every time (files fly into folders, badges count up). Arabic step titles.
+
+**Files:**
+- Card: `styles/laptop-desk-zoom/style.md` (draft)
+- Skill: `skills/style-laptop-desk-zoom/SKILL.md`
+- Frames: `styles/laptop-desk-zoom/frames/` (wide, punch-in sweep, glide out, diagram, Aurora cut-in, result, count-up)
+- Kits: `kits/laptop/` (laptop mockup PNGs + 2 demo screenshots) + `kits/node-explainer/` + `kits/hatch/` + `kits/aurora/`
+- Demo block (6 s): `compositions/portrait/laptop-desk-zoom-9x16.html`
+
+**Reuse:** copy the four kit folders and the demo block into your project, swap the screenshots for
+your own real ones (fake demo data only), and set `--ld-paper` / `--ld-accent` from your brand. On
+white screens, get motion from the cursor, selections and moving files, not extra zoom.
 
 ## Midnight Kinetic Type
 `midnight-kinetic-type`
