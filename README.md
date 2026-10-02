@@ -10,6 +10,7 @@ There are no projects, recordings, renders or brand files in here — only the p
 | Folder | What it is |
 |---|---|
 | `video-projects/_library/styles/<slug>/style.md` | **Style cards.** One whole look each: tone, palette roles, type, camera, edit rhythm, motion JSON (eases, durations, staggers), sound, calm/punchy modes, AI prompt parts, do/don't. |
+| `video-projects/_library/styles/INDEX.md` | **Style index.** One page listing every look: what it looks like, where its files are, how to reuse it. Start here. |
 | `video-projects/_library/styles/_template/` | A blank style card + a blank style skill, to write your own. |
 | `video-projects/_library/styles/neon-node-explainer/frames/` | Style frames for the node-explainer look (rendered from the demo blocks). Other cards list their frames, but those images are not published yet. |
 | `.claude/skills/style-<slug>/SKILL.md` | **Style skills** for Claude Code: how to build a video in that look, step by step, with the checks before you show it. |
