@@ -14,6 +14,7 @@ All paths are from the repo root. `styles/` = `video-projects/_library/styles/`,
 |---|---|---|---|
 | [Hatch Cosmos](#hatch-cosmos) | music-led teaser, mascot intro, channel bumper | 9:16 + 16:9 | kit + 2 demo blocks + 4 frames |
 | [Neon Node Explainer](#neon-node-explainer) | AI / concept explainer with voice-over | 9:16 + 16:9 | kit + 2 demo blocks + 3 frames |
+| [Versus Board](#versus-board) | "X vs Y" AI model comparison, two contenders | 9:16 | demo block on the node kit + 6 frames (draft) |
 | [Midnight Kinetic Type](#midnight-kinetic-type) | direct offer, results reel, AI news told in type | 9:16 | card + skill only |
 | [Swiss Motion Reel](#swiss-motion-reel) | brand sizzle, launch teaser, graphics-only | 16:9 (9:16 not built) | card + skill only |
 | [Amber Grid Newsroom](#amber-grid-newsroom) | "breaking" AI news from a screen recording | 9:16 | card + skill only |
@@ -22,7 +23,7 @@ All paths are from the repo root. `styles/` = `video-projects/_library/styles/`,
 | [Mint Lecture Room](#mint-lecture-room) | lecture clip with a quiz card | 9:16 | card + skill only |
 | [Warm Glass Face-cam](#warm-glass-facecam) | presenter on camera with glass overlays | 16:9 (9:16 not built) | card + skill only |
 
-All nine cards are `status: approved`. Colours in every card are **roles**; your brand fills the hex.
+Nine cards are `status: approved`; Versus Board is `status: draft` until the owner approves it. Colours in every card are **roles**; your brand fills the hex.
 
 ## How to reuse any look
 
@@ -77,6 +78,25 @@ camera moves. Arabic headlines with English mono labels.
 **Reuse:** copy `kits/node-explainer/` into `assets/kits/node-explainer/` and start from a demo block.
 Theme it with `NX.theme(root, { bg, surface, border, text, dim, accent, "accent-2", "role-1"…"role-4", ok, warn, danger })`.
 The accent goes on 1–3 headline words only; each role colour keeps one meaning for the whole video.
+
+## Versus Board
+`versus-board`
+
+**Looks like:** a split screen with a tinted half per side. One prompt types once and forks into two
+plain tiles (MODEL A / MODEL B), the answers race with live counters, a scoreboard ticks with Arabic
+punch words («أسرع», «أرخص»), the tiles shrink and a verdict card drops: «حسب الشغلانة». It never
+names a winner. The mascot points at the verdict. Snap punch-ins, no drift.
+
+**Files:**
+- Card: `styles/versus-board/style.md` (draft)
+- Skill: `skills/style-versus-board/SKILL.md`
+- Frames: `styles/versus-board/frames/` (slam, prompt, fork and race, scoreboard, verdict, mascot)
+- Kits: `kits/node-explainer/` + `kits/hatch/` + `kits/aurora/aurora.js` (the Aurora mascot, global `AURORA`)
+- Demo block (6 s, one round): `compositions/portrait/versus-board-9x16.html`
+
+**Reuse:** copy the three kit folders and the demo block into your project. Set `--vb-a` / `--vb-b`
+to two equally strong brand colours and theme the rest with `NX.theme`. One round per compared task;
+same prompt on both sides; no logos.
 
 ## Midnight Kinetic Type
 `midnight-kinetic-type`

@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="ar">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <title>versus-board 9:16 demo</title>
+    <!-- SFX: none in the library copy. Add your own whoosh on 0.0 + 4.1 and pops on 2.8 / 3.3 / 3.8 / 5.2 as static <audio> tags. -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/DrawSVGPlugin.min.js"></script>
+    <link rel="stylesheet" href="../../assets/kits/node-explainer/nx.css" />
+    <style>
+      @font-face { font-family: "Cairo"; src: url("https://cdn.jsdelivr.net/fontsource/fonts/cairo@latest/arabic-800-normal.woff2") format("woff2"); font-weight: 800; font-display: block;
+        unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF; }
+      @font-face { font-family: "Cairo"; src: url("https://cdn.jsdelivr.net/fontsource/fonts/cairo@latest/latin-800-normal.woff2") format("woff2"); font-weight: 800; font-display: block; }
+      @font-face { font-family: "Cairo"; src: url("https://cdn.jsdelivr.net/fontsource/fonts/cairo@latest/arabic-900-normal.woff2") format("woff2"); font-weight: 900; font-display: block;
+        unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF; }
+      @font-face { font-family: "Cairo"; src: url("https://cdn.jsdelivr.net/fontsource/fonts/cairo@latest/latin-900-normal.woff2") format("woff2"); font-weight: 900; font-display: block; }
+
+      *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1080px; height: 1920px; overflow: hidden; background: #0d1117; }
+
+      /* ====================================================================
+         versus-board 9:16 demo (6 s) — built on the node-explainer kit.
+         Two plain tiles, one prompt, two answers, a scoreboard, a verdict that
+         never names a winner, Aurora points. Colours: role tokens only.
+         A = --vb-a (its own accent), B = --vb-b, lines/packets = --nx-role-2.
+         LAYOUT: 300–420 prompt bar · 560–1180 tiles · 1230–1470 scoreboard ·
+                 safe band x 60–960 · bottom 20% empty.
+         BEATS: 0.0 slam · 0.8 prompt types + forks · 1.6 answers stream ·
+                2.8 scoreboard ticks + punch words · 4.2 tiles out, verdict drops ·
+                5.2 Aurora pops and points · hard cut 6.0
+         ==================================================================== */
+      #vb-root { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; overflow: hidden;
+        --vb-a: #2fd3a0; --vb-b: #ff7a59; font-family: "Cairo", system-ui, sans-serif; }
+      #vb-cam { position: absolute; inset: 0; transform-origin: 510px 900px; }
+      .vb-mono { font-family: "DejaVu Sans Mono", "Liberation Mono", monospace; letter-spacing: 0.04em; }
+
+      /* backdrop halves: each side carries its colour (tinted, flat) */
+      .vb-half { position: absolute; top: 0; height: 1920px; width: 540px; }
+      #vb-ha { left: 0; background: color-mix(in oklab, var(--vb-a) 13%, var(--nx-bg)); }
+      #vb-hb { left: 540px; background: color-mix(in oklab, var(--vb-b) 13%, var(--nx-bg)); }
+
+      /* prompt bar */
+      #vb-prompt { position: absolute; left: 60px; top: 300px; width: 900px; height: 120px; border-radius: 22px;
+        background: var(--nx-surface); border: 3px solid var(--nx-border); display: flex; align-items: center; gap: 20px; padding: 0 30px;
+        font-size: 30px; color: var(--nx-text); white-space: nowrap; }
+      #vb-prompt .vb-lab { font-size: 22px; font-weight: 700; color: var(--nx-dim); letter-spacing: 0.16em; }
+      #vb-caret { display: inline-block; width: 16px; height: 40px; background: var(--nx-role-2); vertical-align: middle; margin-left: 4px; }
+
+      /* tiles */
+      .vb-tile { position: absolute; top: 560px; width: 430px; height: 620px; border-radius: 28px; overflow: hidden;
+        background: var(--nx-surface); border: 4px solid var(--c); box-shadow: 0 0 calc(40px * var(--nx-glow)) color-mix(in oklab, var(--c) 45%, transparent); }
+      #vb-ta { left: 60px; --c: var(--vb-a); transform-origin: 0% 50%; }
+      #vb-tb { left: 530px; --c: var(--vb-b); transform-origin: 100% 50%; }
+      .vb-name { height: 120px; display: flex; align-items: center; justify-content: center; gap: 14px;
+        background: var(--c); color: #0d1117; font-size: 46px; font-weight: 900; letter-spacing: 0.08em; }
+      .vb-body { padding: 30px 30px 0; }
+      .vb-ln { height: 34px; border-radius: 17px; margin-bottom: 20px; background: color-mix(in oklab, var(--c) 70%, var(--nx-text)); transform-origin: 0 50%; }
+      .vb-meter { position: absolute; left: 30px; right: 30px; bottom: 28px; height: 54px; display: flex; align-items: center; justify-content: space-between;
+        font-size: 26px; font-weight: 800; color: var(--nx-dim); }
+      .vb-meter b { color: var(--c); font-size: 34px; }
+
+      /* VS bolt */
+      #vb-vs { position: absolute; left: 450px; top: 760px; width: 120px; height: 220px; }
+      #vb-vs-t { position: absolute; left: 456px; top: 812px; width: 108px; height: 108px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        background: var(--nx-text); color: #0d1117; font-size: 46px; font-weight: 900; }
+
+      /* scoreboard */
+      #vb-board { position: absolute; left: 60px; top: 1240px; width: 900px; }
+      .vb-row { opacity: 0; position: relative; height: 72px; margin-bottom: 14px; border-radius: 18px; background: var(--nx-surface); border: 2px solid var(--nx-border);
+        display: grid; grid-template-columns: 120px 1fr 120px; align-items: center; font-weight: 900; font-size: 34px; color: var(--nx-text); }
+      .vb-row .vb-k { text-align: center; font-size: 24px; letter-spacing: 0.16em; color: var(--nx-dim); }
+      .vb-row .vb-sa, .vb-row .vb-sb { text-align: center; font-size: 40px; }
+      .vb-sa { color: var(--vb-a); } .vb-sb { color: var(--vb-b); }
+      .vb-fill { position: absolute; top: 0; bottom: 0; width: 50%; border-radius: 16px; opacity: 0; }
+      .vb-fill--a { left: 0; background: color-mix(in oklab, var(--vb-a) 55%, transparent); }
+      .vb-fill--b { right: 0; background: color-mix(in oklab, var(--vb-b) 55%, transparent); }
+      .vb-fill--t { left: 25%; background: color-mix(in oklab, var(--nx-text) 30%, transparent); }
+      .vb-punch { position: absolute; top: 1120px; font-size: 150px; font-weight: 900; line-height: 1; color: var(--nx-text);
+        -webkit-text-stroke: 6px #0d1117; paint-order: stroke fill; opacity: 0; }
+      #vb-p1 { left: 70px; color: var(--vb-a); } #vb-p2 { right: 120px; color: var(--vb-b); }
+      #vb-p3 { left: 330px; }
+
+      /* verdict */
+      #vb-verdict { position: absolute; left: 90px; top: 900px; width: 840px; height: 300px; border-radius: 36px;
+        background: var(--nx-text); color: #0d1117; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+        box-shadow: 0 30px 80px rgba(0,0,0,.5); opacity: 0; }
+      #vb-verdict .vb-vl { font-size: 26px; letter-spacing: 0.2em; color: #59616c; font-weight: 800; }
+      #vb-verdict .vb-vt { font-size: 104px; font-weight: 900; line-height: 1.2; white-space: nowrap; }
+      #vb-flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+      #vb-aur { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; pointer-events: none; }
+      #vb-drv { position: absolute; width: 1px; height: 1px; opacity: 0; }
+    </style>
+  </head>
+  <body>
+    <div id="vb-root" class="nx" data-composition-id="versus-board-9x16" data-start="0" data-duration="6" data-width="1080" data-height="1920">
+      <div id="vb-cam">
+        <div class="vb-half" id="vb-ha"></div>
+        <div class="vb-half" id="vb-hb"></div>
+        <svg class="nx-lines" id="vb-lines"></svg>
+
+        <div id="vb-prompt"><span class="vb-lab vb-mono">PROMPT</span><span class="vb-mono"><span id="vb-ptext">Summarize this PDF in 3 bullets</span><i id="vb-caret"></i></span></div>
+
+        <div class="vb-tile" id="vb-ta">
+          <div class="vb-name vb-mono">MODEL A</div>
+          <div class="vb-body"><div class="vb-ln"></div><div class="vb-ln"></div><div class="vb-ln"></div><div class="vb-ln"></div><div class="vb-ln"></div><div class="vb-ln"></div><div class="vb-ln"></div><div class="vb-ln"></div></div>
+          <div class="vb-meter vb-mono"><span>TOK/S</span><b id="vb-ma">0</b></div>
+        </div>
+        <div class="vb-tile" id="vb-tb">
+          <div class="vb-name vb-mono">MODEL B</div>
+          <div class="vb-body"><div class="vb-ln"></div><div class="vb-ln"></div><div class="vb-ln"></div><div class="vb-ln"></div><div class="vb-ln"></div><div class="vb-ln"></div><div class="vb-ln"></div><div class="vb-ln"></div></div>
+          <div class="vb-meter vb-mono"><span>TOK/S</span><b id="vb-mb">0</b></div>
+        </div>
+
+        <svg id="vb-vs" viewBox="0 0 120 220"><path id="vb-bolt" d="M70 0 L28 104 L62 104 L44 220 L94 92 L58 92 L82 0 Z" fill="#ffd34d" stroke="#0d1117" stroke-width="5" stroke-linejoin="round"/></svg>
+        <div id="vb-vs-t" class="vb-mono">VS</div>
+
+        <div id="vb-board">
+          <div class="vb-row" id="vb-r1"><i class="vb-fill vb-fill--a"></i><span class="vb-sa">+1</span><span class="vb-k vb-mono">SPEED</span><span class="vb-sb">0</span></div>
+          <div class="vb-row" id="vb-r2"><i class="vb-fill vb-fill--b"></i><span class="vb-sa">0</span><span class="vb-k vb-mono">PRICE</span><span class="vb-sb">+1</span></div>
+          <div class="vb-row" id="vb-r3"><i class="vb-fill vb-fill--t"></i><span class="vb-sa">=</span><span class="vb-k vb-mono">QUALITY</span><span class="vb-sb">=</span></div>
+        </div>
+        <div class="vb-punch" id="vb-p1" dir="rtl">أسرع</div>
+        <div class="vb-punch" id="vb-p2" dir="rtl">أرخص</div>
+        <div class="vb-punch" id="vb-p3" dir="rtl">تعادل</div>
+
+        <div id="vb-verdict"><div class="vb-vl vb-mono">VERDICT</div><div class="vb-vt" dir="rtl">حسب الشغلانة</div></div>
+      </div>
+      <canvas id="vb-aur" width="1080" height="1920"></canvas>
+      <div id="vb-flash"></div>
+      <div id="vb-drv" class="clip" data-start="0" data-duration="6" data-track-index="0"></div>
+    </div>
+
+    <script src="../../assets/kits/node-explainer/nx.js"></script>
+    <script src="../../assets/kits/hatch/hatch.js"></script>
+    <script src="../../assets/kits/aurora/aurora.js"></script>
+    <script>
+      (function () {
+        window.__timelines = window.__timelines || {};
+        gsap.registerPlugin(DrawSVGPlugin);
+        var DUR = 6;
+        var root = document.getElementById("vb-root");
+        var $ = function (id) { return document.getElementById(id); };
+        var Q = function (s) { return Array.prototype.slice.call(root.querySelectorAll(s)); };
+        NX.theme(root, "midnight", { bg: "#0d1117", surface: "#18202a", border: "#2c3743", "role-2": "#9fd8ff" });
+
+        var tl = gsap.timeline({ paused: true });
+        function ft(el, a, b, at) { b.immediateRender = at < 0.001; return tl.fromTo(el, a, b, at); }
+
+        /* 0.0 slam: halves snap in from the sides, tiles punch, bolt cracks */
+        ft($("vb-ha"), { x: -540 }, { x: 0, duration: 0.16, ease: "power3.out" }, 0);
+        ft($("vb-hb"), { x: 540 }, { x: 0, duration: 0.16, ease: "power3.out" }, 0);
+        ft($("vb-ta"), { x: -320, rotation: -6 }, { x: 0, rotation: 0, duration: 0.24, ease: "back.out(1.6)" }, 0);
+        ft($("vb-tb"), { x: 320, rotation: 6 }, { x: 0, rotation: 0, duration: 0.24, ease: "back.out(1.6)" }, 0);
+        ft($("vb-bolt"), { drawSVG: "0%", scale: 0.2, transformOrigin: "50% 50%" }, { drawSVG: "100%", scale: 1, duration: 0.2, ease: "back.out(2)" }, 0.22);
+        ft($("vb-vs-t"), { scale: 0, rotation: -90 }, { scale: 1, rotation: 0, duration: 0.25, ease: "back.out(2.2)" }, 0.3);
+        ft($("vb-flash"), { opacity: 0.55 }, { opacity: 0, duration: 0.18, ease: "power2.out" }, 0.28);
+        ft($("vb-cam"), { scale: 1.12 }, { scale: 1, duration: 0.3, ease: "power3.out" }, 0.28);
+        // the prompt bar is the cover's lit part's partner: it is there (ghost) from frame 0
+        NX.ghost($("vb-prompt"));
+        tl.set($("vb-caret"), { opacity: 1 }, 0);
+        gsap.set(Q(".vb-ln"), { scaleX: 0 }); gsap.set($("vb-vs-t"), { scale: 0 }); gsap.set($("vb-bolt"), { drawSVG: "0%" });
+
+        /* 0.8 the prompt types once, then forks to both tiles */
+        NX.ignite(tl, $("vb-prompt"), 0.62, { fromGhost: true, glow: 0.3 });
+        var pt = $("vb-ptext"); NX.type(tl, pt, 0.8, 52);
+        for (var b = 0; b < 8; b++) tl.set($("vb-caret"), { opacity: b % 2 ? 1 : 0 }, 0.8 + b * 0.1);
+        var la = NX.connect($("vb-lines"), $("vb-prompt"), $("vb-ta"), { from: "bottom", to: "top", curve: 0.5 });
+        var lb = NX.connect($("vb-lines"), $("vb-prompt"), $("vb-tb"), { from: "bottom", to: "top", curve: 0.5 });
+        NX.draw(tl, la, 1.2); NX.draw(tl, lb, 1.2);
+        NX.packet(tl, la, 1.35, 0.26); NX.packet(tl, lb, 1.35, 0.26);
+        ft($("vb-cam"), { scale: 1.1 }, { scale: 1, duration: 0.22, ease: "power3.out" }, 0.8);
+        ft($("vb-prompt"), { scale: 1.12 }, { scale: 1, duration: 0.22, ease: "back.out(2)" }, 0.8);
+        for (var pk = 0; pk < 9; pk++) { NX.packet(tl, la, 1.5 + pk * 0.14, 0.22, { hot: true }); NX.packet(tl, lb, 1.5 + pk * 0.24, 0.3); }
+        ft($("vb-cam"), { scale: 1.06 }, { scale: 1, duration: 0.2, ease: "power3.out" }, 1.6);
+
+        /* 1.6 answers stream: A fast, B slower; meters count */
+        var LA = Q("#vb-ta .vb-ln"), LB = Q("#vb-tb .vb-ln");
+        var wA = [1, .82, .94, .6, 1, .88, .72, .5], wB = [.9, 1, .7, .96, .64, .8, .9, .55];
+        LA.forEach(function (l, i) { var at = 1.62 + i * 0.13; ft(l, { scaleX: 0, backgroundColor: "#ffffff" }, { scaleX: wA[i], backgroundColor: "", duration: 0.12, ease: "none" }, at);
+          ft($("vb-ha"), { filter: "brightness(2.2)" }, { filter: "brightness(1)", duration: 0.12 }, at); });
+        LB.forEach(function (l, i) { var at = 1.62 + i * 0.26; ft(l, { scaleX: 0, backgroundColor: "#ffffff" }, { scaleX: wB[i], backgroundColor: "", duration: 0.2, ease: "none" }, at);
+          ft($("vb-hb"), { filter: "brightness(2.2)" }, { filter: "brightness(1)", duration: 0.2 }, at); });
+        ft($("vb-ta"), { scale: 1.1 }, { scale: 1, duration: 0.22, ease: "back.out(2)" }, 2.66);
+        ft($("vb-cam"), { scale: 1.06, x: 40 }, { scale: 1, x: 0, duration: 0.22, ease: "power3.out" }, 2.66);
+        counter($("vb-ma"), 1.6, 2.7, 180); counter($("vb-mb"), 1.6, 3.7, 70);
+        // tiles breathe while they write (a small working pulse, not drift)
+        ft($("vb-ta"), { y: 0 }, { y: -10, duration: 0.13, ease: "sine.inOut", yoyo: true, repeat: 7 }, 1.62);
+        ft($("vb-tb"), { y: 0 }, { y: -10, duration: 0.26, ease: "sine.inOut", yoyo: true, repeat: 7 }, 1.62);
+
+        /* 2.8 scoreboard: rows slam up, each tick lands with a punch word */
+        Q(".vb-row").forEach(function (r, i) { ft(r, { y: 120, opacity: 0 }, { y: 0, opacity: 1, duration: 0.16, ease: "back.out(1.6)" }, 2.6 + i * 0.05); });
+        tick(1, "a", 2.8); tick(2, "b", 3.3); tick(3, "t", 3.8);
+
+        /* 4.2 tiles shrink to the sides, verdict card drops */
+        tl.to($("vb-ta"), { scale: 0.5, x: -10, y: -200, rotation: -8, duration: 0.24, ease: "power3.in" }, 4.1);
+        tl.to($("vb-tb"), { scale: 0.5, x: 10, y: -200, rotation: 8, duration: 0.24, ease: "power3.in" }, 4.1);
+        tl.to([$("vb-vs"), $("vb-vs-t")], { scale: 0, duration: 0.14, ease: "power2.in" }, 4.1);
+        tl.to(Q("#vb-lines path"), { opacity: 0, duration: 0.1 }, 4.1);
+        tl.to($("vb-board"), { y: 260, opacity: 0.0, duration: 0.2, ease: "power2.in" }, 4.12);
+        tl.to($("vb-prompt"), { y: -60, opacity: 0.35, duration: 0.2, ease: "power2.in" }, 4.12);
+        ft($("vb-verdict"), { y: -900, rotation: -4, opacity: 1 }, { y: 0, rotation: 0, opacity: 1, duration: 0.3, ease: "back.out(1.3)" }, 4.22);
+        ft($("vb-cam"), { scale: 1.1 }, { scale: 1, duration: 0.26, ease: "power3.out" }, 4.52);
+        ft($("vb-flash"), { opacity: 0.35 }, { opacity: 0, duration: 0.16 }, 4.52);
+        ft($("vb-verdict"), { scale: 1 }, { scale: 1.05, duration: 0.18, ease: "sine.inOut", yoyo: true, repeat: 3 }, 4.8);
+        tl.to($("vb-ha"), { x: -300, duration: 0.3, ease: "power3.out" }, 4.2);
+        tl.to($("vb-hb"), { x: 300, duration: 0.3, ease: "power3.out" }, 4.2);
+
+        /* 5.2 Aurora pops in at the corner, points at the verdict, ^ ^ */
+        var K = HATCH.kit({ w: 1080, h: 1920, seed: 20261002, theme: "midnight" });
+        var A = AURORA.create(K, { glow: true });
+        var cv = $("vb-aur"), A0 = 5.2;
+        function drawA(t) {
+          var c = cv.getContext("2d"); c.clearRect(0, 0, 1080, 1920);
+          if (t < A0) return;
+          var u = t - A0, k = HATCH.clamp(u / 0.22, 0, 1), pop = 1 + 0.25 * Math.sin(k * Math.PI) * (1 - k * 0.3);
+          var st = AURORA.pose("point", u, { dir: 1 });
+          st.eyes = u > 0.25 ? "happy" : "open"; st.glowAmt = 0.6; st.spark = 1; st.blush = 1;
+          st.hop = Math.abs(Math.sin(HATCH.clamp((u - 0.25) / 0.4, 0, 1) * Math.PI)) * 40;
+          A.draw(c, 240, 1560 - (st.hop || 0) + (1 - k) * 420, 1.3 * pop * (0.5 + 0.5 * k), st);
+        }
+        var proxy = { t: 0 };
+        ft(proxy, { t: 0 }, { t: DUR, duration: DUR, ease: "none", onUpdate: function () { drawA(proxy.t); } }, 0);
+        ft($("vb-verdict"), { x: 0 }, { x: 30, duration: 0.12, ease: "power2.out", yoyo: true, repeat: 1 }, 5.32);
+        ft($("vb-flash"), { opacity: 0.25 }, { opacity: 0, duration: 0.14 }, 5.2);
+
+        tl.set({}, {}, DUR);
+        window.__timelines["versus-board-9x16"] = tl;
+
+        function tick(n, side, at) {
+          var r = $("vb-r" + n), f = r.querySelector(".vb-fill"), p = $("vb-p" + n);
+          ft(f, { opacity: 0, scaleX: 0 }, { opacity: 1, scaleX: 1, duration: 0.14, ease: "power3.out" }, at);
+          ft(r, { scale: 1.12 }, { scale: 1, duration: 0.2, ease: "back.out(2)" }, at);
+          ft(p, { opacity: 1, scale: 2.2, y: 0 }, { opacity: 1, scale: 1, duration: 0.16, ease: "power4.out" }, at);
+          tl.to(p, { opacity: 0, y: -80, duration: 0.14, ease: "power2.in" }, at + 0.36);
+          ft($("vb-cam"), { scale: 1.07 }, { scale: 1, duration: 0.2, ease: "power3.out" }, at);
+          var tile = side === "a" ? $("vb-ta") : side === "b" ? $("vb-tb") : null;
+          if (tile) ft(tile, { filter: "brightness(1.8)" }, { filter: "brightness(1)", duration: 0.3 }, at);
+          else ft([$("vb-ta"), $("vb-tb")], { filter: "brightness(1.5)" }, { filter: "brightness(1)", duration: 0.3 }, at);
+        }
+        function counter(el, t0, t1, to) {
+          var o = { v: 0 };
+          ft(o, { v: 0 }, { v: to, duration: t1 - t0, ease: "power1.out", onUpdate: function () { el.textContent = Math.round(o.v); } }, t0);
+        }
+      })();
+    </script>
+  </body>
+</html>
