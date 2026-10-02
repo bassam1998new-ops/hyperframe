@@ -10,7 +10,9 @@
    A.draw(ctx, x, y, scale, AURORA.pose("talk", t));    // draw from the timeline time only
    A.draw(ctx, x, y, scale, AURORA.pose("talk", t, { env: env, fps: 30 }));   // mouth from a voice envelope
 
-   Moves (AURORA.MOVES): idle, talk, hello, happy, surprise, think, wave, point, pointUp, cheer, nod, listen, look, dive
+   Moves (AURORA.MOVES): idle, talk, hello, happy, surprise, think, wave, point, pointUp, cheer, nod, listen, look, dive,
+     walk, walkLook, settle, lookAround. walk/walkLook/settle take { dir: heading ±1, walkT: time since the walk began (keeps the
+     leg phase continuous into settle) }; walkLook also { look: buddy side ±1 }. settle is dive-ready at 0.45 s.
    A.turn(ctx, x, y, scale, turn, state): turnaround view, turn 0 front / 0.5 three-quarter / 1 side
    State fields (all optional): t, hop, squash, tilt, look (-1..1), lookY (-1..1), eyes ("open"|"happy"|"blink"|
      "wide"|"think"|"wink"), mouth 0..1 (open amount), mouthShape ("smile"|"o"|"flat"), armL/armR (rad, + = up),
@@ -261,6 +263,33 @@
       }
       case "nod":
         cyc = t % 1.2; s.tilt = 0; s.hop = -Math.abs(Math.sin(cyc / 1.2 * Math.PI * 2)) * 6; s.squash = Math.abs(Math.sin(cyc / 1.2 * Math.PI * 2)) * 0.05; s.eyes = "happy"; s.mouth = 0; break;
+      case "walk": case "walkLook": { // walk cycle (style card: 0.5 s step, 5 px bob, legs swing 0.17 rad in pairs); dir = heading
+        var wd = opt.dir || 1, wph = (opt.walkT == null ? t : opt.walkT) * Math.PI * 2 / 0.5;
+        s.walk = opt.walkT == null ? t : opt.walkT; s.walkAmt = opt.k == null ? 1 : opt.k;
+        s.armL = 0.12 + Math.sin(wph) * 0.2 * s.walkAmt; s.armR = 0.12 - Math.sin(wph) * 0.2 * s.walkAmt; // arms swing against the legs
+        s.look = wd * 0.35; s.tilt = wd * 0.03; s.squash = Math.abs(Math.cos(wph)) * 0.025 * s.walkAmt;
+        s.spark = 0.4 + 0.2 * Math.abs(Math.sin(wph));
+        if (move === "walkLook") { // glance at a buddy on side opt.look while walking, ^ ^ when eyes meet
+          var lb = opt.look || -wd, gk = sstep(0.3, 0.55, t) * (1 - sstep(2.2, 2.5, t));
+          s.look = s.look * (1 - gk) + lb * gk; s.tilt += lb * 0.04 * gk;
+          s.eyes = win(t, 0.9, 1.7) ? "happy" : s.eyes; s.mouth = win(t, 0.9, 1.7) ? 0.35 : 0; s.blush = 0.6 + 0.4 * gk;
+        }
+        break;
+      }
+      case "settle": { // stop walking and stand still: legs ease out by 0.25 s, a small landing squash, blink, eyes front by 0.45 s (dive-ready)
+        var wt = opt.walkT == null ? t : opt.walkT, sd2 = opt.dir || 1;
+        s.walk = wt; s.walkAmt = 1 - sstep(0, 0.25, t);
+        var bump = sstep(0.18, 0.28, t) * (1 - sstep(0.28, 0.45, t));
+        s.squash = bump * 0.08; s.hop = -bump * 4;
+        s.look = sd2 * 0.35 * (1 - sstep(0.15, 0.4, t)); s.tilt = sd2 * 0.03 * (1 - sstep(0.1, 0.35, t)) - bump * sd2 * 0.03;
+        var wp = wt * Math.PI * 2 / 0.5; s.armL = 0.08 + Math.sin(wp) * 0.2 * s.walkAmt; s.armR = 0.08 - Math.sin(wp) * 0.2 * s.walkAmt;
+        s.eyes = win(t, 0.3, 0.4) ? "blink" : (t > 0.45 && blink(t, 0.4) ? "blink" : "open"); s.mouth = 0; break;
+      }
+      case "lookAround": { // look left, back, look right, back (3 s, loops)
+        var lt = t % 3, L1 = sstep(0.2, 0.45, lt) * (1 - sstep(1.0, 1.25, lt)), R1 = sstep(1.55, 1.8, lt) * (1 - sstep(2.35, 2.6, lt));
+        s.look = -L1 + R1; s.tilt = (-L1 + R1) * 0.06; s.lookY = -0.15 * (L1 + R1);
+        s.eyes = win(lt, 1.3, 1.42) || win(lt, 2.8, 2.92) ? "blink" : "open"; break;
+      }
       case "dive": // calm, eyes front, ready for K.dive into the left eye
         s.look = 0; s.lookY = 0; s.eyes = "open"; s.mouth = 0; s.hop = 0; s.squash = 0; break;
     }
@@ -272,5 +301,5 @@
   function blend(a, b, k) { var o = {}, key; for (key in a) o[key] = a[key]; for (key in b) { var x = a[key], y = b[key]; o[key] = (typeof y === "number" && typeof x === "number") ? x + (y - x) * k : (k < 0.5 && x !== undefined ? x : y); } return o; }
 
   window.AURORA = { create: create, pose: pose, blend: blend, brand: BRAND,
-    MOVES: ["idle", "talk", "hello", "happy", "surprise", "think", "wave", "point", "pointUp", "cheer", "nod", "listen", "look", "dive"] };
+    MOVES: ["idle", "talk", "hello", "happy", "surprise", "think", "wave", "point", "pointUp", "cheer", "nod", "listen", "look", "dive", "walk", "walkLook", "settle", "lookAround"] };
 })();

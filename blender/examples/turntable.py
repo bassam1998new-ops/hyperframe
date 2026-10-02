@@ -5,7 +5,7 @@ frames = int(argv[1]) if len(argv)>1 else 90
 size = int(argv[2]) if len(argv)>2 else 720
 bpy.ops.wm.read_factory_settings(use_empty=True)
 s=bpy.context.scene
-s.render.engine='CYCLES'; s.cycles.device='CPU'; s.cycles.samples=24; s.cycles.use_denoising=False
+s.render.engine='CYCLES'; s.cycles.device='CPU'; s.cycles.samples=24; s.cycles.use_denoising=True
 s.render.resolution_x=size; s.render.resolution_y=size
 s.render.film_transparent=True
 s.render.image_settings.color_mode='RGBA'
