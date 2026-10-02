@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en" data-composition-variables='[{"id":"bg","type":"string","label":"Background (none | space)","default":"none"},{"id":"buddy","type":"string","label":"Ep 1 buddy (none | bombe)","default":"bombe"}]'>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <title>aurora-host 9:16 — Aurora, the Story-of-AI series host (hatch kit)</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1080px; height: 1920px; overflow: hidden; background: transparent; }
+      /* ====================================================================
+         aurora-host-9x16 — example of driving Aurora (aurora.js) and the ep 1 Bombe (bombe.js) in code.
+         One canvas drawn from the timeline time only (seek-safe). bg = none keeps it transparent so it can sit
+         over any scene. Aurora stands in the reel safe zone; the Bombe walks in on the left at 5.0 s.
+         TIMELINE (10 s)
+           0.0 – 2.4   hello: hop in, wave, ^ ^           ("أهلاً، أنا أورورا")
+           2.4 – 5.0   talk (fake mouth; pass a voice envelope with AURORA.pose("talk", t, { env, fps }))
+           5.0 – 6.6   Bombe walks in, Aurora looks left at it
+           6.6 – 8.2   Bombe: eureka (drums lock, lamp lights)
+           8.2 – 10    Bombe gives the key, Aurora: happy
+         Mouth from the real voice: node tools/voice-envelope.mjs vo.mp3 30 > env.json, then paste the array into ENV.
+         ==================================================================== */
+      #ah-root { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; overflow: hidden; }
+      #ah-cv { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; display: block; }
+    </style>
+  </head>
+  <body>
+    <div id="ah-root" data-composition-id="aurora-host-9x16" data-start="0" data-duration="10" data-width="1080" data-height="1920">
+      <canvas id="ah-cv" class="clip" data-layout-allow-overflow width="1080" height="1920" data-start="0" data-duration="10" data-track-index="0"></canvas>
+    </div>
+
+    <script src="../../assets/kits/hatch/hatch.js"></script>
+    <script src="../../assets/kits/hatch/aurora.js"></script>
+    <script src="../../assets/kits/hatch/bombe.js"></script>
+    <script>
+      (function () {
+        window.__timelines = window.__timelines || {};
+        var V = readProps("aurora-host-9x16", { bg: "none", buddy: "bombe" });
+        var W = 1080, H = 1920, DUR = 10, sstep = HATCH.sstep;
+        var K = HATCH.kit({ w: W, h: H, seed: 20261002, theme: "cosmos" });
+        var A = AURORA.create(K), B = BOMBE.create(K);
+        var travel = V.bg === "space" ? K.travel({ ys: 1.6, xs: 0.6 }) : null;
+        var ENV = null; // per-frame voice loudness 0..1 at 30 fps (from tools/voice-envelope.mjs)
+
+        var AX = 720, AY = 900, AS = 1.25, BXS = 260, BS = 1.0;
+        function auroraState(t) {
+          if (t < 2.4) return AURORA.pose("hello", t);
+          var talk = AURORA.pose("talk", t, { env: ENV, fps: 30 });
+          if (t < 5.0) return AURORA.blend(AURORA.pose("hello", 2.4), talk, sstep(2.4, 2.7, t));
+          if (V.buddy !== "bombe") return talk;
+          var look = AURORA.pose("look", t - 4.9, { dir: -1 });
+          if (t < 8.4) return AURORA.blend(talk, look, sstep(5.0, 5.3, t));
+          return AURORA.blend(look, AURORA.pose("happy", t - 8.4), sstep(8.4, 8.6, t));
+        }
+        function bombeX(t) { return -260 + (BXS + 260) * sstep(5.0, 6.4, t); }
+        function bombeState(t) {
+          if (t < 6.6) { var s = BOMBE.pose("walk", t); s.walkAmt = 1 - sstep(6.2, 6.6, t); return s; }
+          if (t < 8.2) return BOMBE.pose("eureka", t - 6.6);
+          return BOMBE.pose("give", t - 8.2, { dir: 1 });
+        }
+        // a little hop-in for Aurora at the start
+        function enterY(t) { return (1 - sstep(0, 0.45, t)) * 700; }
+
+        var cv = null, ctx = null;
+        function draw(t) {
+          if (!ctx) { cv = document.getElementById("ah-cv"); ctx = cv.getContext("2d"); }
+          ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.clearRect(0, 0, W, H);
+          if (travel) K.drawTravel(ctx, travel, t * 0.3, function () {});
+          if (V.buddy === "bombe" && t >= 5.0) B.draw(ctx, bombeX(t), AY + 40, BS, bombeState(t));
+          A.draw(ctx, AX, AY + enterY(t), AS, auroraState(t));
+        }
+
+        var state = { t: 0 };
+        var tl = gsap.timeline({ paused: true });
+        tl.to(state, { t: DUR, duration: DUR, ease: "none", onUpdate: function () { draw(state.t); } }, 0);
+        draw(0);
+        window.__timelines["aurora-host-9x16"] = tl;
+
+        function readProps(id, defaults) {
+          var w = window, src = null;
+          var key = typeof __hfTimelineCompId !== "undefined" && __hfTimelineCompId ? __hfTimelineCompId : null;
+          var byComp = w.__hfVariablesByComp || {};
+          if (key) src = byComp[key] || null;
+          else if (byComp[id]) src = byComp[id];
+          else if (w.__hyperframes && typeof w.__hyperframes.getVariables === "function") { try { src = w.__hyperframes.getVariables(); } catch (e) { src = null; } }
+          var out = {}; for (var k in defaults) out[k] = defaults[k];
+          if (src && typeof src === "object") for (var j in src) if (j in defaults) out[j] = src[j];
+          return out;
+        }
+      })();
+    </script>
+  </body>
+</html>
