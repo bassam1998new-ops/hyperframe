@@ -43,10 +43,10 @@
     cosmos: COSMOS,
     // brand/<name>.md: midnight #1F1428, panels #2B1C38, violet/lavender chrome, white, pink only as punctuation,
     // one scarce mint. Hexes as in the node-explainer kit's midnight theme; clouds derived.
-    midnight: { canvas: "#1F1428", halo: "#2B1C38", ink: "#0d0919", paper: "#ECE8F6", light: "#F1E4FD", star: "#cfc4ff", core: "#F1E4FD", _(example colours — not a real brand)_
-      hero: "#B881F5", buddy: "#F1E4FD", _(example colours — not a real brand)_
+    midnight: { canvas: "#1F1428", halo: "#2B1C38", ink: "#0d0919", paper: "#ECE8F6", light: "#F1E4FD", star: "#cfc4ff", core: "#F1E4FD", // example colours, not a real brand
+      hero: "#B881F5", buddy: "#F1E4FD", // example colours, not a real brand
       // a2 drives the big pink masses in the reference → violet here; pink (a3) only lands on one ring, a few dots and planets
-      a1: "#F1E4FD", a2: "#A15FF2", a3: "#F2617F", a4: "#816EF3", a5: "#CAA4F8", a6: "#5ED4CE" } _(example colours — not a real brand)_
+      a1: "#F1E4FD", a2: "#A15FF2", a3: "#F2617F", a4: "#816EF3", a5: "#CAA4F8", a6: "#5ED4CE" } // example colours, not a real brand
   };
   function deriveClouds(T) {
     var cv = T.canvas, pp = T.paper;
