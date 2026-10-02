@@ -58,7 +58,7 @@ looks: dark `space` or cream `paper`. No text in the canvas; music-led.
 `data-variable-values='{"theme":"<name>","look":"space|paper"}'`. For your brand pass your own roles to
 `HATCH.kit({ theme: { canvas, ink, paper, hero, buddy, a1…a6, … } })`. Build new scenes from kit parts
 (`K.blob`, `K.planet`, `K.galaxy`, `K.mascot`, `K.dive`) and draw only from `t`. Put any words outside
-the canvas. Note: the skill still says the card is "draft"; the card itself is approved.
+the canvas.
 
 ## Neon Node Explainer
 `neon-node-explainer`
