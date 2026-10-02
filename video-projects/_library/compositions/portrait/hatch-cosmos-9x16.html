@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en" data-composition-variables='[{"id":"theme","type":"string","label":"Theme (cosmos | midnight)","default":"cosmos"},{"id":"look","type":"string","label":"Travel look (space | paper)","default":"space"}]'>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <title>hatch-cosmos 9:16 — two mascots, dive into the eye, deep galaxy</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1080px; height: 1920px; overflow: hidden; background: transparent; }
+      /* ====================================================================
+         hatch-cosmos-9x16 — demo of the hatch kit (style card hatch-cosmos)
+         One canvas, drawn from the timeline time (seeded, seek-safe).
+         LAYOUT (1080 x 1920): pair centred on the safe zone (x 60–960, y 220–1500) at y 860;
+         the dive ends with the eye / galaxy core at (510, 860); bottom 20% (y > 1536) holds background only.
+         Variables: theme = cosmos (reference) | midnight — or edit HATCH.kit({theme:{…brand roles…}})
+                    look  = space (dark travel) | paper (reference intro: cream sheet + floor line)
+         TIMELINE (6 s)
+           0.00 – 2.35  hero + buddy walk together, look at each other, ^ ^ at 1.15–1.8, buddy waves
+           2.35 – 3.20  dive into the hero's left eye: eye → rounded window, speed lines, rings
+           ~3.13        the window covers the frame (hard hand-off, like the reference)
+           3.20 – 6.00  deep galaxy settles with a small roll, then drifts
+         EXAMPLE CONFIG: hero = Claude (orange block), buddy = Codex (our design, OpenAI knot mark).
+         Swap the mascot() configs for any brand pair — the kit itself has no logos.
+         ==================================================================== */
+      #hc9-root { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; overflow: hidden; background: #140f2c; }
+      #hc9-cv { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; display: block; }
+    </style>
+  </head>
+  <body>
+    <div id="hc9-root" data-composition-id="hatch-cosmos-9x16" data-start="0" data-duration="6" data-width="1080" data-height="1920">
+      <canvas id="hc9-cv" class="clip" data-layout-allow-overflow width="1080" height="1920" data-start="0" data-duration="6" data-track-index="0"></canvas>
+    </div>
+
+    <script src="../../assets/kits/hatch/hatch.js"></script>
+    <script>
+      (function () {
+        window.__timelines = window.__timelines || {};
+        var V = readProps("hatch-cosmos-9x16", { theme: "cosmos", look: "space" });
+        var W = 1080, H = 1920, CX = W / 2, CY = H / 2, DUR = 6;
+        var K = HATCH.kit({ w: W, h: H, seed: 20261002, theme: V.theme });
+        var T = K.T, g = HATCH.geom, sstep = HATCH.sstep, win = HATCH.win;
+        var paper = V.look === "paper";
+
+        /* ---- example mascot pair (brand config lives HERE, not in the kit) ---- */
+        var KNOT = new Path2D("M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z");
+        var hero = K.mascot({ role: "hero", radius: 7 });
+        var buddy = K.mascot({ role: "buddy", radius: 30, mark: function (c, BW, BH) {
+          c.save(); c.translate(0, BH * 0.2); c.scale(1.5, 1.5); c.translate(-12, -12); c.fillStyle = HATCH.rgba(HATCH.mix(T.buddy, T.ink, 0.6), 0.75); c.fill(KNOT); c.restore();
+        } });
+
+        /* ---- scenes ---- */
+        var galaxy = K.galaxy({ stars: [1100, 1500] });
+        var travel = K.travel({ ys: 1.6, xs: 0.6, look: V.look });
+        var trail = K.trail(64, 2);
+        var speed = K.speed(420, 6);
+
+        /* ---- layout + acting (seconds) ---- */
+        var SAFE = [510, 860]; // centre of the reel safe zone (x 60–960, y 220–1500)
+        var MS = 1.2, HERO_X = SAFE[0] - 205, BUDDY_X = SAFE[0] + 205, PAIR_Y = SAFE[1], Z0 = 2.35, Z1 = 3.2;
+        function freeze(t) { return 1 - sstep(Z0 - 0.45, Z0 - 0.02, t); } // the walk settles before the dive
+        function bob(t, who) { return paper ? 0 : Math.sin(t * 2.1 + who * 1.9) * 10 * freeze(t); }
+        function heroState(t) {
+          var fz = freeze(t);
+          return { walk: t, walkAmt: fz, legWiggle: 0.04 * fz, glowAmt: paper ? 0 : 1, waveSide: 1, wave: 0,
+            look: win(t, 0.3, 1.05) ? sstep(0.3, 0.45, t) : win(t, 1.75, 2.05) ? 1 - sstep(1.75, 2.0, t) : (t >= 1.05 && t < 1.75 ? 1 : 0),
+            eyes: win(t, 1.15, 1.75) ? "happy" : (win(t, 0.78, 0.86) || win(t, 2.12, 2.2)) ? "blink" : "open" };
+        }
+        function buddyState(t) {
+          var fz = freeze(t);
+          return { walk: t + 0.21, walkAmt: fz, legWiggle: 0.04 * fz, glowAmt: paper ? 0 : 1, waveSide: -1,
+            look: -(win(t, 0.45, 1.85) ? sstep(0.45, 0.6, t) * (1 - sstep(1.7, 1.85, t)) : 0),
+            eyes: win(t, 1.2, 1.8) ? "happy" : win(t, 0.95, 1.03) ? "blink" : "open",
+            wave: sstep(1.05, 1.2, t) * (1 - sstep(1.7, 1.85, t)) };
+        }
+        var dive = K.dive({ z0: Z0, z1: Z1, smax: 160, eyeScale: MS, centre: SAFE, target: function (t) { return K.eyePoint(HERO_X, PAIR_Y + bob(t, 0), MS, -1); },
+          inner: { start: 2.3, end: 3.5, zEnd: 1.0, fitK: 0.027, roll: -0.9 } });
+        var feet = [
+          function (tb) { return { x: HERO_X, y: PAIR_Y + bob(tb, 0) + g.FOOT * MS, cols: [T.a3, T.a1, HATCH.mix(T.a3, T.a2, 0.35)] }; },
+          function (tb) { return { x: BUDDY_X, y: PAIR_Y + bob(tb, 1) + g.FOOT * MS, cols: [T.clouds.tealL, HATCH.mix(T.buddy, T.a4, 0.1), T.a4] }; }
+        ];
+
+        function drawOuter(c, t, s, cam) {
+          K.drawTravel(c, travel, t, cam);
+          c.save(); cam(c, 1);
+          if (paper) K.drawFloor(c, travel.floor, PAIR_Y + g.FOOT * MS, 40, W - 40, t, 220 * freeze(t));
+          else K.drawTrail(c, trail, t, feet, MS, freeze, 400);
+          var hs = heroState(t), bs = buddyState(t); hs.zoom = s; bs.zoom = s;
+          K.drawMascot(c, buddy, BUDDY_X, PAIR_Y + bob(t, 1), MS, bs);
+          K.drawMascot(c, hero, HERO_X, PAIR_Y + bob(t, 0), MS, hs);
+          c.restore();
+        }
+        function drawInner(ic, t, cam, at) { K.drawGalaxy(ic, galaxy, t, { x: at[0], y: at[1], z: cam.z, rot: cam.rot, entry: cam.entry }); }
+
+        var cv = null, ctx = null;
+        function draw(t) {
+          if (!ctx) { cv = document.getElementById("hc9-cv"); ctx = cv.getContext("2d"); }
+          dive.frame(ctx, t, drawOuter, drawInner, speed, paper ? null : travel.grain);
+          K.lift(ctx, 3);
+        }
+
+        var state = { t: 0 };
+        var tl = gsap.timeline({ paused: true });
+        tl.to(state, { t: DUR, duration: DUR, ease: "none", onUpdate: function () { draw(state.t); } }, 0);
+        draw(0);
+        window.__timelines["hatch-cosmos-9x16"] = tl;
+
+        function readProps(id, defaults) {
+          var w = window, src = null;
+          var key = typeof __hfTimelineCompId !== "undefined" && __hfTimelineCompId ? __hfTimelineCompId : null;
+          var byComp = w.__hfVariablesByComp || {};
+          if (key) src = byComp[key] || null;
+          else if (byComp[id]) src = byComp[id];
+          else if (w.__hyperframes && typeof w.__hyperframes.getVariables === "function") { try { src = w.__hyperframes.getVariables(); } catch (e) { src = null; } }
+          var out = {}; for (var k in defaults) out[k] = defaults[k];
+          if (src && typeof src === "object") for (var j in src) if (j in defaults) out[j] = src[j];
+          return out;
+        }
+      })();
+    </script>
+  </body>
+</html>
