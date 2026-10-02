@@ -1,6 +1,6 @@
 import bpy, math, sys
 argv = sys.argv[sys.argv.index("--")+1:] if "--" in sys.argv else []
-out = argv[0] if argv else "/tmp/studio/frames/f_"
+out = argv[0] if argv else "/tmp/blender-frames/f_"
 frames = int(argv[1]) if len(argv)>1 else 90
 size = int(argv[2]) if len(argv)>2 else 720
 bpy.ops.wm.read_factory_settings(use_empty=True)
