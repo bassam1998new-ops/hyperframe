@@ -1,0 +1,15 @@
+<!doctype html><meta charset="utf-8">
+<style>body{margin:0;background:#E9E4DB}.v{position:relative;display:inline-block;transform-origin:0 0}.v img.l{position:absolute;left:0;top:0}</style>
+<body><div id="root"></div>
+<script src="../laptop-screen.js"></script><script src="../meta.js"></script>
+<script>
+async function show(view, src, scale, x, y){
+  const m=window.META[view];
+  const box=document.createElement("div");box.className="v";
+  box.style.cssText=`position:absolute;left:${x}px;top:${y}px;width:${m.size[0]}px;height:${m.size[1]}px;transform:scale(${scale})`;
+  box.innerHTML=`<img class="l" src="../laptop-${view}-shadow.png"><img class="s" src="${src}"><img class="l" src="../laptop-${view}-body.png"><img class="l" src="../laptop-${view}-glass.png">`;
+  document.getElementById("root").appendChild(box);
+  const s=box.querySelector("img.s"); await s.decode(); LaptopScreen.placeScreen(s,m.corners);
+}
+window.go=async(view,src,scale,x,y)=>{await show(view,src,scale,x,y);};
+</script></body>
