@@ -67,13 +67,10 @@
         } else {
           var w = G.EYE_W, h = G.EYE_H;
           if (kind === "wide") { w *= 1.18; h *= 1.22; }
+          if (kind === "think" && e > 0) { h *= 0.62; ey += G.EYE_H * 0.12; } // curious squint on one eye, never a frown
           rr(c, ex - w / 2, ey - h / 2, w, h, G.EYE_R * (kind === "wide" ? 1.3 : 1)); c.fillStyle = T.eyeInk; c.fill();
           var hs = w * (kind === "wide" ? 0.42 : 0.36), hx = e < 0 ? ex + w / 2 - hs - 2.2 : ex - w / 2 + 2.2;
           rr(c, hx, ey - h / 2 + 2.6, hs, hs, hs * 0.3); c.fillStyle = T.highlight; c.fill();
-          if (kind === "think") { // lowered lid: flat line over the top third
-            c.save(); rr(c, ex - w / 2 - 1, ey - h / 2 - 1, w + 2, h * 0.42, 2); c.fillStyle = m.fill; c.fill(); c.restore();
-            c.beginPath(); c.moveTo(ex - w * 0.75, ey - h / 2 + h * 0.4); c.lineTo(ex + w * 0.75, ey - h / 2 + h * 0.4 - e * 2); c.stroke();
-          }
         }
       }
     }
@@ -242,7 +239,7 @@
         s.hop = a * 22 * (1 - sstep(0.32, 0.7, t % 3)) + a * 4; s.squash = -a * 0.08; s.armL = 0.1 + a * 0.9; s.armR = 0.1 + a * 0.9; s.spark = 0.35 + 0.65 * a; s.tilt = -a * 0.04; break;
       }
       case "think":
-        s.eyes = blink(t, 2) ? "blink" : "think"; s.look = 0.7; s.lookY = -0.6; s.mouthShape = "flat"; s.tilt = 0.08;
+        s.eyes = blink(t, 2) ? "blink" : "think"; s.look = 0.6; s.lookY = -0.5; s.mouthShape = "o"; s.mouth = 0.3; s.tilt = 0.08;
         s.armR = 1.75 + Math.sin(t * 4) * 0.06; s.armL = 0.05; // hand up by the head, scratching
         s.spark = 0.3 + 0.5 * (0.5 + 0.5 * Math.sin(t * 5)); break;
       case "wave":
