@@ -6,7 +6,7 @@ description: Build a video in the Hatch Cosmos look (style card hatch-cosmos) �
 # Style: Hatch Cosmos
 
 A warm hand-drawn cosmos: flat fills under short diagonal pencil hatching, ink outlines, a block mascot that acts, and ONE signature move — the camera dives into the mascot's eye, the eye becomes a phone-shaped window, and the next scene rolls in.
-Card: `video-projects/_library/styles/hatch-cosmos/style.md` (status **draft** — say so to the owner until he approves it on the board).
+Card: `video-projects/_library/styles/hatch-cosmos/style.md` (status **approved** by the owner on 2026-10-02).
 
 **Look first** (in the style folder): `frames/01-pair-happy-eyes.png` · `frames/02-eye-window-dive.png` · `frames/03-deep-galaxy.png` · `frames/04-paper-walk.png`. Reference (look only): `refs/ref-contact-sheet.jpg (not in the public repo)`, `refs/ref-dive-30fps.jpg (not in the public repo)`. Colours follow the brand: `tests/2026-10-02-themes-and-looks.jpg (not in the public repo)`.
 
