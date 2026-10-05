@@ -18,8 +18,26 @@ test('init creates reusable workspace state', () => {
   initWorkspace(root, { name: 'Demo', version: '0.1.0' });
   assert.equal(fs.existsSync(path.join(root, '.aurora', 'studio.json')), true);
   assert.equal(fs.existsSync(path.join(root, 'PROJECT.md')), true);
+  assert.equal(fs.existsSync(path.join(root, 'tmp')), true);
   assert.equal(findWorkspace(path.join(root, 'tmp')).root, root);
   setMode(root, 'director');
   assert.equal(findWorkspace(root).config.mode, 'director');
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
+test('config check and migrate preserve user choices', async () => {
+  const { checkConfig, migrateConfig, readJson, writeJson } = await import('../lib/workspace.mjs');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aurora-migrate-'));
+  initWorkspace(root, { name: 'Demo', version: '0.1.0' });
+  const file = path.join(root, '.aurora', 'studio.json');
+  const config = readJson(file);
+  delete config.updates;
+  config.mode = 'director';
+  writeJson(file, config);
+  assert.equal(checkConfig(config, { name: 'Demo', version: '0.1.0' }).ok, false);
+  const migrated = migrateConfig(root, { name: 'Demo', version: '0.1.1' });
+  assert.equal(migrated.mode, 'director');
+  assert.equal(migrated.updates.channel, 'stable');
+  assert.equal(migrated.studio_version, '0.1.1');
   fs.rmSync(root, { recursive: true, force: true });
 });
