@@ -21,6 +21,8 @@ import {
   runAfterEffectsJob
 } from "./adapters/after-effects.mjs";
 import { retrieveContext } from "./retrieval.mjs";
+import { validateKnowledge } from "./validate.mjs";
+import { obsidianInfo, searchObsidian } from "./integrations/obsidian.mjs";
 import {
   ensureProjectProfile,
   readProject,
@@ -275,14 +277,19 @@ export function runPreflight(cwd = process.cwd()) {
   const tools = detectTools(cwd);
   const integrations = detectIntegrations(cwd);
   const missingRequired = tools.filter(t => t.required && !t.available);
+  const knowledge = validateKnowledge(cwd);
 
   ws.tools = tools;
   ws.integrations = integrations;
   writeWorkspace(ws, cwd);
 
   return {
-    ok: missingRequired.length === 0,
-    errors: missingRequired.map(t => `Missing required tool: ${t.name}`),
+    ok: missingRequired.length === 0 && knowledge.ok,
+    errors: [
+      ...missingRequired.map(t => `Missing required tool: ${t.name}`),
+      ...knowledge.errors
+    ],
+    warnings: knowledge.warnings,
     tools,
     integrations
   };
@@ -740,6 +747,33 @@ export async function showRetrievedContext(query, referenceId = null, cwd = proc
     const packet = retrieveContext({ query, referenceId, cwd });
     console.log(JSON.stringify(packet, null, 2));
     return packet;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+
+export async function validateStudio(cwd = process.cwd()) {
+  const result = validateKnowledge(cwd);
+  console.log(JSON.stringify(result, null, 2));
+  if (!result.ok) process.exitCode = 2;
+  return result;
+}
+
+export async function showObsidianInfo() {
+  const info = obsidianInfo();
+  console.log(JSON.stringify(info, null, 2));
+  if (!info.available) process.exitCode = 2;
+  return info;
+}
+
+export async function searchObsidianKnowledge(query, vault = null) {
+  try {
+    const result = searchObsidian(query, { vault });
+    console.log(JSON.stringify(result, null, 2));
+    return result;
   } catch (error) {
     console.error(error.message);
     process.exitCode = 2;
