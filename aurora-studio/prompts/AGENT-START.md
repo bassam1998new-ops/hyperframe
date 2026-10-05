@@ -16,8 +16,8 @@ For each real production job:
 - create an AurorA production run with `aurora-studio plan`
 - do NOT lock the production tool at plan time
 - checkpoint meaningful stages so the work can resume after interruption
-- in Director mode: concept → owner pick → mood → assets → routing
-- in Direct mode: simple jobs may explicitly skip concept/mood, but asset search still happens before routing
+- in Director mode: concept → owner pick → mood → asset-plan → routing
+- in Direct mode: simple jobs may explicitly skip concept/mood, but a completed asset-plan still happens before routing
 - run `aurora-studio routing RUN_ID` only after the early stages are ready
 - check the budget before paid generation
 - run pre-render and post-render review
@@ -27,7 +27,10 @@ When I give you a reference:
 - analyze its visual and production grammar
 - read my saved project/product context
 - search local/project/AurorA assets and saved styles first
-- decide REUSE / MODIFY / BUILD_NEW
+- record each need in the run's asset-plan.json
+- decide REUSE / MODIFY / BUILD_NEW / NOT_NEEDED
+- for REUSE/MODIFY, use tracked AurorA library IDs
+- validate/complete the asset plan
 - only then choose the tool path
 - never select an unavailable optional tool
 - use HyperFrames features that already exist instead of rebuilding them
