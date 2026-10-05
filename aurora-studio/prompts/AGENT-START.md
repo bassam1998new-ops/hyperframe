@@ -22,7 +22,9 @@ For each real production job:
 - fill/validate the generated build-plan.json and assign each shot/build unit to the right routed engine
 - complete the build_plan checkpoint before execution
 - check the budget before paid generation
-- run pre-render and post-render review
+- create/fill/validate review.json after the final render
+- only PASS can complete post_render_review
+- FIX/REBUILD loops back into production
 - finalize only after I approve, passing the exact approved video with `--video`
 
 When I give you a reference:
