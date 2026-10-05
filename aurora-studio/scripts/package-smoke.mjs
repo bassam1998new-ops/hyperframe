@@ -106,6 +106,8 @@ try {
   );
 
   const expected = [
+    path.join(workspace, ".aurora", ".gitignore"),
+    path.join(workspace, ".aurora", "README.md"),
     path.join(workspace, ".aurora", "workspace.json"),
     path.join(workspace, ".aurora", "project.json"),
     path.join(workspace, ".aurora", "system", "bin", "aurora-studio.mjs"),
@@ -117,6 +119,14 @@ try {
     if (!fs.existsSync(file)) {
       throw new Error(`Packaged install smoke missing: ${file}`);
     }
+  }
+
+  const ignore = fs.readFileSync(
+    path.join(workspace, ".aurora", ".gitignore"),
+    "utf8"
+  );
+  if (!/^\*/m.test(ignore)) {
+    throw new Error("AurorA workspace memory is not private-by-default.");
   }
 
   const workspaceJson = JSON.parse(
