@@ -50,7 +50,9 @@ import {
   routeProductionRun,
   checkStudioUpdate,
   planStudioUpdate,
-  backupStudioWorkspace
+  backupStudioWorkspace,
+  syncStudioSystem,
+  showStudioSystemStatus
 } from "../src/studio.mjs";
 
 const [command = "help", ...args] = process.argv.slice(2);
@@ -118,6 +120,12 @@ switch (command) {
   case "discover":
     await discoverLocalWorkspace();
     break;
+  case "system":
+    if (args[0] === "sync") await syncStudioSystem();
+    else if (args[0] === "status") await showStudioSystemStatus();
+    else console.error("system commands: sync | status");
+    break;
+
   case "update":
     if (args[0] === "check") await checkStudioUpdate({ url: flag("--url") });
     else if (args[0] === "plan") await planStudioUpdate();
@@ -286,6 +294,8 @@ Setup:
   aurora-studio assets search "studio hdri" [--type hdris] [--limit 10]
   aurora-studio assets files POLY_HAVEN_ID
   aurora-studio discover
+  aurora-studio system status
+  aurora-studio system sync
   aurora-studio update check
   aurora-studio update plan
   aurora-studio update backup
