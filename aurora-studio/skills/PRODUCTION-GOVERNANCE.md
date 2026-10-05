@@ -22,12 +22,13 @@ It creates:
 3. mood
 4. assets
 5. routing
-6. build
-7. pre_render_review
-8. render
-9. post_render_review
-10. approval
-11. finalize
+6. build_plan
+7. build
+8. pre_render_review
+9. render
+10. post_render_review
+11. approval
+12. finalize
 
 ## Direct mode
 Only owner approval at the end is mandatory.
@@ -88,6 +89,35 @@ Routing uses:
 - reusable assets/styles
 
 The routing checkpoint is written automatically.
+
+## Build plan
+After routing, AurorA creates `build-plan.json`.
+
+Fill each shot/build unit with:
+- purpose
+- owning engine
+- inputs
+- selected asset IDs
+- output
+- quality tier
+- handoff to another engine when needed
+
+Example:
+- Blender creates transparent avatar overlay
+- handoff format = transparent_webm
+- HyperFrames composes typography/UI/final layout
+
+Validate:
+```bash
+aurora-studio build-plan validate RUN_ID
+```
+
+Then:
+```bash
+aurora-studio checkpoint RUN_ID build_plan completed --artifact .aurora/runs/<run>/build-plan.json
+```
+
+Do not begin final build execution until this stage is complete.
 
 ## Checkpoints
 Use:
