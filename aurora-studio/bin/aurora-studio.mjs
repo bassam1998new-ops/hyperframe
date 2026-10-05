@@ -247,7 +247,7 @@ switch (command) {
     if (args[0] === "doctor") await showHyperframesCoreInfo();
     else if (args[0] === "install") await installHyperframesWorkspace(flagBool("--dry-run"));
     else if (args[0] === "upgrade-check") await checkHyperframesUpgrade();
-    else if (args[0] === "run") await executeHyperframesCore(args.slice(1), { dryRun: flagBool("--dry-run") });
+    else if (args[0] === "run") await executeHyperframesCore(args.slice(1));
     else console.error("hyperframe commands: doctor | install [--dry-run] | upgrade-check | run ARGS...");
     break;
 
