@@ -1,13 +1,14 @@
 import fs from "node:fs";
 import path from "node:path";
-import os from "node:os";
 import { spawnSync } from "node:child_process";
 import readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REGISTRY_PATH = path.resolve(HERE, "../knowledge/tools/registry.json");
+const require = createRequire(import.meta.url);
 
 function registry() {
   return JSON.parse(fs.readFileSync(REGISTRY_PATH, "utf8"));
@@ -19,25 +20,47 @@ function existsOnPath(command) {
   return result.status === 0;
 }
 
+function localBinExists(command, cwd = process.cwd()) {
+  const name = process.platform === "win32" ? `${command}.cmd` : command;
+  return fs.existsSync(path.join(cwd, "node_modules", ".bin", name));
+}
+
+function packageExists(packageName, cwd = process.cwd()) {
+  if (!packageName) return false;
+  try {
+    require.resolve(`${packageName}/package.json`, { paths: [cwd] });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function envPathExists(name) {
   const value = process.env[name];
   return Boolean(value && fs.existsSync(value));
 }
 
-function detectTool(tool) {
-  const command = (tool.detect_commands || []).find(existsOnPath);
+function detectTool(tool, cwd = process.cwd()) {
+  const command = (tool.detect_commands || []).find(cmd => existsOnPath(cmd) || localBinExists(cmd, cwd));
+  const pkgDetected = tool.npm_package ? packageExists(tool.npm_package, cwd) : false;
   const envDetected = tool.env_path ? envPathExists(tool.env_path) : false;
   return {
     id: tool.id,
     name: tool.name,
     required: Boolean(tool.required),
-    available: Boolean(command || envDetected),
-    detected_by: command ? `command:${command}` : envDetected ? `env:${tool.env_path}` : null
+    available: Boolean(command || pkgDetected || envDetected),
+    detected_by: command
+      ? `command:${command}`
+      : pkgDetected
+        ? `package:${tool.npm_package}`
+        : envDetected
+          ? `env:${tool.env_path}`
+          : null
   };
 }
 
-export function detectTools() {
-  return registry().tools.map(detectTool);
+export function detectTools(cwd = process.cwd()) {
+  return registry().tools.map(tool => detectTool(tool, cwd));
 }
 
 function yes(value) {
@@ -48,9 +71,19 @@ function workspaceDir(cwd = process.cwd()) {
   return path.join(cwd, ".aurora");
 }
 
+function workspaceFile(cwd = process.cwd()) {
+  return path.join(workspaceDir(cwd), "workspace.json");
+}
+
 function readWorkspace(cwd = process.cwd()) {
-  const file = path.join(workspaceDir(cwd), "workspace.json");
+  const file = workspaceFile(cwd);
   return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, "utf8")) : null;
+}
+
+function writeWorkspace(workspace, cwd = process.cwd()) {
+  fs.mkdirSync(workspaceDir(cwd), { recursive: true });
+  workspace.updated_at = new Date().toISOString();
+  fs.writeFileSync(workspaceFile(cwd), JSON.stringify(workspace, null, 2) + "\n");
 }
 
 export async function runSetup(cwd = process.cwd()) {
@@ -70,7 +103,7 @@ export async function runSetup(cwd = process.cwd()) {
   const purpose = await rl.question(`What do you mainly make videos for? [${existing?.project?.purpose || ""}]: `);
   const modeAnswer = await rl.question(`Default mode direct/director [${existing?.default_mode || "direct"}]: `);
 
-  console.log("\nOptional browser/account resources. Answer y/n. These are availability flags only.");
+  console.log("\nOptional browser/account resources. Answer y/n. Availability only.");
   const chatgpt = await rl.question("ChatGPT in browser available? [y/N]: ");
   const flow = await rl.question("Google Flow available? [y/N]: ");
   const meta = await rl.question("Meta AI available? [y/N]: ");
@@ -78,14 +111,18 @@ export async function runSetup(cwd = process.cwd()) {
 
   rl.close();
 
-  const tools = detectTools();
+  const tools = detectTools(cwd);
   const now = new Date().toISOString();
+  const mode = ["direct", "director"].includes(modeAnswer.trim().toLowerCase())
+    ? modeAnswer.trim().toLowerCase()
+    : existing?.default_mode || "direct";
+
   const workspace = {
     schema_version: 1,
     studio: "AurorA Studio",
     created_at: existing?.created_at || now,
     updated_at: now,
-    default_mode: modeAnswer.trim() || existing?.default_mode || "direct",
+    default_mode: mode,
     project: {
       product: product.trim() || existing?.project?.product || "",
       purpose: purpose.trim() || existing?.project?.purpose || ""
@@ -104,14 +141,19 @@ export async function runSetup(cwd = process.cwd()) {
     }
   };
 
-  fs.writeFileSync(path.join(dir, "workspace.json"), JSON.stringify(workspace, null, 2) + "\n");
+  writeWorkspace(workspace, cwd);
+
   for (const log of ["decisions.jsonl", "lessons.jsonl"]) {
     const file = path.join(dir, log);
     if (!fs.existsSync(file)) fs.writeFileSync(file, "");
   }
+
   const styleReadme = path.join(dir, "styles", "README.md");
   if (!fs.existsSync(styleReadme)) {
-    fs.writeFileSync(styleReadme, "# Workspace styles\n\nOnly save styles that were useful, approved, or intentionally kept for reuse.\n");
+    fs.writeFileSync(
+      styleReadme,
+      "# Workspace styles\n\nOnly save styles that were useful, approved, or intentionally kept for reuse.\n"
+    );
   }
 
   console.log(`\nWorkspace ready: ${dir}`);
@@ -119,8 +161,9 @@ export async function runSetup(cwd = process.cwd()) {
 }
 
 export async function runDoctor(cwd = process.cwd()) {
-  const tools = detectTools();
+  const tools = detectTools(cwd);
   const ws = readWorkspace(cwd);
+
   console.log("\nAurorA Studio doctor\n");
   for (const tool of tools) {
     const mark = tool.available ? "✓" : tool.required ? "✗ REQUIRED" : "○ optional";
@@ -137,7 +180,7 @@ export async function runDoctor(cwd = process.cwd()) {
 }
 
 export async function printTools(cwd = process.cwd()) {
-  const live = Object.fromEntries(detectTools().map(t => [t.id, t]));
+  const live = Object.fromEntries(detectTools(cwd).map(t => [t.id, t]));
   for (const tool of registry().tools) {
     console.log(`\n${tool.name} — ${live[tool.id]?.available ? "AVAILABLE" : tool.required ? "MISSING REQUIRED" : "NOT INSTALLED / OPTIONAL"}`);
     console.log("Best for: " + tool.best_for.join(", "));
@@ -145,9 +188,37 @@ export async function printTools(cwd = process.cwd()) {
   }
 }
 
+export async function setMode(mode, cwd = process.cwd()) {
+  if (!["direct", "director"].includes(mode)) {
+    console.error("Mode must be: direct or director");
+    process.exitCode = 2;
+    return;
+  }
+
+  const ws = readWorkspace(cwd);
+  if (!ws) {
+    console.error("Workspace is not configured. Run: aurora-studio setup");
+    process.exitCode = 2;
+    return;
+  }
+
+  ws.default_mode = mode;
+  writeWorkspace(ws, cwd);
+  console.log(`AurorA Studio mode: ${mode}`);
+}
+
+export async function showWorkspace(cwd = process.cwd()) {
+  const ws = readWorkspace(cwd);
+  if (!ws) {
+    console.log("Workspace is not configured. Run: aurora-studio setup");
+    return;
+  }
+  console.log(JSON.stringify(ws, null, 2));
+}
+
 export async function recommendRoute(taskText = "", cwd = process.cwd()) {
   const q = taskText.toLowerCase();
-  const available = Object.fromEntries(detectTools().map(t => [t.id, t.available]));
+  const available = Object.fromEntries(detectTools(cwd).map(t => [t.id, t.available]));
   const route = [];
 
   const true3d = /(3d|avatar|character|rig|model|product render|physics)/.test(q);
@@ -156,7 +227,7 @@ export async function recommendRoute(taskText = "", cwd = process.cwd()) {
 
   if (true3d) {
     if (!available.blender) {
-      console.log("No safe route: this task appears to need true 3D, but Blender is not available.");
+      console.log("No safe automatic route: this task appears to need true 3D, but Blender is unavailable.");
       process.exitCode = 2;
       return;
     }
@@ -174,6 +245,7 @@ export async function recommendRoute(taskText = "", cwd = process.cwd()) {
   console.log(JSON.stringify({
     task: taskText,
     route,
-    note: "Foundation router: hard rules only. Later versions add asset search, experience retrieval and learned scoring."
+    unavailable_optional_tools_are_not_errors: true,
+    note: "Foundation router: hard rules only. Later: asset search + prior-job retrieval + evaluated learned scoring."
   }, null, 2));
 }
