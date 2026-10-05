@@ -28,17 +28,21 @@ function readExistingWorkspace(cwd) {
 }
 
 function normalizeConfig(config = {}) {
-  const mode = String(config.mode || "direct").toLowerCase();
+  const mode = config.mode == null ? null : String(config.mode).toLowerCase();
   const agents = String(config.agents || "all").toLowerCase();
 
-  if (!MODES.has(mode)) throw new Error("Configured setup mode must be direct or director.");
+  if (mode !== null && !MODES.has(mode)) {
+    throw new Error("Configured setup mode must be direct or director.");
+  }
   if (!AGENT_TARGETS.has(agents)) {
     throw new Error("Configured setup agents must be none, all, claude, or codex.");
   }
 
   const resources = {};
   for (const key of RESOURCE_KEYS) {
-    resources[key] = Boolean(config.resources?.[key]);
+    resources[key] = Object.prototype.hasOwnProperty.call(config.resources || {}, key)
+      ? Boolean(config.resources[key])
+      : null;
   }
 
   return {
@@ -85,7 +89,7 @@ export function writeConfiguredWorkspace(configInput, {
     studio: "AurorA Studio",
     created_at: existing?.created_at || now,
     updated_at: now,
-    default_mode: config.mode,
+    default_mode: config.mode || existing?.default_mode || "direct",
     project: {
       product: config.product || existing?.project?.product || "",
       purpose: config.purpose || existing?.project?.purpose || "",
@@ -95,7 +99,7 @@ export function writeConfiguredWorkspace(configInput, {
     integrations: existing?.integrations || [],
     resources: {
       ...RESOURCE_KEYS.reduce((acc, key) => {
-        acc[key] = config.resources[key];
+        acc[key] = config.resources[key] ?? existing?.resources?.[key] ?? false;
         return acc;
       }, {})
     },
