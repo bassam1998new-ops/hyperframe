@@ -9,6 +9,7 @@ import { chooseRoute } from "./selector.mjs";
 import { createRun, loadRun, checkpoint, evaluateSpend, finalizeRun } from "./governance.mjs";
 import { probeRender } from "./quality.mjs";
 import { addLibraryItem, readLibrary, searchLibrary, summarizeLibrary } from "./library.mjs";
+import { importHyperframeLibrary } from "./importers/hyperframe.mjs";
 import {
   ensureProjectProfile,
   readProject,
@@ -642,4 +643,17 @@ export async function libraryStats(cwd = process.cwd()) {
   const stats = summarizeLibrary(cwd);
   console.log(JSON.stringify(stats, null, 2));
   return stats;
+}
+
+
+export async function importHyperframeRecords(root = null, cwd = process.cwd()) {
+  try {
+    const result = importHyperframeLibrary({ root, cwd });
+    console.log(JSON.stringify(result, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
 }
