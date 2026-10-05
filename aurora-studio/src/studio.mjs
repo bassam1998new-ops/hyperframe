@@ -15,6 +15,7 @@ import {
   createBlenderJob,
   runBlenderJob
 } from "./adapters/blender.mjs";
+import { packTransparentWebm } from "./adapters/blender-handoff.mjs";
 import {
   afterEffectsInfo,
   createAfterEffectsJob,
@@ -829,6 +830,28 @@ export async function createBlenderJobRecord(name, cwd = process.cwd()) {
 export async function executeBlenderJob(jobPath, dryRun = false, cwd = process.cwd()) {
   try {
     const result = runBlenderJob(jobPath, { cwd, dryRun });
+    console.log(JSON.stringify(result, null, 2));
+    if (result.ok === false) process.exitCode = 2;
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+
+export async function executeBlenderHandoff(inputPattern, output, options = {}, cwd = process.cwd()) {
+  try {
+    const result = packTransparentWebm({
+      inputPattern,
+      output,
+      fps: Number(options.fps || 30),
+      quality: options.quality || "normal"
+    }, {
+      cwd,
+      dryRun: Boolean(options.dryRun)
+    });
     console.log(JSON.stringify(result, null, 2));
     if (result.ok === false) process.exitCode = 2;
     return result;
