@@ -16,6 +16,7 @@ The command performs the technical probe first. Then the agent fills the creativ
 
 ## Technical
 - output exists and has a valid video stream
+- ffprobe verification is available
 - valid duration
 - expected aspect/resolution
 - no known broken render
