@@ -194,3 +194,14 @@ aurora-studio hyperframe upgrade-check
 ```
 
 Upgrades are checked separately and are never applied silently mid-project.
+
+
+## Privacy by default
+
+AurorA's `.aurora/` workspace memory is ignored by Git by default.
+
+That folder can contain project context, local paths, provider availability, run history, review frames, cost records and learning logs.
+
+If you want to share stable knowledge with a team, review it first and promote the useful parts into normal tracked project documentation or style files.
+
+AurorA does not treat its local memory folder as something that should be committed automatically.
