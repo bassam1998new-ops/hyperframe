@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aurora-studio.dev/schemas/decision.schema.json",
+  "title": "AurorA Studio Decision Record",
+  "type": "object",
+  "required": ["timestamp", "task_type", "route", "approved"],
+  "properties": {
+    "timestamp": { "type": "string" },
+    "task_type": { "type": "string" },
+    "route": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "available_tools": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "asset_action": { "enum": ["reuse", "modify", "build_new", "unknown"] },
+    "approved": { "type": "boolean" },
+    "reviewer_score": { "type": ["number", "null"], "minimum": 0, "maximum": 10 },
+    "revisions": { "type": ["integer", "null"], "minimum": 0 },
+    "cost": { "type": ["number", "null"], "minimum": 0 },
+    "render_minutes": { "type": ["number", "null"], "minimum": 0 },
+    "failure_reason": { "type": ["string", "null"] },
+    "lesson": { "type": ["string", "null"] }
+  },
+  "additionalProperties": true
+}
