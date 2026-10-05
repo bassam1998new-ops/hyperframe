@@ -159,6 +159,23 @@ export function validateReviewReport(report) {
       errors.push("Completed review needs a short summary.");
     }
 
+    const evidence = report.visual_evidence;
+    const evidenceFrames = Array.isArray(evidence?.frames) ? evidence.frames : [];
+
+    if (!evidence) {
+      errors.push("Completed review requires visual_evidence.");
+    } else {
+      if (evidence.video_sha256 !== report.video_sha256) {
+        errors.push("Visual evidence does not belong to the reviewed video SHA-256.");
+      }
+      if (evidenceFrames.length < 3) {
+        errors.push("Completed review requires at least 3 sampled visual review frames.");
+      }
+      if (evidence.error) {
+        errors.push("Visual review frame extraction failed: " + evidence.error);
+      }
+    }
+
     const missingCreative = completedCreativeChecks(report.creative);
     if (missingCreative.length) {
       errors.push(
@@ -246,5 +263,48 @@ export function validateReviewReportFile(runId, cwd = process.cwd()) {
       warnings: []
     };
   }
-  return validateReviewReport(value.report);
+
+  const validation = validateReviewReport(value.report);
+  const errors = [...validation.errors];
+
+  if (value.report.status === "completed") {
+    const run = loadRun(cwd, runId);
+    const frames = Array.isArray(value.report.visual_evidence?.frames)
+      ? value.report.visual_evidence.frames
+      : [];
+
+    for (const frame of frames) {
+      const resolved = path.resolve(cwd, String(frame.path || ""));
+      const relativeToRun = path.relative(run.dir, resolved);
+
+      if (
+        !frame.path ||
+        relativeToRun.startsWith("..") ||
+        path.isAbsolute(relativeToRun)
+      ) {
+        errors.push("Review frame is outside the current run directory: " + (frame.path || "(missing)"));
+        continue;
+      }
+
+      if (!fs.existsSync(resolved) || !fs.statSync(resolved).isFile()) {
+        errors.push("Review frame file is missing: " + frame.path);
+        continue;
+      }
+
+      const hash = sha256File(resolved);
+      if (frame.sha256 !== hash) {
+        errors.push("Review frame SHA-256 mismatch: " + frame.path);
+      }
+    }
+  }
+
+  return {
+    ...validation,
+    ok: errors.length === 0,
+    can_complete_post_review:
+      errors.length === 0 &&
+      value.report.status === "completed" &&
+      value.report.decision === "PASS",
+    errors
+  };
 }
