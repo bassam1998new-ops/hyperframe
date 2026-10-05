@@ -9,25 +9,47 @@ import {
   createRun,
   checkpoint,
   finalizeRun,
-  makeRunId
+  makeRunId,
+  setRunRoute,
+  loadRun
 } from "../src/governance.mjs";
 
 const routeDecision = {
   selected: { route: ["hyperframe"], score: 8 },
   confidence: 0.8,
-  candidates: []
+  candidates: [
+    { route: ["hyperframe"], score: 8 },
+    { route: ["blender", "hyperframe"], score: 6 }
+  ]
 };
 
+function temp() {
+  return fs.mkdtempSync(path.join(os.tmpdir(), "aurora-governance-"));
+}
+
 test("director mode gates concept and final approval", () => {
-  const plan = buildPlan({ task: "test", mode: "director", routeDecision });
+  const plan = buildPlan({ task: "test", mode: "director", routeDecision: null });
   const gated = plan.stages.filter(s => s.human_approval_required).map(s => s.id);
   assert.deepEqual(gated, ["concept", "approval"]);
+  assert.equal(plan.stages.find(s => s.id === "concept").skippable, false);
+  assert.equal(plan.stages.find(s => s.id === "mood").skippable, false);
 });
 
-test("direct mode only requires final approval", () => {
-  const plan = buildPlan({ task: "test", mode: "direct", routeDecision });
+test("direct mode may skip concept and mood only", () => {
+  const plan = buildPlan({ task: "test", mode: "direct", routeDecision: null });
   const gated = plan.stages.filter(s => s.human_approval_required).map(s => s.id);
   assert.deepEqual(gated, ["approval"]);
+  assert.equal(plan.stages.find(s => s.id === "concept").skippable, true);
+  assert.equal(plan.stages.find(s => s.id === "mood").skippable, true);
+  assert.equal(plan.stages.find(s => s.id === "assets").skippable, false);
+});
+
+test("new run can start without a preselected route", () => {
+  const plan = buildPlan({ task: "test", mode: "director", routeDecision: null });
+  assert.deepEqual(plan.route, []);
+  assert.equal(plan.route_score, null);
+  assert.equal(plan.route_confidence, 0);
+  assert.ok(plan.stages.some(s => s.id === "routing"));
 });
 
 test("budget cap blocks projected overspend", () => {
@@ -46,17 +68,44 @@ test("run ids keep millisecond precision", () => {
 });
 
 test("agent cannot jump ahead and complete a later stage", () => {
-  const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "aurora-stage-"));
-  const run = createRun({ cwd, task: "test", mode: "direct", routeDecision });
+  const cwd = temp();
+  const run = createRun({ cwd, task: "test", mode: "direct", routeDecision: null });
   assert.throws(
     () => checkpoint({ cwd, runId: run.id, stage: "render", status: "completed" }),
     /earlier stages not complete/
   );
 });
 
+test("director cannot skip concept or mood", () => {
+  const cwd = temp();
+  const run = createRun({ cwd, task: "test", mode: "director", routeDecision: null });
+  checkpoint({ cwd, runId: run.id, stage: "understand", status: "completed" });
+  assert.throws(
+    () => checkpoint({ cwd, runId: run.id, stage: "concept", status: "skipped" }),
+    /cannot be skipped/
+  );
+});
+
+test("direct can skip concept and mood then route after assets", () => {
+  const cwd = temp();
+  const run = createRun({ cwd, task: "test", mode: "direct", routeDecision: null });
+
+  checkpoint({ cwd, runId: run.id, stage: "understand", status: "completed" });
+  checkpoint({ cwd, runId: run.id, stage: "concept", status: "skipped" });
+  checkpoint({ cwd, runId: run.id, stage: "mood", status: "skipped" });
+  checkpoint({ cwd, runId: run.id, stage: "assets", status: "completed" });
+
+  const routed = setRunRoute({ cwd, runId: run.id, routeDecision });
+  assert.deepEqual(routed.plan.route, ["hyperframe"]);
+  assert.equal(routed.state.checkpoints.routing.status, "completed");
+
+  const saved = loadRun(cwd, run.id);
+  assert.equal(saved.plan.stages.find(s => s.id === "routing").status, "completed");
+});
+
 test("finalize requires review and owner approval", () => {
-  const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "aurora-final-"));
-  const run = createRun({ cwd, task: "test", mode: "direct", routeDecision });
+  const cwd = temp();
+  const run = createRun({ cwd, task: "test", mode: "direct", routeDecision: null });
   assert.throws(
     () => finalizeRun({ cwd, runId: run.id }),
     /owner approval is not recorded/
