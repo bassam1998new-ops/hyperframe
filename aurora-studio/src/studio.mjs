@@ -199,7 +199,9 @@ export async function runSetup(cwd = process.cwd()) {
   const flow = await rl.question(`Google Flow available? [${existing?.resources?.google_flow ? "Y/n" : "y/N"}]: `);
   const meta = await rl.question(`Meta AI available? [${existing?.resources?.meta_ai ? "Y/n" : "y/N"}]: `);
   const eleven = await rl.question(`ElevenLabs available? [${existing?.resources?.elevenlabs ? "Y/n" : "y/N"}]: `);
-  const installPointers = await rl.question("Install small Claude/Codex AurorA pointers? [Y/n]: ");
+  const installPointers = await rl.question(
+    "Install AurorA instructions + the small SessionStart context hook for Claude/Codex? [Y/n]: "
+  );
 
   const hyperframesBefore = detectTools(cwd).find(tool => tool.id === "hyperframe");
   let installHyperframesAnswer = "";
