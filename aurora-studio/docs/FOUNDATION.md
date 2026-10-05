@@ -1,33 +1,25 @@
 # AS-00 / AS-01 Foundation Decisions
 
 ## Build, do not duplicate
-
-AurorA Studio wraps strong existing engines instead of reimplementing them.
+AurorA Studio wraps strong engines instead of reimplementing them.
 
 HyperFrames already provides a large programmable video foundation. AurorA adds:
 - persistent project context
 - reusable style knowledge
-- asset search and reuse rules
+- cross-engine asset memory
 - optional Blender / After Effects routing
 - Direct and Director operating modes
-- cross-tool decision records
-- learning from approved production outcomes
+- decision records
+- learning from approved outcomes
 
 ## Optional means optional
-
 Blender and After Effects improve the ceiling but cannot be required for setup success.
 
 After Effects is proprietary. It is an adapter, not part of the open-source core.
 
-OpenMontage is AGPLv3. Until the project makes an explicit licensing decision, use it as:
-- an optional external adapter
-- a source of architecture ideas
-- a benchmark
-
-Do not copy its AGPL implementation into the core.
+Obsidian is an optional knowledge UI. Markdown/JSON remain the source of truth.
 
 ## Router V1
-
 Do not train a small decision model yet.
 
 Order:
@@ -38,10 +30,17 @@ Order:
 5. deterministic scoring
 6. large Director model fallback
 
-Only after real decision data exists should we benchmark Laya or another small router.
+Only after real decision data exists should we benchmark a small learned router.
+
+## Hooks
+Start with only:
+- preflight
+- post-approval
+- post-update
+
+More hooks require evidence that they prevent failures or remove repeated work.
 
 ## Public installation
-
 Foundation package stays private until:
 - command names are stable
 - schemas are stable enough to migrate
@@ -52,12 +51,11 @@ Target UX:
 `npx <package>@latest setup`
 
 ## Update UX
-
-The later desktop UI should borrow the useful simplicity of Hermes updates:
+Keep updates simple:
 - visible current version
 - clear update available state
 - short fixed/new summary
 - one primary Update button
 - one defer option
-- no forced Adobe/Blender installs
+- no forced Adobe/Blender/Obsidian installs
 - migrations tested before applying
