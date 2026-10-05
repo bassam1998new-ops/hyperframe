@@ -45,12 +45,17 @@ function normalizeConfig(config = {}) {
       : null;
   }
 
+  const local_paths = Array.isArray(config.local_paths)
+    ? [...new Set(config.local_paths.map(value => String(value || "").trim()).filter(Boolean))]
+    : null;
+
   return {
     product: String(config.product || "").trim(),
     purpose: String(config.purpose || "").trim(),
     website: String(config.website || "").trim(),
     mode,
     resources,
+    local_paths,
     agents,
     install_hyperframes: config.install_hyperframes !== false
   };
@@ -101,7 +106,8 @@ export function writeConfiguredWorkspace(configInput, {
       ...RESOURCE_KEYS.reduce((acc, key) => {
         acc[key] = config.resources[key] ?? existing?.resources?.[key] ?? false;
         return acc;
-      }, {})
+      }, {}),
+      local_paths: config.local_paths ?? existing?.resources?.local_paths ?? []
     },
     learning: {
       decision_log: ".aurora/decisions.jsonl",
@@ -130,7 +136,9 @@ export function writeConfiguredWorkspace(configInput, {
   writeProject(project, cwd);
 
   readLibrary(cwd);
-  const discovery = saveDiscovery(cwd);
+  const discovery = saveDiscovery(cwd, {
+    extraRoots: workspace.resources.local_paths
+  });
 
   for (const log of ["decisions.jsonl", "lessons.jsonl", "learning-proposals.jsonl"]) {
     const file = path.join(aurora, log);
