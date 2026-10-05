@@ -7,7 +7,10 @@ import {
   HYPERFRAMES_RANGE,
   ensureToolsPackage,
   hyperframesInstallPlan,
-  installHyperframesCore
+  installHyperframesCore,
+  hyperframesBin,
+  resolveHyperframesBinary,
+  runWorkspaceHyperframes
 } from "../src/tool-install.mjs";
 
 function temp() {
@@ -45,4 +48,33 @@ test("HyperFrames installer supports dry run without network", () => {
 
   assert.equal(result.dry_run, true);
   assert.ok(result.binary.includes("hyperframes"));
+});
+
+
+test("isolated HyperFrames binary is preferred when present", () => {
+  const cwd = temp();
+  const binary = hyperframesBin(cwd);
+  fs.mkdirSync(path.dirname(binary), { recursive: true });
+  fs.writeFileSync(binary, "");
+
+  const resolved = resolveHyperframesBinary(cwd);
+  assert.equal(resolved.available, true);
+  assert.equal(resolved.source, "aurora_workspace");
+  assert.equal(resolved.binary, binary);
+});
+
+test("workspace HyperFrames wrapper can dry-run the isolated binary", () => {
+  const cwd = temp();
+  const binary = hyperframesBin(cwd);
+  fs.mkdirSync(path.dirname(binary), { recursive: true });
+  fs.writeFileSync(binary, "");
+
+  const result = runWorkspaceHyperframes(
+    ["upgrade", "--check", "--json"],
+    { cwd, dryRun: true }
+  );
+
+  assert.equal(result.dry_run, true);
+  assert.equal(result.source, "aurora_workspace");
+  assert.deepEqual(result.args, ["upgrade", "--check", "--json"]);
 });
