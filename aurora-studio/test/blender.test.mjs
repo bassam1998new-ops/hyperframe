@@ -6,6 +6,8 @@ import path from "node:path";
 import {
   buildBlenderArgs,
   createBlenderJob,
+  discoverBlenderInstall,
+  findBlender,
   runBlenderJob
 } from "../src/adapters/blender.mjs";
 
@@ -57,4 +59,51 @@ test("dry run does not require Blender installation", () => {
   const result = runBlenderJob("job.json", { cwd, dryRun: true });
   assert.equal(result.dry_run, true);
   assert.ok(result.args.includes("--python"));
+});
+
+
+test("detects a standard Windows Blender install outside PATH", () => {
+  const root = temp();
+  const programFiles = path.join(root, "Program Files");
+  const install = path.join(
+    programFiles,
+    "Blender Foundation",
+    "Blender 5.2",
+    "blender.exe"
+  );
+  fs.mkdirSync(path.dirname(install), { recursive: true });
+  fs.writeFileSync(install, "");
+
+  const discovered = discoverBlenderInstall({
+    platform: "win32",
+    env: { ProgramFiles: programFiles }
+  });
+
+  assert.equal(discovered, install);
+
+  const resolved = findBlender({
+    platform: "win32",
+    env: { ProgramFiles: programFiles },
+    skipPathLookup: true
+  });
+  assert.equal(resolved, install);
+});
+
+test("configured Blender directory resolves its executable", () => {
+  const root = temp();
+  const installDir = path.join(root, "Blender");
+  const executable = path.join(
+    installDir,
+    process.platform === "win32" ? "blender.exe" : "blender"
+  );
+  fs.mkdirSync(installDir, { recursive: true });
+  fs.writeFileSync(executable, "");
+
+  const resolved = findBlender({
+    platform: process.platform,
+    env: { AURORA_BLENDER_PATH: installDir },
+    skipPathLookup: true
+  });
+
+  assert.equal(resolved, executable);
 });
