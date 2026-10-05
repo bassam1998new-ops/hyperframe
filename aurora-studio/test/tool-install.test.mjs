@@ -10,6 +10,7 @@ import {
   installHyperframesCore,
   hyperframesBin,
   resolveHyperframesBinary,
+  resolveHyperframesCommand,
   runWorkspaceHyperframes
 } from "../src/tool-install.mjs";
 
@@ -109,4 +110,50 @@ test("configured FFmpeg directory is forwarded to HyperFrames child PATH", () =>
 
   assert.ok(captured);
   assert.ok(String(captured.env.PATH).startsWith(path.dirname(ffmpeg)));
+});
+
+
+test("local npm HyperFrames package executes its JS bin through Node", () => {
+  const cwd = temp();
+  const binary = hyperframesBin(cwd);
+  const packageRoot = path.join(
+    cwd,
+    ".aurora",
+    "tools",
+    "node_modules",
+    "hyperframes"
+  );
+  const cli = path.join(packageRoot, "cli.mjs");
+
+  fs.mkdirSync(path.dirname(binary), { recursive: true });
+  fs.mkdirSync(packageRoot, { recursive: true });
+  fs.writeFileSync(binary, "");
+  fs.writeFileSync(
+    path.join(packageRoot, "package.json"),
+    JSON.stringify({
+      name: "hyperframes",
+      version: "0.8.999-test",
+      type: "module",
+      bin: {
+        hyperframes: "./cli.mjs"
+      }
+    })
+  );
+  fs.writeFileSync(
+    cli,
+    'console.log("FAKE-HYPERFRAMES", process.argv.slice(2).join(" "));'
+  );
+
+  const command = resolveHyperframesCommand(cwd);
+  assert.equal(command.executable, process.execPath);
+  assert.equal(command.node_cli, cli);
+
+  const result = runWorkspaceHyperframes(
+    ["doctor", "--json"],
+    { cwd }
+  );
+
+  assert.equal(result.ok, true);
+  assert.match(result.stdout, /FAKE-HYPERFRAMES doctor --json/);
+  assert.equal(result.node_cli, cli);
 });
