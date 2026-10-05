@@ -9,16 +9,13 @@ function findOnPath(command) {
   return result.stdout.split(/\r?\n/).map(x => x.trim()).find(Boolean) || null;
 }
 
-function configuredCandidates() {
-  const configured = process.env.AURORA_AFTER_EFFECTS_PATH;
-  if (!configured || !fs.existsSync(configured)) return {};
+function candidatesInDirectory(dir, platform = process.platform) {
+  if (!dir || !fs.existsSync(dir)) return {};
 
-  const stat = fs.statSync(configured);
-  const dir = stat.isDirectory() ? configured : path.dirname(configured);
-  const afterfxNames = process.platform === "win32"
+  const afterfxNames = platform === "win32"
     ? ["AfterFX.exe", "afterfx.exe"]
     : ["After Effects"];
-  const aerenderNames = process.platform === "win32"
+  const aerenderNames = platform === "win32"
     ? ["aerender.exe"]
     : ["aerender"];
 
@@ -27,20 +24,134 @@ function configuredCandidates() {
     .find(candidate => fs.existsSync(candidate)) || null;
 
   return {
-    afterfx: stat.isFile() && /afterfx/i.test(path.basename(configured))
-      ? configured
-      : firstExisting(afterfxNames),
-    aerender: stat.isFile() && /aerender/i.test(path.basename(configured))
-      ? configured
-      : firstExisting(aerenderNames)
+    afterfx: firstExisting(afterfxNames),
+    aerender: firstExisting(aerenderNames)
   };
 }
 
-export function findAfterEffects() {
-  const configured = configuredCandidates();
+function configuredCandidates(env = process.env, platform = process.platform) {
+  const configured = env.AURORA_AFTER_EFFECTS_PATH;
+  if (!configured || !fs.existsSync(configured)) return {};
+
+  const stat = fs.statSync(configured);
+  if (stat.isDirectory()) return candidatesInDirectory(configured, platform);
+
+  const dir = path.dirname(configured);
+  const siblings = candidatesInDirectory(dir, platform);
+
   return {
-    afterfx: configured.afterfx || findOnPath(process.platform === "win32" ? "afterfx.exe" : "afterfx"),
-    aerender: configured.aerender || findOnPath(process.platform === "win32" ? "aerender.exe" : "aerender")
+    afterfx: /afterfx/i.test(path.basename(configured))
+      ? configured
+      : siblings.afterfx,
+    aerender: /aerender/i.test(path.basename(configured))
+      ? configured
+      : siblings.aerender
+  };
+}
+
+export function discoverAfterEffectsInstall({
+  platform = process.platform,
+  env = process.env,
+  applicationsRoot = "/Applications"
+} = {}) {
+  if (platform === "win32") {
+    const programFiles = env.ProgramFiles || env.PROGRAMFILES;
+    if (!programFiles) return {};
+
+    const adobeRoot = path.join(programFiles, "Adobe");
+    if (!fs.existsSync(adobeRoot)) return {};
+
+    let dirs = [];
+    try {
+      dirs = fs.readdirSync(adobeRoot, { withFileTypes: true })
+        .filter(entry =>
+          entry.isDirectory() &&
+          /^Adobe After Effects/i.test(entry.name)
+        )
+        .map(entry => entry.name)
+        .sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
+    } catch {
+      return {};
+    }
+
+    for (const dirName of dirs) {
+      const support = path.join(adobeRoot, dirName, "Support Files");
+      const found = candidatesInDirectory(support, platform);
+      if (found.afterfx || found.aerender) return found;
+    }
+
+    return {};
+  }
+
+  if (platform === "darwin" && fs.existsSync(applicationsRoot)) {
+    let dirs = [];
+    try {
+      dirs = fs.readdirSync(applicationsRoot, { withFileTypes: true })
+        .filter(entry =>
+          entry.isDirectory() &&
+          /^Adobe After Effects/i.test(entry.name)
+        )
+        .map(entry => entry.name)
+        .sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
+    } catch {
+      return {};
+    }
+
+    for (const dirName of dirs) {
+      const root = path.join(applicationsRoot, dirName);
+      const direct = candidatesInDirectory(root, platform);
+      if (direct.afterfx || direct.aerender) return direct;
+
+      let children = [];
+      try {
+        children = fs.readdirSync(root, { withFileTypes: true });
+      } catch {
+        continue;
+      }
+
+      const app = children.find(entry =>
+        entry.isDirectory() &&
+        /After Effects.*\.app$/i.test(entry.name)
+      );
+      if (!app) continue;
+
+      const executable = path.join(
+        root,
+        app.name,
+        "Contents",
+        "MacOS",
+        "After Effects"
+      );
+
+      return {
+        afterfx: fs.existsSync(executable) ? executable : null,
+        aerender: direct.aerender || null
+      };
+    }
+  }
+
+  return {};
+}
+
+export function findAfterEffects(options = {}) {
+  const platform = options.platform || process.platform;
+  const env = options.env || process.env;
+  const configured = configuredCandidates(env, platform);
+  const onPath = options.skipPathLookup
+    ? {}
+    : {
+        afterfx: findOnPath(platform === "win32" ? "afterfx.exe" : "afterfx"),
+        aerender: findOnPath(platform === "win32" ? "aerender.exe" : "aerender")
+      };
+  const common = discoverAfterEffectsInstall({
+    platform,
+    env,
+    applicationsRoot: options.applicationsRoot
+  });
+
+  return {
+    afterfx: configured.afterfx || onPath.afterfx || common.afterfx || null,
+    aerender: configured.aerender || onPath.aerender || common.aerender || null
   };
 }
 
