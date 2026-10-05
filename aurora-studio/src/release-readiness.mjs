@@ -28,6 +28,16 @@ export function evaluateReleaseReadiness({
 
   if (!release?.public_install_ready) blockers.push("release_public_install_not_enabled");
   if (!release?.package_name) blockers.push("release_package_name_missing");
+
+  const hyperframesVersion = String(release?.hyperframes_version || "").trim();
+  if (release?.public_install_ready && !hyperframesVersion) {
+    blockers.push("hyperframes_version_missing");
+  } else if (
+    hyperframesVersion &&
+    !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(hyperframesVersion)
+  ) {
+    blockers.push("hyperframes_version_must_be_exact");
+  }
   if (release?.package_name && name && release.package_name !== name) {
     blockers.push("release_package_name_mismatch");
   }
@@ -74,7 +84,8 @@ export function evaluateReleaseReadiness({
       package_name: release?.package_name || null,
       version: releaseVersion || null,
       public_install_ready: Boolean(release?.public_install_ready),
-      channel: release?.channel || null
+      channel: release?.channel || null,
+      hyperframes_version: hyperframesVersion || null
     },
     blockers,
     warnings,
