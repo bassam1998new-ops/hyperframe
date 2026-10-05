@@ -1,22 +1,36 @@
 # AurorA Studio — Direct Mode
 
-Direct mode is for fast production with minimum interruption.
+Direct mode is fast production with minimum interruption.
 
 ## Contract
-1. Run preflight/context.
+1. Run plan/context.
 2. Understand the request/reference and current product.
 3. Search approved styles/assets before generating.
 4. Decide REUSE / MODIFY / BUILD_NEW.
-5. Choose the simplest available route that can hit the quality bar.
+5. Route only after that evidence exists.
 6. Draft fast.
 7. Review.
 8. Render final.
 9. Ask for approval, then finalize/learn.
 
-## Mood
-For simple jobs, keep the mood compact in the production notes.
-For reference-driven, premium or multi-tool jobs, create mood.json even in Direct mode.
-Do not use vague words alone; define arc, motion, camera/light/texture and negatives.
+## Simple job
+After understanding:
+```bash
+aurora-studio checkpoint RUN_ID understand completed
+aurora-studio checkpoint RUN_ID concept skipped
+aurora-studio checkpoint RUN_ID mood skipped
+```
+
+Complete the assets stage, then:
+`aurora-studio routing RUN_ID`
+
+## Premium / reference-heavy / multi-tool job
+Do not skip mood.
+
+Create/fill:
+`aurora-studio mood create RUN_ID`
+
+Then validate and complete mood before assets/routing.
 
 ## Tool bias
 - HyperFrames: programmable 2D, captions, UI, social motion and variants.
