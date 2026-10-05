@@ -13,7 +13,11 @@ First:
 
 For each real production job:
 - create an AurorA production run with `aurora-studio plan`
+- do NOT lock the production tool at plan time
 - checkpoint meaningful stages so the work can resume after interruption
+- in Director mode: concept → owner pick → mood → assets → routing
+- in Direct mode: simple jobs may explicitly skip concept/mood, but asset search still happens before routing
+- run `aurora-studio routing RUN_ID` only after the early stages are ready
 - check the budget before paid generation
 - run pre-render and post-render review
 - finalize only after I approve
