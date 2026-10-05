@@ -40,6 +40,9 @@ node ./bin/aurora-studio.mjs mode director
 node ./bin/aurora-studio.mjs workspace
 node ./bin/aurora-studio.mjs route "3d avatar with cinematic lighting"
 node ./bin/aurora-studio.mjs plan "make this reference for my product"
+node ./bin/aurora-studio.mjs mood create <run-id>
+node ./bin/aurora-studio.mjs mood validate <run-id>
+node ./bin/aurora-studio.mjs routing <run-id>
 node ./bin/aurora-studio.mjs status <run-id>
 node ./bin/aurora-studio.mjs review ./final.mp4
 node ./bin/aurora-studio.mjs finalize <run-id> --lesson "short reusable lesson"
@@ -94,7 +97,7 @@ The planned updater should stay simple:
 ## Reliability layer
 
 AurorA keeps the user experience simple, but internally each production can have:
-- a scored production path
+- a scored production path chosen after context/mood/assets
 - resumable checkpoints
 - owner gates where needed
 - paid-action budget checks
