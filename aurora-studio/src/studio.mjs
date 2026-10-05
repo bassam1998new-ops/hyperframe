@@ -219,6 +219,9 @@ export async function runSetup(cwd = process.cwd()) {
   const modeAnswer = await rl.question(`Default mode direct/director [${existing?.default_mode || "direct"}]: `);
 
   console.log("\nOptional browser/account resources. Answer y/n. Availability only.");
+  const browserControl = await rl.question(
+    `Can this agent control/use your browser for creative sites? [${existing?.resources?.browser_control ? "Y/n" : "y/N"}]: `
+  );
   const chatgpt = await rl.question(`ChatGPT in browser available? [${existing?.resources?.chatgpt_browser ? "Y/n" : "y/N"}]: `);
   const flow = await rl.question(`Google Flow available? [${existing?.resources?.google_flow ? "Y/n" : "y/N"}]: `);
   const meta = await rl.question(`Meta AI available? [${existing?.resources?.meta_ai ? "Y/n" : "y/N"}]: `);
@@ -272,6 +275,7 @@ export async function runSetup(cwd = process.cwd()) {
     tools,
     integrations,
     resources: {
+      browser_control: yesOrExisting(browserControl, existing?.resources?.browser_control),
       chatgpt_browser: yesOrExisting(chatgpt, existing?.resources?.chatgpt_browser),
       google_flow: yesOrExisting(flow, existing?.resources?.google_flow),
       meta_ai: yesOrExisting(meta, existing?.resources?.meta_ai),
@@ -385,7 +389,9 @@ export async function runDoctor(cwd = process.cwd()) {
     console.log(`\nWorkspace: configured | mode=${ws.default_mode}`);
     console.log(`System knowledge: ${system.installed ? system.installed_version : "missing"}${system.needs_sync ? " (sync needed)" : ""}`);
     const r = ws.resources || {};
-    console.log(`Resources: ChatGPT=${!!r.chatgpt_browser} Flow=${!!r.google_flow} MetaAI=${!!r.meta_ai} ElevenLabs=${!!r.elevenlabs}`);
+    console.log(
+      `Resources: BrowserControl=${!!r.browser_control} ChatGPT=${!!r.chatgpt_browser} Flow=${!!r.google_flow} MetaAI=${!!r.meta_ai} ElevenLabs=${!!r.elevenlabs}`
+    );
   }
 }
 
