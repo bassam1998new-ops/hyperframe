@@ -52,5 +52,8 @@ jobs:
       - name: Package dry run
         run: npm pack --dry-run
 
+      - name: Installed package smoke
+        run: node ./scripts/package-smoke.mjs
+
       - name: Release readiness status
         run: npm run release:status
