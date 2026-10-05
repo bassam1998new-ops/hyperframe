@@ -3,7 +3,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { loadRun } from "./governance.mjs";
 
-function sha256(file) {
+export function sha256File(file) {
   const hash = crypto.createHash("sha256");
   const fd = fs.openSync(file, "r");
   const buffer = Buffer.allocUnsafe(1024 * 1024);
@@ -23,7 +23,7 @@ function sha256(file) {
 
 function fileHashIfExists(file) {
   if (!fs.existsSync(file) || !fs.statSync(file).isFile()) return null;
-  return sha256(file);
+  return sha256File(file);
 }
 
 function safeRunSuffix(runId) {
@@ -38,7 +38,7 @@ function uniqueTarget(source, finalDir, runId) {
   const direct = path.join(finalDir, base);
   if (!fs.existsSync(direct)) return direct;
 
-  const sourceHash = sha256(source);
+  const sourceHash = sha256File(source);
   if (fileHashIfExists(direct) === sourceHash) return direct;
 
   const ext = path.extname(base);
@@ -89,7 +89,7 @@ export function preserveFinalArtifact({
     run_id: runId,
     approved_at: new Date().toISOString(),
     final_path: path.relative(cwd, target),
-    sha256: sha256(target),
+    sha256: sha256File(target),
     bytes: stat.size,
     copied,
     source_was_inside_workspace:
