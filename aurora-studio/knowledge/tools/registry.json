@@ -66,22 +66,16 @@
         "jobs that HyperFrames or Blender can finish cleanly without it"
       ],
       "license_note": "Proprietary optional tool. Never required for AurorA Studio to work."
-    },
+    }
+  ],
+  "integrations": [
     {
-      "id": "open_montage",
-      "name": "OpenMontage",
+      "id": "obsidian",
+      "name": "Obsidian",
       "required": false,
-      "availability": "configured_at_setup",
-      "detect_commands": ["openmontage"],
-      "env_path": "AURORA_OPENMONTAGE_PATH",
-      "best_for": [
-        "optional external pipeline experiments",
-        "studying reviewer and orchestration patterns"
-      ],
-      "avoid_for": [
-        "copying AGPL code into a permissive AurorA core"
-      ],
-      "license_note": "Keep as an external adapter unless the final AurorA Studio license strategy explicitly accepts AGPL obligations."
+      "role": "knowledge_ui",
+      "detect_commands": ["obsidian"],
+      "notes": "Optional UI over AurorA's plain Markdown/JSON brain. Never the source of truth."
     }
   ]
 }
