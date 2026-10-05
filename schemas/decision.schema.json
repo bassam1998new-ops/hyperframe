@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aurora.studio/schemas/decision.schema.json",
+  "title": "AurorA routing decision",
+  "type": "object",
+  "required": ["task", "candidates", "selected_path", "reason", "confidence"],
+  "properties": {
+    "task": { "type": "string" },
+    "candidates": { "type": "array", "items": { "type": "object" } },
+    "selected_path": { "type": "array", "items": { "type": "string" } },
+    "reason": { "type": "array", "items": { "type": "string" } },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "outcome": { "type": ["object", "null"] }
+  },
+  "additionalProperties": true
+}
