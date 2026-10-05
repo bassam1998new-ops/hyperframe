@@ -27,7 +27,8 @@ import {
   executeBlenderJob,
   showAfterEffectsInfo,
   createAfterEffectsJobRecord,
-  executeAfterEffectsJob
+  executeAfterEffectsJob,
+  showRetrievedContext
 } from "../src/studio.mjs";
 
 const [command = "help", ...args] = process.argv.slice(2);
@@ -67,6 +68,17 @@ switch (command) {
     if (args[0] === "set") await setProjectValue(args[1], args.slice(2).join(" "));
     else await showProject();
     break;
+
+  case "context": {
+    const ref = flag("--reference");
+    const filtered = args.filter((value, index) => {
+      if (value === "--reference") return false;
+      if (index > 0 && args[index - 1] === "--reference") return false;
+      return true;
+    });
+    await showRetrievedContext(filtered.join(" "), ref);
+    break;
+  }
 
   case "reference":
     if (args[0] === "create") await createReferenceRecord(args[1], flag("--source"));
@@ -171,6 +183,7 @@ Setup:
   aurora-studio workspace
 
 Brain:
+  aurora-studio context "TASK" [--reference ID]
   aurora-studio project
   aurora-studio project set FIELD VALUE
   aurora-studio reference create NAME [--source VALUE]
