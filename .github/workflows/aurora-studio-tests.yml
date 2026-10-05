@@ -43,6 +43,9 @@ jobs:
       - name: CLI smoke
         run: node ./bin/aurora-studio.mjs help
 
+      - name: HyperFrames install plan smoke
+        run: node ./bin/aurora-studio.mjs hyperframe install --dry-run
+
       - name: Run tests
         run: npm test
 
