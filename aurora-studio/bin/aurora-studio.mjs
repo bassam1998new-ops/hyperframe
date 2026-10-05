@@ -24,7 +24,10 @@ import {
   importHyperframeRecords,
   showBlenderInfo,
   createBlenderJobRecord,
-  executeBlenderJob
+  executeBlenderJob,
+  showAfterEffectsInfo,
+  createAfterEffectsJobRecord,
+  executeAfterEffectsJob
 } from "../src/studio.mjs";
 
 const [command = "help", ...args] = process.argv.slice(2);
@@ -112,6 +115,14 @@ switch (command) {
     else console.error("blender commands: doctor | create NAME | run JOB [--dry-run]");
     break;
 
+  case "ae":
+  case "after-effects":
+    if (args[0] === "doctor") await showAfterEffectsInfo();
+    else if (args[0] === "create") await createAfterEffectsJobRecord(args[1]);
+    else if (args[0] === "run") await executeAfterEffectsJob(args[1], flagBool("--dry-run"));
+    else console.error("ae commands: doctor | create NAME | run JOB [--dry-run]");
+    break;
+
   case "route":
     await recommendRoute(args.join(" "));
     break;
@@ -175,6 +186,11 @@ Blender:
   aurora-studio blender doctor
   aurora-studio blender create NAME
   aurora-studio blender run JOB [--dry-run]
+
+After Effects (optional):
+  aurora-studio ae doctor
+  aurora-studio ae create NAME
+  aurora-studio ae run JOB [--dry-run]
 
 Production:
   aurora-studio route "TASK"
