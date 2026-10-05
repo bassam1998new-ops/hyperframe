@@ -63,6 +63,7 @@ import {
   showHyperframesCoreInfo,
   executeHyperframesCore,
   checkHyperframesUpgrade,
+  showReleaseReadiness,
   runConfiguredSetupFile,
   recordRunUsage,
   summarizeRunUsage,
@@ -139,6 +140,11 @@ switch (command) {
     if (args[0] === "sync") await syncStudioSystem();
     else if (args[0] === "status") await showStudioSystemStatus();
     else console.error("system commands: sync | status");
+    break;
+
+  case "release":
+    if (args[0] === "status") await showReleaseReadiness();
+    else console.error("release commands: status");
     break;
 
   case "update":
@@ -366,6 +372,7 @@ Setup:
   aurora-studio discover
   aurora-studio system status
   aurora-studio system sync
+  aurora-studio release status
   aurora-studio update check
   aurora-studio update plan
   aurora-studio update backup
