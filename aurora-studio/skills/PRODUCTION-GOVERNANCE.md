@@ -162,9 +162,24 @@ Before render:
 - do not spend final render time on a known-broken plan
 
 After render:
-`aurora-studio review path/to/video.mp4`
+```bash
+aurora-studio review create RUN_ID --video path/to/video.mp4
+```
 
-Then perform the creative Reviewer skill. Technical validity alone is not creative approval.
+Fill the run's `review.json` using the Reviewer skill, then:
+
+```bash
+aurora-studio review validate RUN_ID
+```
+
+Only `decision=PASS` can complete:
+
+```bash
+aurora-studio checkpoint RUN_ID post_render_review completed
+```
+
+Technical validity alone is not creative approval.
+FIX/REBUILD must loop back into production.
 
 ## Finalize
 Only after:
