@@ -6,7 +6,7 @@ import { stdin as input, stdout as output } from "node:process";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 import { chooseRoute } from "./selector.mjs";
-import { createRun, loadRun, checkpoint, evaluateSpend } from "./governance.mjs";
+import { createRun, loadRun, checkpoint, evaluateSpend, finalizeRun } from "./governance.mjs";
 import { probeRender } from "./quality.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -415,4 +415,44 @@ export async function reviewRender(file, cwd = process.cwd()) {
   console.log(JSON.stringify(result, null, 2));
   if (!result.ok) process.exitCode = 2;
   return result;
+}
+
+
+export async function finalizeProduction(runId, lesson = null, cwd = process.cwd()) {
+  try {
+    const result = finalizeRun({ cwd, runId });
+    const globalDecisionLog = path.join(cwd, ".aurora", "decisions.jsonl");
+    const globalLessonLog = path.join(cwd, ".aurora", "lessons.jsonl");
+
+    fs.appendFileSync(globalDecisionLog, JSON.stringify({
+      timestamp: new Date().toISOString(),
+      run_id: runId,
+      task_type: "video_production",
+      route: result.run.plan.route,
+      approved: true,
+      mode: result.run.plan.mode
+    }) + "\n");
+
+    if (lesson && lesson.trim()) {
+      fs.appendFileSync(globalLessonLog, JSON.stringify({
+        timestamp: new Date().toISOString(),
+        run_id: runId,
+        lesson: lesson.trim(),
+        approved: true
+      }) + "\n");
+    }
+
+    console.log(JSON.stringify({
+      run_id: runId,
+      status: "completed",
+      removed_run_temp: result.removed_run_temp,
+      decision_saved: true,
+      lesson_saved: Boolean(lesson && lesson.trim())
+    }, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
 }
