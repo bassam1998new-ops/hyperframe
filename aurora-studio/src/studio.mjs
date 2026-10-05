@@ -50,6 +50,12 @@ import {
 } from "./learning.mjs";
 import { syncSystemKnowledge, systemStatus } from "./system-install.mjs";
 import {
+  installHyperframesCore,
+  resolveHyperframesBinary,
+  runWorkspaceHyperframes,
+  HYPERFRAMES_RANGE
+} from "./tool-install.mjs";
+import {
   checkForUpdate,
   backupWorkspaceState,
   planWorkspaceMigration
@@ -79,7 +85,10 @@ function existsOnPath(command) {
 
 function localBinExists(command, cwd = process.cwd()) {
   const name = process.platform === "win32" ? `${command}.cmd` : command;
-  return fs.existsSync(path.join(cwd, "node_modules", ".bin", name));
+  return (
+    fs.existsSync(path.join(cwd, "node_modules", ".bin", name)) ||
+    fs.existsSync(path.join(cwd, ".aurora", "tools", "node_modules", ".bin", name))
+  );
 }
 
 function packageExists(packageName, cwd = process.cwd()) {
@@ -98,6 +107,19 @@ function envPathExists(name) {
 }
 
 function detectTool(tool, cwd = process.cwd()) {
+  if (tool.id === "hyperframe") {
+    const resolved = resolveHyperframesBinary(cwd);
+    if (resolved.available) {
+      return {
+        id: tool.id,
+        name: tool.name,
+        required: Boolean(tool.required),
+        available: true,
+        detected_by: `${resolved.source}:${resolved.binary}`
+      };
+    }
+  }
+
   const command = (tool.detect_commands || []).find(cmd => existsOnPath(cmd) || localBinExists(cmd, cwd));
   const pkgDetected = tool.npm_package ? packageExists(tool.npm_package, cwd) : false;
   const envDetected = tool.env_path ? envPathExists(tool.env_path) : false;
@@ -178,7 +200,25 @@ export async function runSetup(cwd = process.cwd()) {
   const eleven = await rl.question(`ElevenLabs available? [${existing?.resources?.elevenlabs ? "Y/n" : "y/N"}]: `);
   const installPointers = await rl.question("Install small Claude/Codex AurorA pointers? [Y/n]: ");
 
+  const hyperframesBefore = detectTools(cwd).find(tool => tool.id === "hyperframe");
+  let installHyperframesAnswer = "";
+  if (!hyperframesBefore?.available) {
+    installHyperframesAnswer = await rl.question(
+      `HyperFrames core is missing. Install it inside this workspace (${HYPERFRAMES_RANGE})? [Y/n]: `
+    );
+  }
+
   rl.close();
+
+  let hyperframesInstall = null;
+  if (!hyperframesBefore?.available && !/^(n|no|false|0)$/i.test(installHyperframesAnswer.trim())) {
+    try {
+      console.log("\nInstalling HyperFrames into .aurora/tools ...");
+      hyperframesInstall = installHyperframesCore({ cwd });
+    } catch (error) {
+      console.warn(`HyperFrames install warning: ${error.message}`);
+    }
+  }
 
   const tools = detectTools(cwd);
   const integrations = detectIntegrations(cwd);
@@ -265,6 +305,9 @@ export async function runSetup(cwd = process.cwd()) {
 
   console.log(`\nWorkspace ready: ${dir}`);
   console.log(`System knowledge: ${system.studio_version} synced to .aurora/system`);
+  if (hyperframesInstall?.ok) {
+    console.log("HyperFrames core: installed privately in .aurora/tools");
+  }
   console.log(`Discovery: ${discovery.result.matched_files} useful files across ${Object.keys(discovery.result.by_kind).length} categories.`);
   if (agentSetup?.hooks?.trust_review_required) {
     console.log("Claude/Codex project hooks installed. Review/trust them in your agent before they run.");
@@ -1408,4 +1451,51 @@ export async function validateBuildPlanRecord(runId, cwd = process.cwd()) {
     process.exitCode = 2;
     return null;
   }
+}
+
+
+export async function installHyperframesWorkspace(dryRun = false, cwd = process.cwd()) {
+  try {
+    const result = installHyperframesCore({ cwd, dryRun });
+    console.log(JSON.stringify(result, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function showHyperframesCoreInfo(cwd = process.cwd()) {
+  const resolved = resolveHyperframesBinary(cwd);
+  const tool = detectTools(cwd).find(item => item.id === "hyperframe") || null;
+  const result = {
+    ...resolved,
+    required: true,
+    compatible_range: HYPERFRAMES_RANGE,
+    detected_by: tool?.detected_by || null
+  };
+  console.log(JSON.stringify(result, null, 2));
+  if (!result.available) process.exitCode = 2;
+  return result;
+}
+
+export async function executeHyperframesCore(args = [], options = {}, cwd = process.cwd()) {
+  try {
+    const result = runWorkspaceHyperframes(args, {
+      cwd,
+      dryRun: Boolean(options.dryRun)
+    });
+    console.log(JSON.stringify(result, null, 2));
+    if (result.ok === false) process.exitCode = 2;
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function checkHyperframesUpgrade(cwd = process.cwd()) {
+  return executeHyperframesCore(["upgrade", "--check", "--json"], {}, cwd);
 }
