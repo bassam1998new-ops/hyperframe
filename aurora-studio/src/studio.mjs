@@ -16,6 +16,11 @@ import {
   runBlenderJob
 } from "./adapters/blender.mjs";
 import {
+  afterEffectsInfo,
+  createAfterEffectsJob,
+  runAfterEffectsJob
+} from "./adapters/after-effects.mjs";
+import {
   ensureProjectProfile,
   readProject,
   writeProject,
@@ -692,6 +697,39 @@ export async function createBlenderJobRecord(name, cwd = process.cwd()) {
 export async function executeBlenderJob(jobPath, dryRun = false, cwd = process.cwd()) {
   try {
     const result = runBlenderJob(jobPath, { cwd, dryRun });
+    console.log(JSON.stringify(result, null, 2));
+    if (result.ok === false) process.exitCode = 2;
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+
+export async function showAfterEffectsInfo() {
+  const info = afterEffectsInfo();
+  console.log(JSON.stringify(info, null, 2));
+  if (!info.available) process.exitCode = 2;
+  return info;
+}
+
+export async function createAfterEffectsJobRecord(name, cwd = process.cwd()) {
+  try {
+    const result = createAfterEffectsJob(name, cwd);
+    console.log(JSON.stringify({ id: result.job.id, file: result.file }, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function executeAfterEffectsJob(jobPath, dryRun = false, cwd = process.cwd()) {
+  try {
+    const result = runAfterEffectsJob(jobPath, { cwd, dryRun });
     console.log(JSON.stringify(result, null, 2));
     if (result.ok === false) process.exitCode = 2;
     return result;
