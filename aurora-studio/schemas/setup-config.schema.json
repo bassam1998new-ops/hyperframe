@@ -32,6 +32,9 @@
         },
         "elevenlabs": {
           "type": "boolean"
+        },
+        "browser_control": {
+          "type": "boolean"
         }
       },
       "additionalProperties": false
