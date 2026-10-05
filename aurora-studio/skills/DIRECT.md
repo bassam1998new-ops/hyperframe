@@ -28,6 +28,14 @@ For a pure procedural/typography job, the asset plan may contain no needs; write
 Then:
 `aurora-studio routing RUN_ID`
 
+## Build plan
+After routing, fill the generated `build-plan.json`.
+
+For a simple job this may be one HyperFrames build unit.
+For mixed jobs, assign each unit to the engine that owns it and make handoffs explicit.
+
+Validate and complete `build_plan` before execution.
+
 ## Premium / reference-heavy / multi-tool job
 Do not skip mood.
 
