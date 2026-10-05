@@ -12,8 +12,15 @@ export function reviewFrameTimes(durationSeconds, count = 5) {
     throw new Error("Review frame sampling needs a positive video duration.");
   }
 
+  const startFraction = 0.05;
+  const endFraction = 0.95;
+
   return Array.from({ length: n }, (_, index) => {
-    const fraction = (index + 1) / (n + 1);
+    const fraction =
+      n === 1
+        ? 0.5
+        : startFraction +
+          ((endFraction - startFraction) * index) / (n - 1);
     return Number((duration * fraction).toFixed(3));
   });
 }
