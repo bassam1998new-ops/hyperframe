@@ -1,42 +1,66 @@
 # AurorA Studio — Director Mode
 
-Director mode gives the owner more control before expensive work begins.
+Director mode gives the owner control over the idea before expensive production begins.
 
 ## Flow
-REFERENCE
-→ DECONSTRUCT
-→ PROJECT CONTEXT
-→ MOOD
-→ CONCEPTS
-→ OWNER PICK
-→ REQUIREMENTS
-→ LIBRARY SEARCH
-→ REUSE / MODIFY / BUILD
-→ TOOL ROUTING
-→ SHOT PLAN
-→ DRAFT
-→ REVIEW
-→ FINAL
-→ LEARN
+1. PREFLIGHT
+2. CONTEXT
+3. REFERENCE DECONSTRUCTION
+4. CONCEPTS
+5. OWNER PICK
+6. MOOD CONTRACT
+7. ASSET / STYLE SEARCH
+8. REUSE / MODIFY / BUILD
+9. TOOL ROUTING
+10. SHOT / BUILD PLAN
+11. DRAFT
+12. REVIEW
+13. FINAL
+14. APPROVAL + LEARN
 
-## Rules
-- Mood is tool-agnostic. Describe the desired result, not the software.
-- Read the workspace product/service context before adapting a reference.
-- Do not blindly copy the reference. Rebuild its visual grammar for the current product.
-- Search existing local assets/styles first.
-- Give a small number of clearly different concepts, not cosmetic variations.
-- Do not spend on high-quality generation before the direction is selected.
-- Use unavailable tools as zero-weight candidates, not blockers.
-- Explain major routing choices in simple language.
+## Start
+- run `aurora-studio context "<task>" [--reference ID]`
+- read project.json and discovery.json
+- if a reference exists, complete its structured analysis
+- do not ask the owner for facts already available in the workspace/site
 
-## Concept review
-For each concept provide:
-- idea
+## Concepts
+Give 2–3 genuinely different ideas, not color/layout variants.
+For each:
+- core idea
 - why it fits this product
-- visual/motion approach
-- likely tool path
-- any paid/optional resources
-- major risk
+- emotional arc
+- visual/motion grammar
+- likely complexity/cost
+- biggest risk
+
+Do not lock the software yet unless a hard requirement makes a tool mandatory.
+
+## After owner picks
+Create/fill the run mood.json using the Mood V2 skill.
+The mood must be specific enough that another good editor could reproduce the same direction.
+
+## Assets
+Search in this order:
+1. project
+2. approved AurorA library/styles
+3. curated open-asset sources
+4. procedural build
+5. configured browser generation
+6. build new from scratch
+
+Return REUSE / MODIFY / BUILD_NEW.
+
+## Routing
+Route only after mood + requirements + asset search.
+Unavailable optional tools get zero weight.
+Prefer the simplest path that can honestly hit the requested quality.
+
+## Draft
+Do not spend hero-quality render/generation cost before the direction works as a draft.
 
 ## Final review
-Check reference fit, story clarity, typography, captions, Arabic shaping when relevant, crop/safe zones, audio, visual repetition, broken frames, missing assets/fonts, brand rules and license status.
+Check project/reference fit, story clarity, hierarchy, captions/Arabic, crop/safe zones, audio, repetition, AI-slop, broken frames, missing assets/fonts, brand rules and license status.
+
+## Explain to owner
+Keep explanations simple. Show creative choices and major trade-offs, not internal orchestration noise.
