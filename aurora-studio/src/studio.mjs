@@ -67,6 +67,10 @@ import {
   planWorkspaceMigration
 } from "./update.mjs";
 import {
+  readSetupConfig,
+  writeConfiguredWorkspace
+} from "./configured-setup.mjs";
+import {
   ensureProjectProfile,
   readProject,
   writeProject,
@@ -1555,6 +1559,23 @@ export async function checkRunPaidUsage(input, cwd = process.cwd()) {
     const result = checkPaidAction(input, cwd);
     console.log(JSON.stringify(result, null, 2));
     if (result.allowed === false) process.exitCode = 2;
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+
+export async function runConfiguredSetupFile(file, cwd = process.cwd()) {
+  try {
+    const loaded = readSetupConfig(file, cwd);
+    const result = writeConfiguredWorkspace(loaded.config, { cwd });
+    console.log(JSON.stringify({
+      config_file: loaded.file,
+      ...result
+    }, null, 2));
     return result;
   } catch (error) {
     console.error(error.message);
