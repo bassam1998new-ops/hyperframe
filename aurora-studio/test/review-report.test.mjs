@@ -81,3 +81,24 @@ test("completed review requires license and watermark checks", () => {
   assert.ok(validation.errors.some(error => error.includes("licenses_ok")));
   assert.ok(validation.errors.some(error => error.includes("watermark_free")));
 });
+
+
+test("PASS rejects a false required creative check", () => {
+  const report = passingReport();
+  report.creative.project_fit = false;
+
+  const validation = validateReviewReport(report);
+  assert.equal(validation.ok, false);
+  assert.equal(validation.can_complete_post_review, false);
+  assert.ok(validation.errors.some(error => error.includes("project_fit")));
+});
+
+test("PASS rejects unresolved issues", () => {
+  const report = passingReport();
+  report.issues = ["Minor caption timing issue"];
+
+  const validation = validateReviewReport(report);
+  assert.equal(validation.ok, false);
+  assert.equal(validation.can_complete_post_review, false);
+  assert.ok(validation.errors.some(error => error.includes("unresolved issues")));
+});
