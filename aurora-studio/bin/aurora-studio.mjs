@@ -63,6 +63,7 @@ import {
   showHyperframesCoreInfo,
   executeHyperframesCore,
   checkHyperframesUpgrade,
+  runConfiguredSetupFile,
   recordRunUsage,
   summarizeRunUsage,
   checkRunPaidUsage
@@ -86,7 +87,8 @@ function csv(value) {
 switch (command) {
   case "setup":
   case "init":
-    await runSetup();
+    if (flag("--config")) await runConfiguredSetupFile(flag("--config"));
+    else await runSetup();
     break;
   case "doctor":
     await runDoctor();
@@ -351,6 +353,7 @@ AurorA Studio
 
 Setup:
   aurora-studio setup
+  aurora-studio setup --config aurora-setup.json
   aurora-studio doctor
   aurora-studio validate
   aurora-studio tools
