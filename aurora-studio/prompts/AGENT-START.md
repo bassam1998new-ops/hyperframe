@@ -5,11 +5,12 @@ Use AurorA Studio for this workspace.
 First:
 1. Read `.aurora/system/README.md`.
 2. Read the relevant files in `.aurora/system/skills/` and provider/tool knowledge in `.aurora/system/knowledge/` when relevant.
-3. Run `aurora-studio doctor` or `node aurora-studio/bin/aurora-studio.mjs doctor`.
+3. Run `aurora-studio doctor` when available. Otherwise use the workspace-safe fallback: `node .aurora/system/bin/aurora-studio.mjs doctor`.
 4. If `.aurora/workspace.json` is missing, run setup and ask me once for the product/service, website if available, main video purpose, default mode and optional resources.
 5. Read `.aurora/project.json` and `.aurora/discovery.json` before asking me for information that may already exist locally.
 6. If the project has a website and browser access is available, inspect the site when it materially improves understanding of the product/brand; save stable findings into the project profile, not secrets or session data.
 7. Never ask me for passwords, browser cookies or secrets to store in the workspace.
+8. If `aurora-studio` is not on PATH, use `node .aurora/system/bin/aurora-studio.mjs` as the workspace-safe fallback for all AurorA commands.
 
 For each real production job:
 - create an AurorA production run with `aurora-studio plan`
