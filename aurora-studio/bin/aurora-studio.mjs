@@ -39,7 +39,9 @@ import {
   showAssetSources,
   checkAssetLicense,
   createMoodRecord,
-  showMoodRecord
+  showMoodRecord,
+  validateMoodRecord,
+  routeProductionRun
 } from "../src/studio.mjs";
 
 const [command = "help", ...args] = process.argv.slice(2);
@@ -111,7 +113,8 @@ switch (command) {
   case "mood":
     if (args[0] === "create") await createMoodRecord(args[1]);
     else if (args[0] === "show") await showMoodRecord(args[1]);
-    else console.error("mood commands: create RUN_ID | show RUN_ID");
+    else if (args[0] === "validate") await validateMoodRecord(args[1]);
+    else console.error("mood commands: create RUN_ID | show RUN_ID | validate RUN_ID");
     break;
 
   case "reference":
@@ -191,6 +194,9 @@ switch (command) {
     await planProduction(filtered.join(" "), { referenceId: ref });
     break;
   }
+  case "routing":
+    await routeProductionRun(args[0]);
+    break;
   case "status":
     await showRunStatus(args[0]);
     break;
@@ -235,6 +241,7 @@ Brain:
   aurora-studio context "TASK" [--reference ID]
   aurora-studio mood create RUN_ID
   aurora-studio mood show RUN_ID
+  aurora-studio mood validate RUN_ID
   aurora-studio project
   aurora-studio project set FIELD VALUE
   aurora-studio reference create NAME [--source VALUE]
@@ -264,6 +271,7 @@ After Effects (optional):
 Production:
   aurora-studio route "TASK"
   aurora-studio plan "TASK" [--reference ID]
+  aurora-studio routing RUN_ID
   aurora-studio status RUN_ID
   aurora-studio checkpoint RUN_ID STAGE STATUS [--artifact PATH] [--note TEXT] [--approved]
   aurora-studio budget ESTIMATED_USD [SPENT_USD]
