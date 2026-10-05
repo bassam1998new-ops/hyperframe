@@ -39,6 +39,10 @@ node ./bin/aurora-studio.mjs mode direct
 node ./bin/aurora-studio.mjs mode director
 node ./bin/aurora-studio.mjs workspace
 node ./bin/aurora-studio.mjs route "3d avatar with cinematic lighting"
+node ./bin/aurora-studio.mjs plan "make this reference for my product"
+node ./bin/aurora-studio.mjs status <run-id>
+node ./bin/aurora-studio.mjs review ./final.mp4
+node ./bin/aurora-studio.mjs finalize <run-id> --lesson "short reusable lesson"
 ```
 
 The package remains private during foundation work. Before public release we will choose the final npm name/scope and enable the one-line install.
@@ -85,3 +89,17 @@ The planned updater should stay simple:
 - Update now
 - Maybe later
 - safe migration/rollback information when needed
+
+
+## Reliability layer
+
+AurorA keeps the user experience simple, but internally each production can have:
+- a scored production path
+- resumable checkpoints
+- owner gates where needed
+- paid-action budget checks
+- pre-render review
+- post-render technical + creative review
+- approved-only final learning
+
+These are internal guardrails, not extra modes the user has to learn.
