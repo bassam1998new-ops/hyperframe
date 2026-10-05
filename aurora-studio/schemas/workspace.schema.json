@@ -3,19 +3,47 @@
   "$id": "https://aurora-studio.dev/schemas/workspace.schema.json",
   "title": "AurorA Studio Workspace",
   "type": "object",
-  "required": ["schema_version", "studio", "default_mode", "project", "tools", "resources", "learning"],
+  "required": [
+    "schema_version",
+    "studio",
+    "default_mode",
+    "project",
+    "tools",
+    "resources",
+    "learning"
+  ],
   "properties": {
-    "schema_version": { "const": 1 },
-    "studio": { "const": "AurorA Studio" },
-    "created_at": { "type": "string" },
-    "updated_at": { "type": "string" },
-    "default_mode": { "enum": ["direct", "director"] },
+    "schema_version": {
+      "const": 1
+    },
+    "studio": {
+      "const": "AurorA Studio"
+    },
+    "created_at": {
+      "type": "string"
+    },
+    "updated_at": {
+      "type": "string"
+    },
+    "default_mode": {
+      "enum": [
+        "direct",
+        "director"
+      ]
+    },
     "project": {
       "type": "object",
-      "required": ["product", "purpose"],
+      "required": [
+        "product",
+        "purpose"
+      ],
       "properties": {
-        "product": { "type": "string" },
-        "purpose": { "type": "string" }
+        "product": {
+          "type": "string"
+        },
+        "purpose": {
+          "type": "string"
+        }
       },
       "additionalProperties": true
     },
@@ -23,13 +51,31 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "name", "required", "available"],
+        "required": [
+          "id",
+          "name",
+          "required",
+          "available"
+        ],
         "properties": {
-          "id": { "type": "string" },
-          "name": { "type": "string" },
-          "required": { "type": "boolean" },
-          "available": { "type": "boolean" },
-          "detected_by": { "type": ["string", "null"] }
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "available": {
+            "type": "boolean"
+          },
+          "detected_by": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         }
       }
     },
@@ -37,33 +83,74 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "name", "required", "available"],
+        "required": [
+          "id",
+          "name",
+          "required",
+          "available"
+        ],
         "properties": {
-          "id": { "type": "string" },
-          "name": { "type": "string" },
-          "required": { "type": "boolean" },
-          "available": { "type": "boolean" },
-          "detected_by": { "type": ["string", "null"] }
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "available": {
+            "type": "boolean"
+          },
+          "detected_by": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         }
       }
     },
     "resources": {
       "type": "object",
       "properties": {
-        "chatgpt_browser": { "type": "boolean" },
-        "google_flow": { "type": "boolean" },
-        "meta_ai": { "type": "boolean" },
-        "elevenlabs": { "type": "boolean" }
+        "chatgpt_browser": {
+          "type": "boolean"
+        },
+        "google_flow": {
+          "type": "boolean"
+        },
+        "meta_ai": {
+          "type": "boolean"
+        },
+        "elevenlabs": {
+          "type": "boolean"
+        },
+        "local_paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
       },
       "additionalProperties": true
     },
     "learning": {
       "type": "object",
-      "required": ["approved_only"],
+      "required": [
+        "approved_only"
+      ],
       "properties": {
-        "decision_log": { "type": "string" },
-        "lesson_log": { "type": "string" },
-        "approved_only": { "type": "boolean" }
+        "decision_log": {
+          "type": "string"
+        },
+        "lesson_log": {
+          "type": "string"
+        },
+        "approved_only": {
+          "type": "boolean"
+        }
       }
     }
   },
