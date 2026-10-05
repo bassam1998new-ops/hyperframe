@@ -2,7 +2,7 @@
   "name": "aurora-studio-local",
   "version": "0.2.0",
   "private": true,
-  "description": "AurorA Studio foundation CLI and agent knowledge layer",
+  "description": "Agent-first video studio brain for HyperFrames, Blender and optional After Effects",
   "type": "module",
   "bin": {
     "aurora-studio": "./bin/aurora-studio.mjs"
@@ -18,5 +18,36 @@
   },
   "engines": {
     "node": ">=22"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bassam1998new-ops/hyperframe.git",
+    "directory": "aurora-studio"
+  },
+  "keywords": [
+    "video",
+    "ai",
+    "agents",
+    "hyperframes",
+    "blender",
+    "motion-graphics",
+    "creative-tools"
+  ],
+  "files": [
+    "bin",
+    "src",
+    "skills",
+    "knowledge",
+    "schemas",
+    "hooks",
+    "prompts",
+    "blender",
+    "README.md",
+    "release.json",
+    "studio.manifest.json"
+  ],
+  "publishConfig": {
+    "access": "public"
   }
 }
