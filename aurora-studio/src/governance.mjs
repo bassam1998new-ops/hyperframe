@@ -4,7 +4,9 @@ import path from "node:path";
 const STAGES = [
   "understand",
   "concept",
+  "mood",
   "assets",
+  "routing",
   "build",
   "pre_render_review",
   "render",
@@ -68,9 +70,13 @@ function criteriaFor(stage) {
     case "understand":
       return ["project context read", "reference/brief requirements captured"];
     case "concept":
-      return ["creative direction fits project", "tool-agnostic mood defined"];
+      return ["creative direction fits project", "selected concept is clear enough to execute"];
+    case "mood":
+      return ["tool-agnostic creative contract exists or is intentionally skipped"];
     case "assets":
       return ["library searched before generation", "licenses/source recorded for imported assets"];
+    case "routing":
+      return ["production route selected after context/mood/asset evidence", "unavailable tools excluded"];
     case "build":
       return ["selected route used", "reproducible source kept"];
     case "pre_render_review":
@@ -224,5 +230,38 @@ export function finalizeRun({ cwd = process.cwd(), runId }) {
     run,
     state,
     removed_run_temp: removedTemp
+  };
+}
+
+
+export function setRunRoute({ cwd = process.cwd(), runId, routeDecision }) {
+  if (!routeDecision?.selected?.route?.length) {
+    throw new Error("Cannot set run route without a selected production path.");
+  }
+
+  const run = loadRun(cwd, runId);
+
+  const routingState = checkpoint({
+    cwd,
+    runId,
+    stage: "routing",
+    status: "completed",
+    note: `Selected route: ${routeDecision.selected.route.join(" -> ")}`
+  });
+
+  run.plan.route = routeDecision.selected.route;
+  run.plan.route_score = routeDecision.selected.score ?? null;
+  run.plan.route_confidence = routeDecision.confidence ?? 0;
+  run.plan.alternatives = (routeDecision.candidates || []).slice(1, 4).map(candidate => ({
+    route: candidate.route,
+    score: candidate.score
+  }));
+  run.plan.routed_at = new Date().toISOString();
+
+  fs.writeFileSync(path.join(run.dir, "plan.json"), JSON.stringify(run.plan, null, 2) + "\n");
+
+  return {
+    plan: run.plan,
+    state: routingState
   };
 }
