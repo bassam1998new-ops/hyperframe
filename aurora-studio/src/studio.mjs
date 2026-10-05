@@ -71,6 +71,7 @@ import {
   checkPaidAction
 } from "./usage.mjs";
 import { runtimeStatus } from "./runtime.mjs";
+import { ensureWorkspacePrivacyFiles } from "./workspace-privacy.mjs";
 import {
   installHyperframesCore,
   resolveHyperframesBinary,
@@ -338,6 +339,7 @@ export async function runSetup(cwd = process.cwd()) {
     extraRoots: workspace.resources.local_paths
   });
   fs.mkdirSync(path.join(dir, "references"), { recursive: true });
+  ensureWorkspacePrivacyFiles(cwd);
 
   try {
     importHyperframeLibrary({ cwd });
