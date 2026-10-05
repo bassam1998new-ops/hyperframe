@@ -349,7 +349,7 @@ switch (command) {
     await reviewRender(args[0]);
     break;
   case "finalize":
-    await finalizeProduction(args[0], flag("--lesson"));
+    await finalizeProduction(args[0], flag("--video"), flag("--lesson"));
     break;
 
   case "help":
@@ -437,7 +437,7 @@ Production:
   aurora-studio usage summary RUN_ID
   aurora-studio budget ESTIMATED_USD [SPENT_USD]
   aurora-studio review VIDEO_PATH
-  aurora-studio finalize RUN_ID [--lesson TEXT]
+  aurora-studio finalize RUN_ID --video APPROVED_VIDEO [--lesson TEXT]
 
 UI comes later. .aurora/ is the workspace source of truth.
 `);
