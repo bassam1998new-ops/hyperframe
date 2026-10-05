@@ -1,6 +1,8 @@
 # AurorA Studio — Browser Asset Generation
 
-Use this skill when the workspace has browser-based AI resources such as Google Flow, ChatGPT, Meta AI or another configured site.
+Use this skill when the workspace has both:
+- a configured browser-based AI resource such as Google Flow, ChatGPT or Meta AI
+- `browser_control=true`, meaning the active agent can actually control/use the browser
 
 ## When to use
 Use browser generation only when:
@@ -12,6 +14,7 @@ Use browser generation only when:
 1. Read the reference analysis and project context.
 2. Search local and shared assets first.
 3. Run `aurora-studio resources` (or `aurora-studio resources "video generation"`) and use only resources marked available.
+   - An account can exist but still be unavailable if this agent has no browser-control capability.
 4. Open the provider and inspect its current model, supported features, resolution and current credit/cost information.
 5. Do not assume old prices or credit costs are still correct.
 
