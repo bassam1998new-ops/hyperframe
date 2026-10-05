@@ -32,7 +32,7 @@ function sanitize(value) {
 }
 
 export function makeRunId(taskText = "video", now = new Date()) {
-  const stamp = now.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+  const stamp = now.toISOString().replace(/[-:.]/g, "");
   return `${stamp}-${sanitize(taskText)}`;
 }
 
@@ -58,7 +58,7 @@ export function buildPlan({ task, mode, routeDecision, budget }) {
       route: c.route,
       score: c.score
     })),
-    budget: budget || { mode: "observe", cap_usd: null, approval_threshold_usd: 0.50 },
+    budget: budget || { mode: "observe", cap_usd: null, approval_threshold_usd: 1.00 },
     stages
   };
 }
@@ -137,6 +137,18 @@ export function checkpoint({ cwd = process.cwd(), runId, stage, status, artifact
   const run = loadRun(cwd, runId);
   const stagePlan = run.plan.stages.find(s => s.id === stage);
 
+  if (status === "completed") {
+    const stageIndex = run.plan.stages.findIndex(s => s.id === stage);
+    const prior = run.plan.stages.slice(0, stageIndex);
+    const incomplete = prior.filter(s => {
+      const priorStatus = run.state.checkpoints?.[s.id]?.status;
+      return priorStatus !== "completed" && priorStatus !== "skipped";
+    });
+    if (incomplete.length) {
+      throw new Error(`Cannot complete ${stage}; earlier stages not complete: ${incomplete.map(s => s.id).join(", ")}`);
+    }
+  }
+
   if (status === "completed" && stagePlan?.human_approval_required && !humanApproved) {
     throw new Error(`Approval required before completing stage: ${stage}`);
   }
@@ -164,7 +176,7 @@ export function checkpoint({ cwd = process.cwd(), runId, stage, status, artifact
 export function evaluateSpend(policy, { estimated_usd = 0, spent_usd = 0 } = {}) {
   const mode = policy?.mode || "observe";
   const cap = policy?.cap_usd;
-  const threshold = policy?.approval_threshold_usd ?? 0.50;
+  const threshold = policy?.approval_threshold_usd ?? 1.00;
   const projected = Number((spent_usd + estimated_usd).toFixed(4));
 
   if (mode === "cap" && cap != null && projected > cap) {
