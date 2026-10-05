@@ -11,7 +11,8 @@
     "setup": "node ./bin/aurora-studio.mjs setup",
     "doctor": "node ./bin/aurora-studio.mjs doctor",
     "tools": "node ./bin/aurora-studio.mjs tools",
-    "route": "node ./bin/aurora-studio.mjs route"
+    "route": "node ./bin/aurora-studio.mjs route",
+    "test": "node --test ./test/*.test.mjs"
   },
   "engines": {
     "node": ">=22"
