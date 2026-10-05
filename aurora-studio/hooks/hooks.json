@@ -3,14 +3,19 @@
   "hooks": {
     "preflight": {
       "enabled": true,
+      "implemented": true,
       "purpose": "Validate workspace and refresh available tools before routing/build work."
     },
     "post_approval": {
       "enabled": true,
+      "implemented": false,
+      "blocked_by": "finalize_command",
       "purpose": "Run safe cleanup checklist and capture compact approved decisions/lessons."
     },
     "post_update": {
       "enabled": true,
+      "implemented": false,
+      "blocked_by": "updater",
       "purpose": "Validate schemas, knowledge files and compatibility after Studio updates."
     }
   }
