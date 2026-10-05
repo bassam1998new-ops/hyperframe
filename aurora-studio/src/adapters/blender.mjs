@@ -2,17 +2,84 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 
-function findOnPath(command) {
-  const finder = process.platform === "win32" ? "where" : "which";
+function findOnPath(command, platform = process.platform) {
+  const finder = platform === "win32" ? "where" : "which";
   const result = spawnSync(finder, [command], { encoding: "utf8" });
   if (result.status !== 0) return null;
   return result.stdout.split(/\r?\n/).map(x => x.trim()).find(Boolean) || null;
 }
 
-export function findBlender() {
-  const configured = process.env.AURORA_BLENDER_PATH;
-  if (configured && fs.existsSync(configured)) return configured;
-  return findOnPath("blender");
+function executableFromConfigured(value, platform = process.platform) {
+  if (!value || !fs.existsSync(value)) return null;
+
+  const stat = fs.statSync(value);
+  if (stat.isFile()) return value;
+
+  const name = platform === "win32" ? "blender.exe" : "blender";
+  const candidate = path.join(value, name);
+  return fs.existsSync(candidate) ? candidate : null;
+}
+
+export function discoverBlenderInstall({
+  platform = process.platform,
+  env = process.env,
+  applicationsRoot = "/Applications"
+} = {}) {
+  if (platform === "win32") {
+    const programFiles = env.ProgramFiles || env.PROGRAMFILES;
+    if (!programFiles) return null;
+
+    const root = path.join(programFiles, "Blender Foundation");
+    if (!fs.existsSync(root)) return null;
+
+    const direct = path.join(root, "Blender", "blender.exe");
+    if (fs.existsSync(direct)) return direct;
+
+    let dirs = [];
+    try {
+      dirs = fs.readdirSync(root, { withFileTypes: true })
+        .filter(entry => entry.isDirectory() && /^Blender/i.test(entry.name))
+        .map(entry => entry.name)
+        .sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
+    } catch {
+      return null;
+    }
+
+    for (const dir of dirs) {
+      const candidate = path.join(root, dir, "blender.exe");
+      if (fs.existsSync(candidate)) return candidate;
+    }
+
+    return null;
+  }
+
+  if (platform === "darwin") {
+    const candidate = path.join(
+      applicationsRoot,
+      "Blender.app",
+      "Contents",
+      "MacOS",
+      "Blender"
+    );
+    return fs.existsSync(candidate) ? candidate : null;
+  }
+
+  for (const candidate of ["/usr/bin/blender", "/usr/local/bin/blender", "/snap/bin/blender"]) {
+    if (fs.existsSync(candidate)) return candidate;
+  }
+  return null;
+}
+
+export function findBlender(options = {}) {
+  const platform = options.platform || process.platform;
+  const env = options.env || process.env;
+  const configured = executableFromConfigured(env.AURORA_BLENDER_PATH, platform);
+  if (configured) return configured;
+
+  const onPath = options.skipPathLookup ? null : findOnPath("blender", platform);
+  if (onPath) return onPath;
+
+  return discoverBlenderInstall({ platform, env, applicationsRoot: options.applicationsRoot });
 }
 
 export function blenderInfo() {
