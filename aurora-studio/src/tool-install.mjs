@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 
-export const HYPERFRAMES_RANGE = "^0.8.0";
+export const HYPERFRAMES_RANGE = "0.8";
 
 function findOnPath(command) {
   const finder = process.platform === "win32" ? "where" : "which";
@@ -66,20 +66,41 @@ export function ensureToolsPackage(cwd = process.cwd()) {
   return { prefix, package_file: file };
 }
 
+function cmdQuote(value) {
+  return '"' + String(value).replace(/"/g, '""') + '"';
+}
+
 export function hyperframesInstallPlan(cwd = process.cwd()) {
   const npm = findOnPath(process.platform === "win32" ? "npm.cmd" : "npm") || findOnPath("npm");
   const tools = ensureToolsPackage(cwd);
+  const npmArgs = [
+    "install",
+    "--prefix", tools.prefix,
+    "--save-exact",
+    "--no-audit",
+    "--no-fund",
+    `hyperframes@${HYPERFRAMES_RANGE}`
+  ];
+
+  let executable = npm || (process.platform === "win32" ? "npm.cmd" : "npm");
+  let args = npmArgs;
+
+  if (process.platform === "win32") {
+    const comspec = process.env.ComSpec || process.env.COMSPEC || "cmd.exe";
+    const command = [
+      cmdQuote(executable),
+      ...npmArgs.map(cmdQuote)
+    ].join(" ");
+
+    executable = comspec;
+    args = ["/d", "/s", "/c", command];
+  }
 
   return {
-    executable: npm || (process.platform === "win32" ? "npm.cmd" : "npm"),
-    args: [
-      "install",
-      "--prefix", tools.prefix,
-      "--save-exact",
-      "--no-audit",
-      "--no-fund",
-      `hyperframes@${HYPERFRAMES_RANGE}`
-    ],
+    executable,
+    args,
+    npm_executable: npm || null,
+    npm_args: npmArgs,
     prefix: tools.prefix,
     package_file: tools.package_file,
     binary: hyperframesBin(cwd)
@@ -145,8 +166,18 @@ export function runWorkspaceHyperframes(args = [], {
     };
   }
 
+  const env = { ...process.env };
+  const configuredFfmpeg = process.env.AURORA_FFMPEG_PATH;
+  if (configuredFfmpeg && fs.existsSync(configuredFfmpeg)) {
+    env.PATH = [
+      path.dirname(configuredFfmpeg),
+      env.PATH || env.Path || ""
+    ].filter(Boolean).join(path.delimiter);
+  }
+
   const result = spawnImpl(resolved.binary, args, {
     cwd,
+    env,
     encoding: "utf8",
     maxBuffer: 64 * 1024 * 1024
   });
