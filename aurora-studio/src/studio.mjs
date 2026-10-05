@@ -28,6 +28,7 @@ import { obsidianInfo, searchObsidian } from "./integrations/obsidian.mjs";
 import { installAgentInstructions, removeAgentInstructions } from "./agent-install.mjs";
 import { installAgentHooks, removeAgentHooks } from "./hook-install.mjs";
 import { saveDiscovery } from "./discovery.mjs";
+import { createMood, readMood } from "./mood.mjs";
 import {
   ensureProjectProfile,
   readProject,
@@ -419,6 +420,11 @@ export async function planProduction(taskText = "", options = {}, cwd = process.
     budget
   });
 
+  let moodRecord = null;
+  if (ws.default_mode === "director") {
+    moodRecord = createMood(run.id, cwd);
+  }
+
   const contextPacket = retrieveContext({
     query: taskText,
     referenceId: referenceRecord?.reference?.id || null,
@@ -453,6 +459,7 @@ export async function planProduction(taskText = "", options = {}, cwd = process.
     first_stage: "understand",
     plan: path.join(run.dir, "plan.json"),
     context: path.join(run.dir, "context.json"),
+    mood: moodRecord?.file || null,
     reference: referenceRecord?.reference?.id || null,
     library_matches: libraryMatches.slice(0, 3).map(x => ({ id: x.id, name: x.name, score: x.search_score }))
   }, null, 2));
@@ -901,4 +908,29 @@ export async function checkAssetLicense(assetId, forBundling = false, cwd = proc
   console.log(JSON.stringify({ asset_id: assetId, for_bundling: forBundling, ...result }, null, 2));
   if (!result.allowed) process.exitCode = 2;
   return result;
+}
+
+
+export async function createMoodRecord(runId, cwd = process.cwd()) {
+  try {
+    const result = createMood(runId, cwd);
+    console.log(JSON.stringify({ file: result.file, created: result.created, mood: result.mood }, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function showMoodRecord(runId, cwd = process.cwd()) {
+  try {
+    const result = readMood(runId, cwd);
+    console.log(JSON.stringify(result.mood, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
 }
