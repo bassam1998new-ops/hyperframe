@@ -51,3 +51,6 @@ jobs:
 
       - name: Package dry run
         run: npm pack --dry-run
+
+      - name: Release readiness status
+        run: npm run release:status
