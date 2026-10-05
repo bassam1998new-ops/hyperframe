@@ -25,6 +25,7 @@ import { listProviders, providersFor } from "./providers.mjs";
 import { validateKnowledge } from "./validate.mjs";
 import { obsidianInfo, searchObsidian } from "./integrations/obsidian.mjs";
 import { installAgentInstructions, removeAgentInstructions } from "./agent-install.mjs";
+import { saveDiscovery } from "./discovery.mjs";
 import {
   ensureProjectProfile,
   readProject,
@@ -133,6 +134,7 @@ export async function runSetup(cwd = process.cwd()) {
 
   const product = await rl.question(`Product/service [${existing?.project?.product || ""}]: `);
   const purpose = await rl.question(`What do you mainly make videos for? [${existing?.project?.purpose || ""}]: `);
+  const website = await rl.question(`Website/product URL (optional) [${existing?.project?.website || ""}]: `);
   const modeAnswer = await rl.question(`Default mode direct/director [${existing?.default_mode || "direct"}]: `);
 
   console.log("\nOptional browser/account resources. Answer y/n. Availability only.");
@@ -140,6 +142,7 @@ export async function runSetup(cwd = process.cwd()) {
   const flow = await rl.question("Google Flow available? [y/N]: ");
   const meta = await rl.question("Meta AI available? [y/N]: ");
   const eleven = await rl.question("ElevenLabs available? [y/N]: ");
+  const installPointers = await rl.question("Install small Claude/Codex AurorA pointers? [Y/n]: ");
 
   rl.close();
 
@@ -158,7 +161,8 @@ export async function runSetup(cwd = process.cwd()) {
     default_mode: mode,
     project: {
       product: product.trim() || existing?.project?.product || "",
-      purpose: purpose.trim() || existing?.project?.purpose || ""
+      purpose: purpose.trim() || existing?.project?.purpose || "",
+      website: website.trim() || existing?.project?.website || ""
     },
     tools,
     integrations,
@@ -178,15 +182,21 @@ export async function runSetup(cwd = process.cwd()) {
   writeWorkspace(workspace, cwd);
   ensureProjectProfile({
     product: workspace.project.product,
-    purpose: workspace.project.purpose
+    purpose: workspace.project.purpose,
+    website: workspace.project.website
   }, cwd);
   readLibrary(cwd);
+  saveDiscovery(cwd);
   fs.mkdirSync(path.join(dir, "references"), { recursive: true });
 
   try {
     importHyperframeLibrary({ cwd });
   } catch {
     // Fine for non-HyperFrames workspaces.
+  }
+
+  if (!/^(n|no|false|0)$/i.test(installPointers.trim())) {
+    installAgentInstructions("all", cwd);
   }
 
   for (const log of ["decisions.jsonl", "lessons.jsonl"]) {
@@ -813,4 +823,19 @@ export async function removeAgentPointers(target = "all", cwd = process.cwd()) {
     process.exitCode = 2;
     return null;
   }
+}
+
+
+export async function discoverLocalWorkspace(cwd = process.cwd()) {
+  const saved = saveDiscovery(cwd);
+  console.log(JSON.stringify({
+    file: saved.file,
+    scanned_files: saved.result.scanned_files,
+    matched_files: saved.result.matched_files,
+    truncated: saved.result.truncated,
+    by_kind: Object.fromEntries(
+      Object.entries(saved.result.by_kind).map(([key, files]) => [key, files.length])
+    )
+  }, null, 2));
+  return saved;
 }
