@@ -12,7 +12,21 @@ Create/refresh it with:
 aurora-studio review create RUN_ID --video path/to/render.mp4
 ```
 
-The command performs the technical probe first. Then the agent fills the creative/assets review.
+The command performs the technical probe and extracts 5 evenly distributed review frames first. Then the agent fills the creative/assets review.
+
+## Visual evidence
+AurorA stores sampled frames under the run's `review-frames/` folder and records them in `review.json.visual_evidence`.
+
+Before setting creative PASS fields:
+- open/read **every generated review frame**
+- check beginning, middle and late visual state
+- look for black/blank frames, crop mistakes, broken composites, unreadable type, bad 3D edges, continuity problems and generic AI artifacts
+
+Do not mark a creative check `true` from command success alone.
+
+A completed review requires at least 3 valid sampled frames; AurorA normally generates 5.
+
+If a new render replaces the old video, the previous review decision resets to PENDING automatically.
 
 ## Technical
 - output exists and has a valid video stream
