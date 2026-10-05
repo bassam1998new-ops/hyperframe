@@ -6,6 +6,8 @@ import path from "node:path";
 import {
   buildAfterEffectsCommand,
   createAfterEffectsJob,
+  discoverAfterEffectsInstall,
+  findAfterEffects,
   runAfterEffectsJob
 } from "../src/adapters/after-effects.mjs";
 
@@ -58,4 +60,59 @@ test("dry-run JSX script does not require After Effects", () => {
   assert.equal(result.dry_run, true);
   assert.equal(result.kind, "afterfx");
   assert.ok(result.args.includes("-r"));
+});
+
+
+test("detects a standard Windows After Effects install outside PATH", () => {
+  const root = temp();
+  const programFiles = path.join(root, "Program Files");
+  const support = path.join(
+    programFiles,
+    "Adobe",
+    "Adobe After Effects 2026",
+    "Support Files"
+  );
+  const afterfx = path.join(support, "AfterFX.exe");
+  const aerender = path.join(support, "aerender.exe");
+  fs.mkdirSync(support, { recursive: true });
+  fs.writeFileSync(afterfx, "");
+  fs.writeFileSync(aerender, "");
+
+  const discovered = discoverAfterEffectsInstall({
+    platform: "win32",
+    env: { ProgramFiles: programFiles }
+  });
+
+  assert.equal(discovered.afterfx, afterfx);
+  assert.equal(discovered.aerender, aerender);
+
+  const resolved = findAfterEffects({
+    platform: "win32",
+    env: { ProgramFiles: programFiles },
+    skipPathLookup: true
+  });
+
+  assert.equal(resolved.afterfx, afterfx);
+  assert.equal(resolved.aerender, aerender);
+});
+
+test("configured After Effects directory resolves both executables", () => {
+  const root = temp();
+  const support = path.join(root, "Support Files");
+  const afterfxName = process.platform === "win32" ? "AfterFX.exe" : "After Effects";
+  const aerenderName = process.platform === "win32" ? "aerender.exe" : "aerender";
+  const afterfx = path.join(support, afterfxName);
+  const aerender = path.join(support, aerenderName);
+  fs.mkdirSync(support, { recursive: true });
+  fs.writeFileSync(afterfx, "");
+  fs.writeFileSync(aerender, "");
+
+  const resolved = findAfterEffects({
+    platform: process.platform,
+    env: { AURORA_AFTER_EFFECTS_PATH: support },
+    skipPathLookup: true
+  });
+
+  assert.equal(resolved.afterfx, afterfx);
+  assert.equal(resolved.aerender, aerender);
 });
