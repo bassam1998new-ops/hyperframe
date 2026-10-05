@@ -25,6 +25,7 @@ import {
   showBlenderInfo,
   createBlenderJobRecord,
   executeBlenderJob,
+  executeBlenderHandoff,
   showAfterEffectsInfo,
   createAfterEffectsJobRecord,
   executeAfterEffectsJob,
@@ -170,7 +171,13 @@ switch (command) {
     if (args[0] === "doctor") await showBlenderInfo();
     else if (args[0] === "create") await createBlenderJobRecord(args[1]);
     else if (args[0] === "run") await executeBlenderJob(args[1], flagBool("--dry-run"));
-    else console.error("blender commands: doctor | create NAME | run JOB [--dry-run]");
+    else if (args[0] === "handoff") {
+      await executeBlenderHandoff(args[1], args[2], {
+        fps: flag("--fps") || 30,
+        quality: flag("--quality") || "normal",
+        dryRun: flagBool("--dry-run")
+      });
+    } else console.error("blender commands: doctor | create NAME | run JOB [--dry-run] | handoff FRAMES OUTPUT.webm [--fps N] [--quality draft|normal|premium|hero] [--dry-run]");
     break;
 
   case "ae":
@@ -262,6 +269,7 @@ Blender:
   aurora-studio blender doctor
   aurora-studio blender create NAME
   aurora-studio blender run JOB [--dry-run]
+  aurora-studio blender handoff "frames/f_%04d.png" overlay.webm [--fps 30] [--quality premium] [--dry-run]
 
 After Effects (optional):
   aurora-studio ae doctor
