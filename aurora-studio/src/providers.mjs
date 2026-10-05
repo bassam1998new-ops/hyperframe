@@ -18,10 +18,26 @@ export function listProviders(cwd = process.cwd()) {
   const workspace = readWorkspace(cwd);
   const resources = workspace?.resources || {};
 
-  return readRegistry().providers.map(provider => ({
-    ...provider,
-    available: Boolean(resources[provider.resource_flag])
-  }));
+  return readRegistry().providers.map(provider => {
+    const accountAvailable = Boolean(resources[provider.resource_flag]);
+    const browserControlRequired = provider.kind === "browser";
+    const browserControlAvailable = Boolean(resources.browser_control);
+    const available =
+      accountAvailable &&
+      (!browserControlRequired || browserControlAvailable);
+
+    return {
+      ...provider,
+      account_available: accountAvailable,
+      browser_control_required: browserControlRequired,
+      browser_control_available: browserControlAvailable,
+      available,
+      blocked_reason:
+        accountAvailable && browserControlRequired && !browserControlAvailable
+          ? "browser_control_unavailable"
+          : null
+    };
+  });
 }
 
 export function availableProviders(cwd = process.cwd()) {
