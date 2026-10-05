@@ -5,7 +5,19 @@ import { loadRun } from "./governance.mjs";
 
 function sha256(file) {
   const hash = crypto.createHash("sha256");
-  hash.update(fs.readFileSync(file));
+  const fd = fs.openSync(file, "r");
+  const buffer = Buffer.allocUnsafe(1024 * 1024);
+
+  try {
+    while (true) {
+      const bytesRead = fs.readSync(fd, buffer, 0, buffer.length, null);
+      if (bytesRead === 0) break;
+      hash.update(buffer.subarray(0, bytesRead));
+    }
+  } finally {
+    fs.closeSync(fd);
+  }
+
   return hash.digest("hex");
 }
 
@@ -64,9 +76,11 @@ export function preserveFinalArtifact({
 
   const target = uniqueTarget(input, finalDir, runId);
   const sameFile = path.resolve(input) === path.resolve(target);
+  let copied = false;
 
   if (!sameFile && !fs.existsSync(target)) {
     fs.copyFileSync(input, target);
+    copied = true;
   }
 
   const stat = fs.statSync(target);
@@ -77,7 +91,7 @@ export function preserveFinalArtifact({
     final_path: path.relative(cwd, target),
     sha256: sha256(target),
     bytes: stat.size,
-    copied: !sameFile,
+    copied,
     source_was_inside_workspace:
       !path.relative(cwd, input).startsWith("..") &&
       !path.isAbsolute(path.relative(cwd, input))
