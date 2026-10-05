@@ -28,6 +28,10 @@ Missing Blender or After Effects must not break setup.
 ## Optional resources
 Browser resources such as ChatGPT, Google Flow and Meta AI, and services such as ElevenLabs, can improve quality/cost when the owner already has access. They are never required.
 
+Record **browser control capability separately** from account availability.
+
+A Flow/ChatGPT/Meta account must not be routed as usable unless the active agent can actually control/use the browser.
+
 ## Obsidian
 If Obsidian is installed, detect it and use it as an optional UI over AurorA's Markdown/JSON knowledge.
 Do not make the Studio depend on Obsidian or its plugins.
