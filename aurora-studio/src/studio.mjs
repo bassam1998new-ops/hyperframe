@@ -61,6 +61,7 @@ import {
   runWorkspaceHyperframes,
   HYPERFRAMES_RANGE
 } from "./tool-install.mjs";
+import { releaseReadiness } from "./release-readiness.mjs";
 import {
   checkForUpdate,
   backupWorkspaceState,
@@ -1588,6 +1589,19 @@ export async function runConfiguredSetupFile(file, cwd = process.cwd()) {
       config_file: loaded.file,
       ...result
     }, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+
+export async function showReleaseReadiness() {
+  try {
+    const result = releaseReadiness();
+    console.log(JSON.stringify(result, null, 2));
     return result;
   } catch (error) {
     console.error(error.message);
