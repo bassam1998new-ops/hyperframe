@@ -63,6 +63,10 @@ export function detectTools(cwd = process.cwd()) {
   return registry().tools.map(tool => detectTool(tool, cwd));
 }
 
+export function detectIntegrations(cwd = process.cwd()) {
+  return (registry().integrations || []).map(tool => detectTool(tool, cwd));
+}
+
 function yes(value) {
   return /^(y|yes|true|1)$/i.test(String(value).trim());
 }
@@ -112,6 +116,7 @@ export async function runSetup(cwd = process.cwd()) {
   rl.close();
 
   const tools = detectTools(cwd);
+  const integrations = detectIntegrations(cwd);
   const now = new Date().toISOString();
   const mode = ["direct", "director"].includes(modeAnswer.trim().toLowerCase())
     ? modeAnswer.trim().toLowerCase()
@@ -128,6 +133,7 @@ export async function runSetup(cwd = process.cwd()) {
       purpose: purpose.trim() || existing?.project?.purpose || ""
     },
     tools,
+    integrations,
     resources: {
       chatgpt_browser: yes(chatgpt),
       google_flow: yes(flow),
@@ -162,12 +168,20 @@ export async function runSetup(cwd = process.cwd()) {
 
 export async function runDoctor(cwd = process.cwd()) {
   const tools = detectTools(cwd);
+  const integrations = detectIntegrations(cwd);
   const ws = readWorkspace(cwd);
 
   console.log("\nAurorA Studio doctor\n");
   for (const tool of tools) {
     const mark = tool.available ? "✓" : tool.required ? "✗ REQUIRED" : "○ optional";
     console.log(`${mark.padEnd(12)} ${tool.name}${tool.detected_by ? ` (${tool.detected_by})` : ""}`);
+  }
+
+  if (integrations.length) {
+    console.log("\nIntegrations");
+    for (const item of integrations) {
+      console.log(`${item.available ? "✓" : "○ optional"} ${item.name}${item.detected_by ? ` (${item.detected_by})` : ""}`);
+    }
   }
 
   if (!ws) {
