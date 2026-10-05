@@ -1,29 +1,47 @@
 # AurorA Studio — Hooks
 
-Keep hooks small and useful.
+Keep hooks small. A hook must prevent a real failure or remove repeated work.
 
-## Active hooks
+## Agent SessionStart hook — active
+Installed for supported Claude/Codex local project workflows.
 
-### preflight
+It reloads compact AurorA context on:
+- startup
+- resume
+- clear
+- compaction
+
+Context includes:
+- mode
+- product / purpose / website
+- available production tools
+- configured optional resources
+- local discovery summary
+- active AurorA production run
+
+It does not read secrets or run generation.
+
+Claude and Codex still apply their normal project/hook trust rules before project-local hooks execute.
+
+## Preflight — active
 Before routing/building:
-- verify `.aurora/workspace.json`
+- validate workspace knowledge
 - refresh tool/integration availability
-- reject routes that need unavailable required capabilities
+- reject routes requiring missing required capabilities
 
-### post_approval
-Only after the owner approves the final result:
-- run safe cleanup rules
-- keep reproducible source/final output
-- capture compact decision and lesson records
-- update a style only when it is genuinely reusable
+## Post approval — active through finalize
+After the owner approves:
+- require completed post-render review
+- clean only run-scoped temp
+- save compact approved decision/lesson records
 
-### post_update
-After an AurorA Studio update:
+## Post update — planned
+Will activate with the updater:
 - validate schemas
-- validate knowledge/tool cards
-- report incompatible workspace data before changing it
+- migrate compatible workspace data
+- stop before destructive/incompatible migration
 
-## Rule
-Do not add hooks unless they remove a repeated manual step or prevent a real failure.
-
-Project-local agent hooks are executable configuration. Install/activate agent-specific hooks only after the user trusts the project.
+## Do not add
+No hook on every tool call unless we prove a repeated failure requires it.
+No automatic self-training hook.
+No hook that deletes original media.
