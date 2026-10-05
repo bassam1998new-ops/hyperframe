@@ -16,6 +16,11 @@ import {
   setRunRoute
 } from "./governance.mjs";
 import { probeRender } from "./quality.mjs";
+import {
+  createReviewReport,
+  readReviewReport,
+  validateReviewReportFile
+} from "./review-report.mjs";
 import { preserveFinalArtifact } from "./final-artifact.mjs";
 import { addLibraryItem, readLibrary, searchLibrary, summarizeLibrary } from "./library.mjs";
 import { importHyperframeLibrary } from "./importers/hyperframe.mjs";
@@ -752,6 +757,8 @@ export async function showRunStatus(runId, cwd = process.cwd()) {
 
 export async function writeRunCheckpoint(runId, stage, status, options = {}, cwd = process.cwd()) {
   try {
+    let artifact = options.artifact || null;
+
     if (stage === "build_plan" && status === "completed") {
       const validation = validateBuildPlanFile(runId, cwd);
       if (!validation.ok) {
@@ -759,12 +766,25 @@ export async function writeRunCheckpoint(runId, stage, status, options = {}, cwd
       }
     }
 
+    if (stage === "post_render_review" && status === "completed") {
+      const validation = validateReviewReportFile(runId, cwd);
+      if (!validation.can_complete_post_review) {
+        throw new Error(
+          "Post-render review cannot complete: " +
+          (validation.errors || []).join("; ")
+        );
+      }
+
+      const review = readReviewReport(runId, cwd);
+      artifact ||= review?.file || null;
+    }
+
     const state = checkpoint({
       cwd,
       runId,
       stage,
       status,
-      artifact: options.artifact || null,
+      artifact,
       note: options.note || null,
       humanApproved: Boolean(options.humanApproved)
     });
@@ -803,6 +823,48 @@ export async function reviewRender(file, cwd = process.cwd()) {
   console.log(JSON.stringify(result, null, 2));
   if (!result.ok) process.exitCode = 2;
   return result;
+}
+
+
+export async function createRunReview(runId, video, cwd = process.cwd()) {
+  try {
+    const result = createReviewReport(runId, video, cwd);
+    console.log(JSON.stringify({
+      file: result.file,
+      report: result.report
+    }, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function showRunReview(runId, cwd = process.cwd()) {
+  try {
+    const result = readReviewReport(runId, cwd);
+    if (!result) throw new Error("Review report not found.");
+    console.log(JSON.stringify(result.report, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function validateRunReview(runId, cwd = process.cwd()) {
+  try {
+    const result = validateReviewReportFile(runId, cwd);
+    console.log(JSON.stringify(result, null, 2));
+    if (!result.ok) process.exitCode = 2;
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
 }
 
 
