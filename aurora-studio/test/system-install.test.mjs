@@ -1,0 +1,49 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { syncSystemKnowledge, systemStatus } from "../src/system-install.mjs";
+
+function temp() {
+  return fs.mkdtempSync(path.join(os.tmpdir(), "aurora-system-"));
+}
+
+test("sync installs agent-readable system knowledge into workspace", () => {
+  const cwd = temp();
+  const result = syncSystemKnowledge(cwd);
+
+  assert.ok(fs.existsSync(path.join(result.system_dir, "README.md")));
+  assert.ok(fs.existsSync(path.join(result.system_dir, "skills", "DIRECTOR.md")));
+  assert.ok(fs.existsSync(path.join(result.system_dir, "knowledge", "providers", "google-flow.md")));
+  assert.ok(fs.existsSync(path.join(result.system_dir, "schemas", "reference.schema.json")));
+  assert.ok(fs.existsSync(path.join(result.system_dir, "system.json")));
+
+  const status = systemStatus(cwd);
+  assert.equal(status.installed, true);
+  assert.equal(status.needs_sync, false);
+});
+
+test("sync replaces managed system but preserves user project memory", () => {
+  const cwd = temp();
+  fs.mkdirSync(path.join(cwd, ".aurora"), { recursive: true });
+  fs.writeFileSync(path.join(cwd, ".aurora", "project.json"), JSON.stringify({
+    project_id: "keep-me",
+    product: "User Product"
+  }));
+
+  syncSystemKnowledge(cwd);
+  fs.writeFileSync(path.join(cwd, ".aurora", "system", "old-managed-file.txt"), "old");
+  syncSystemKnowledge(cwd);
+
+  const project = JSON.parse(fs.readFileSync(path.join(cwd, ".aurora", "project.json"), "utf8"));
+  assert.equal(project.product, "User Product");
+  assert.equal(fs.existsSync(path.join(cwd, ".aurora", "system", "old-managed-file.txt")), false);
+});
+
+test("system status detects missing snapshot", () => {
+  const cwd = temp();
+  const status = systemStatus(cwd);
+  assert.equal(status.installed, false);
+  assert.equal(status.needs_sync, true);
+});
