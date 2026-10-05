@@ -305,7 +305,7 @@ export async function recommendRoute(taskText = "", cwd = process.cwd()) {
   return decision;
 }
 
-export async function planProduction(taskText = "", cwd = process.cwd()) {
+export async function planProduction(taskText = "", options = {}, cwd = process.cwd()) {
   if (!taskText.trim()) {
     console.error("Provide a task to plan.");
     process.exitCode = 2;
@@ -320,8 +320,31 @@ export async function planProduction(taskText = "", cwd = process.cwd()) {
   }
 
   const ws = readWorkspace(cwd);
+  const project = readProject(cwd);
+  let referenceRecord = null;
+
+  if (options.referenceId) {
+    try {
+      referenceRecord = readReference(options.referenceId, cwd);
+    } catch (error) {
+      console.error(error.message);
+      process.exitCode = 2;
+      return null;
+    }
+  }
+
+  const referenceAnalysis = referenceRecord?.reference?.analysis || {};
+  const requirementOverrides = {
+    ...(typeof referenceAnalysis.requires_true_3d === "boolean"
+      ? { true3d: referenceAnalysis.requires_true_3d }
+      : {}),
+    ...(typeof referenceAnalysis.requires_compositing === "boolean"
+      ? { compositing: referenceAnalysis.requires_compositing }
+      : {})
+  };
+
   const availability = Object.fromEntries(preflight.tools.map(t => [t.id, t.available]));
-  const decision = chooseRoute(taskText, availability);
+  const decision = chooseRoute(taskText, availability, requirementOverrides);
 
   if (!decision.selected) {
     console.error("No safe automatic route. Use Director mode or add the missing capability.");
@@ -343,12 +366,15 @@ export async function planProduction(taskText = "", cwd = process.cwd()) {
     budget
   });
 
-  const project = readProject(cwd);
-  const libraryMatches = searchLibrary(taskText, { limit: 8, approved_only: true }, cwd);
+  const assetTerms = referenceAnalysis.asset_search_terms || [];
+  const libraryQuery = [taskText, ...assetTerms].filter(Boolean).join(" ");
+  const libraryMatches = searchLibrary(libraryQuery, { limit: 8, approved_only: true }, cwd);
   fs.writeFileSync(path.join(run.dir, "context.json"), JSON.stringify({
     schema_version: 1,
     captured_at: new Date().toISOString(),
     project,
+    reference: referenceRecord?.reference || null,
+    library_query: libraryQuery,
     library_matches: libraryMatches.map(item => ({
       id: item.id,
       kind: item.kind,
@@ -381,6 +407,7 @@ export async function planProduction(taskText = "", cwd = process.cwd()) {
     first_stage: "understand",
     plan: path.join(run.dir, "plan.json"),
     context: path.join(run.dir, "context.json"),
+    reference: referenceRecord?.reference?.id || null,
     library_matches: libraryMatches.slice(0, 3).map(x => ({ id: x.id, name: x.name, score: x.search_score }))
   }, null, 2));
   return run;
