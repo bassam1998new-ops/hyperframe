@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { loadRun } from "./governance.mjs";
 import { probeRender } from "./quality.mjs";
+import { sha256File } from "./final-artifact.mjs";
 
 const DECISIONS = new Set(["PENDING", "PASS", "FIX", "REBUILD"]);
 
@@ -32,6 +33,10 @@ export function createReviewReport(runId, video, cwd = process.cwd()) {
     schema_version: 1,
     run_id: runId,
     video: resolvedVideo ? path.relative(cwd, resolvedVideo) : null,
+    video_sha256:
+      resolvedVideo && fs.existsSync(resolvedVideo) && fs.statSync(resolvedVideo).isFile()
+        ? sha256File(resolvedVideo)
+        : null,
     status: existing?.status || "pending",
     technical,
     creative: existing?.creative || {
@@ -105,6 +110,7 @@ export function validateReviewReport(report) {
   }
 
   if (!report.video) errors.push("Review report is missing the video path.");
+  if (!report.video_sha256) errors.push("Review report is missing the reviewed video SHA-256.");
 
   if (!report.technical?.ok) {
     errors.push("Technical video review did not pass.");
