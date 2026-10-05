@@ -808,6 +808,22 @@ export async function reviewRender(file, cwd = process.cwd()) {
 
 export async function finalizeProduction(runId, video, lesson = null, cwd = process.cwd()) {
   try {
+    const existingRun = loadRun(cwd, runId);
+    const existingReceiptFile = path.join(existingRun.dir, "final.json");
+
+    if (existingRun.state.status === "completed" && fs.existsSync(existingReceiptFile)) {
+      const existingReceipt = JSON.parse(fs.readFileSync(existingReceiptFile, "utf8"));
+      const response = {
+        run_id: runId,
+        status: "completed",
+        already_finalized: true,
+        final: existingReceipt,
+        final_receipt: existingReceiptFile
+      };
+      console.log(JSON.stringify(response, null, 2));
+      return { run: existingRun, response, already_finalized: true };
+    }
+
     const readiness = finalizationReadiness({ cwd, runId });
     if (!readiness.ok) {
       throw new Error("Cannot finalize: " + readiness.errors.join("; "));
