@@ -34,7 +34,8 @@ import {
   searchObsidianKnowledge,
   showResources,
   installAgentPointers,
-  removeAgentPointers
+  removeAgentPointers,
+  discoverLocalWorkspace
 } from "../src/studio.mjs";
 
 const [command = "help", ...args] = process.argv.slice(2);
@@ -74,6 +75,9 @@ switch (command) {
     break;
   case "resources":
     await showResources(args.join(" ") || null);
+    break;
+  case "discover":
+    await discoverLocalWorkspace();
     break;
   case "agent":
     if (args[0] === "install") await installAgentPointers(args[1] || "all");
@@ -206,6 +210,7 @@ Setup:
   aurora-studio mode direct|director
   aurora-studio workspace
   aurora-studio resources ["CAPABILITY"]
+  aurora-studio discover
   aurora-studio agent install [all|claude|codex]
   aurora-studio agent remove [all|claude|codex]
 
