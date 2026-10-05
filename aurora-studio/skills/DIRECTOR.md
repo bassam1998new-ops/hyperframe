@@ -100,6 +100,19 @@ Only now run:
 Unavailable optional tools get zero weight.
 Prefer the simplest path that can honestly hit the requested quality.
 
+## Shot / build plan
+Routing creates `build-plan.json`.
+
+Assign the best engine per shot/build unit. The whole video does not need one tool.
+
+Examples:
+- kinetic intro → HyperFrames
+- true 3D avatar → Blender
+- Blender overlay → transparent WebM → HyperFrames
+- AE finishing → only if the routed path includes After Effects and the finish materially improves quality
+
+Validate and complete the build_plan stage before building.
+
 ## Draft
 Do not spend hero-quality render/generation cost before the direction works as a draft.
 
