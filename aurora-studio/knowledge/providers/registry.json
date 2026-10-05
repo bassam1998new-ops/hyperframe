@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "providers": [
+    {
+      "id": "chatgpt_browser",
+      "name": "ChatGPT",
+      "resource_flag": "chatgpt_browser",
+      "kind": "browser",
+      "best_for": ["image generation", "visual ideation", "analysis", "asset editing"],
+      "cost_dynamic": true,
+      "required": false
+    },
+    {
+      "id": "google_flow",
+      "name": "Google Flow",
+      "resource_flag": "google_flow",
+      "kind": "browser",
+      "best_for": ["video generation", "image to video", "reference driven generation", "asset exploration"],
+      "cost_dynamic": true,
+      "required": false
+    },
+    {
+      "id": "meta_ai",
+      "name": "Meta AI",
+      "resource_flag": "meta_ai",
+      "kind": "browser",
+      "best_for": ["image generation", "visual exploration"],
+      "cost_dynamic": true,
+      "required": false
+    },
+    {
+      "id": "elevenlabs",
+      "name": "ElevenLabs",
+      "resource_flag": "elevenlabs",
+      "kind": "service",
+      "best_for": ["voiceover", "speech", "voice experiments"],
+      "cost_dynamic": true,
+      "required": false
+    }
+  ]
+}
