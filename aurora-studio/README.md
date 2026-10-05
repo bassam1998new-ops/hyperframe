@@ -29,27 +29,43 @@ Controlled. The agent deconstructs the reference, proposes concepts, gets a dire
 
 Missing optional tools are not errors. Setup records what exists and routing ignores unavailable tools.
 
-## Current foundation commands
+## Quick start
+
+AurorA Studio is designed so **you do not need to learn its internal commands**.
+
+During development:
 
 ```bash
 node ./bin/aurora-studio.mjs setup
-node ./bin/aurora-studio.mjs setup --config aurora-setup.json
-node ./bin/aurora-studio.mjs doctor
-node ./bin/aurora-studio.mjs tools
-node ./bin/aurora-studio.mjs mode direct
-node ./bin/aurora-studio.mjs mode director
-node ./bin/aurora-studio.mjs workspace
-node ./bin/aurora-studio.mjs route "3d avatar with cinematic lighting"
-node ./bin/aurora-studio.mjs plan "make this reference for my product"
-node ./bin/aurora-studio.mjs mood create <run-id>
-node ./bin/aurora-studio.mjs mood validate <run-id>
-node ./bin/aurora-studio.mjs routing <run-id>
-node ./bin/aurora-studio.mjs status <run-id>
-node ./bin/aurora-studio.mjs review ./final.mp4
-node ./bin/aurora-studio.mjs finalize <run-id> --video ./approved.mp4 --lesson "short reusable lesson"
 ```
 
-The package remains private during foundation work. Before public release we will choose the final npm name/scope and enable the one-line install.
+Public release target:
+
+```bash
+npx <final-package>@latest setup
+```
+
+Then use your agent normally:
+
+> Make this reference for my product.
+
+or:
+
+> Use Director mode and give me three concepts first.
+
+Useful human commands:
+
+```bash
+aurora-studio doctor
+aurora-studio mode direct
+aurora-studio mode director
+aurora-studio update check
+aurora-studio help --all
+```
+
+The agent uses the detailed planning/routing/build commands behind the scenes.
+
+The package remains private during foundation work. The final npm package/scope will be chosen before public release.
 
 ## Workspace
 
