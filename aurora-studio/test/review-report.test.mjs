@@ -134,3 +134,25 @@ test("completed review rejects visual evidence from another render", () => {
   assert.equal(validation.ok, false);
   assert.ok(validation.errors.some(error => error.includes("does not belong")));
 });
+
+
+test("new render resets an old PASS review to pending", () => {
+  const cwd = temp();
+  const run = createRun({ cwd, task: "test", mode: "direct", routeDecision: null });
+  const reviewFile = path.join(run.dir, "review.json");
+
+  const old = passingReport();
+  old.run_id = run.id;
+  fs.writeFileSync(reviewFile, JSON.stringify(old, null, 2));
+
+  const newVideo = path.join(cwd, "new-render.mp4");
+  fs.writeFileSync(newVideo, "new-render-content");
+
+  const result = createReviewReport(run.id, newVideo, cwd);
+
+  assert.equal(result.report.status, "pending");
+  assert.equal(result.report.decision, "PENDING");
+  assert.equal(result.report.summary, "");
+  assert.equal(result.report.creative.project_fit, null);
+  assert.notEqual(result.report.video_sha256, old.video_sha256);
+});
