@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "hooks": {
+    "preflight": {
+      "enabled": true,
+      "purpose": "Validate workspace and refresh available tools before routing/build work."
+    },
+    "post_approval": {
+      "enabled": true,
+      "purpose": "Run safe cleanup checklist and capture compact approved decisions/lessons."
+    },
+    "post_update": {
+      "enabled": true,
+      "purpose": "Validate schemas, knowledge files and compatibility after Studio updates."
+    }
+  }
+}
