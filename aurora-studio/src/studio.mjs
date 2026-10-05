@@ -21,7 +21,7 @@ import {
   readReviewReport,
   validateReviewReportFile
 } from "./review-report.mjs";
-import { preserveFinalArtifact } from "./final-artifact.mjs";
+import { preserveFinalArtifact, sha256File } from "./final-artifact.mjs";
 import { addLibraryItem, readLibrary, searchLibrary, summarizeLibrary } from "./library.mjs";
 import { importHyperframeLibrary } from "./importers/hyperframe.mjs";
 import {
@@ -912,6 +912,18 @@ export async function finalizeProduction(runId, video, lesson = null, cwd = proc
       );
     }
     const review = readReviewReport(runId, cwd);
+
+    const approvedVideo = path.resolve(cwd, video || "");
+    if (!video || !fs.existsSync(approvedVideo) || !fs.statSync(approvedVideo).isFile()) {
+      throw new Error("Cannot finalize: approved video file is missing.");
+    }
+
+    const approvedVideoSha256 = sha256File(approvedVideo);
+    if (review?.report?.video_sha256 !== approvedVideoSha256) {
+      throw new Error(
+        "Cannot finalize: approved video does not match the exact file that passed review."
+      );
+    }
 
     const learning = completedLearningPayload(runId, cwd);
     if (!learning) {
