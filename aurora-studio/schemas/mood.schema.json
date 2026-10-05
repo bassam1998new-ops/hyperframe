@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AurorA Studio Mood",
+  "type": "object",
+  "required": ["schema_version", "run_id", "tool_agnostic", "intent", "arc", "visual", "motion", "audio", "continuity_anchors", "must_not_happen"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "run_id": { "type": "string", "minLength": 1 },
+    "tool_agnostic": { "const": true },
+    "intent": {
+      "type": "object",
+      "required": ["one_sentence", "audience_should_feel", "product_truth_to_protect"],
+      "properties": {
+        "one_sentence": { "type": "string" },
+        "audience_should_feel": { "type": "array", "items": { "type": "string" } },
+        "product_truth_to_protect": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "arc": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["phase", "range", "feeling", "energy", "tension"],
+        "properties": {
+          "phase": { "type": "string" },
+          "range": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": { "type": "number", "minimum": 0, "maximum": 1 }
+          },
+          "feeling": { "type": "string" },
+          "energy": { "type": "number", "minimum": 0, "maximum": 10 },
+          "tension": { "type": "number", "minimum": 0, "maximum": 10 }
+        }
+      }
+    },
+    "visual": { "type": "object" },
+    "motion": { "type": "object" },
+    "audio": { "type": "object" },
+    "continuity_anchors": { "type": "array", "items": { "type": "string" } },
+    "must_not_happen": { "type": "array", "items": { "type": "string" } },
+    "assumptions": { "type": "array", "items": { "type": "string" } },
+    "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+  },
+  "additionalProperties": true
+}
