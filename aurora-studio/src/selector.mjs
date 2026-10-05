@@ -135,3 +135,93 @@ export function chooseRoute(taskText, availability = {}, requirementOverrides = 
         : Number(Math.min(0.99, 0.55 + Math.max(0, result.candidates[0].score - result.candidates[1].score) / 10).toFixed(2))
   };
 }
+
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function routeEquals(a, b) {
+  return Array.isArray(a) &&
+    Array.isArray(b) &&
+    a.length === b.length &&
+    a.every((value, index) => value === b[index]);
+}
+
+export function applyExperiencePrior(decision, experience = []) {
+  if (!decision?.candidates?.length) return decision;
+
+  const approved = (experience || []).filter(item =>
+    item?.approved === true &&
+    Array.isArray(item.route) &&
+    Number(item.retrieval_score || 0) > 0
+  );
+
+  if (!approved.length) {
+    return {
+      ...decision,
+      experience_used: 0,
+      experience_adjusted: false
+    };
+  }
+
+  const candidates = decision.candidates.map(candidate => {
+    let bonus = 0;
+    const evidence = [];
+
+    for (const item of approved) {
+      if (!routeEquals(item.route, candidate.route)) continue;
+
+      const relevance = clamp(Number(item.retrieval_score || 0) / 4, 0.15, 1);
+      const quality = item.quality_score == null
+        ? 0.85
+        : clamp(Number(item.quality_score) / 10, 0.5, 1);
+      const revisionFactor = item.revisions == null
+        ? 1
+        : clamp(1 - Math.min(Number(item.revisions) || 0, 5) * 0.08, 0.6, 1);
+
+      const contribution = 0.35 * relevance * quality * revisionFactor;
+      bonus += contribution;
+
+      evidence.push({
+        run_id: item.run_id || null,
+        retrieval_score: Number(item.retrieval_score || 0),
+        quality_score: item.quality_score ?? null,
+        revisions: item.revisions ?? null,
+        contribution: Number(contribution.toFixed(3))
+      });
+    }
+
+    bonus = Math.min(0.8, bonus);
+
+    return {
+      ...candidate,
+      base_score: candidate.score,
+      experience_bonus: Number(bonus.toFixed(2)),
+      experience_evidence: evidence,
+      score: Number((candidate.score + bonus).toFixed(2))
+    };
+  }).sort((a, b) => b.score - a.score);
+
+  const top = candidates[0] || null;
+  const selected = top && top.dimensions.task_fit >= 5 ? top : null;
+  const confidence = !selected
+    ? 0
+    : candidates.length < 2
+      ? 0.70
+      : Number(
+          Math.min(
+            0.99,
+            0.55 + Math.max(0, candidates[0].score - candidates[1].score) / 10
+          ).toFixed(2)
+        );
+
+  return {
+    ...decision,
+    candidates,
+    selected,
+    confidence,
+    experience_used: approved.length,
+    experience_adjusted: candidates.some(candidate => candidate.experience_bonus > 0)
+  };
+}
