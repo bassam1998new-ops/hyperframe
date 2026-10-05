@@ -49,6 +49,7 @@ import {
   completedLearningPayload
 } from "./learning.mjs";
 import { syncSystemKnowledge, systemStatus } from "./system-install.mjs";
+import { runtimeStatus } from "./runtime.mjs";
 import {
   installHyperframesCore,
   resolveHyperframesBinary,
@@ -320,8 +321,17 @@ export async function runDoctor(cwd = process.cwd()) {
   const integrations = detectIntegrations(cwd);
   const ws = readWorkspace(cwd);
   const system = systemStatus(cwd);
+  const runtime = runtimeStatus();
 
   console.log("\nAurorA Studio doctor\n");
+  console.log("Runtime");
+  console.log(`${runtime.node.ok ? "✓" : "✗"} Node ${runtime.node.version}`);
+  console.log(`${runtime.ffmpeg.available ? "✓" : "✗"} FFmpeg${runtime.ffmpeg.path ? ` (${runtime.ffmpeg.path})` : ""}`);
+  console.log(`${runtime.ffprobe.available ? "✓" : "○"} ffprobe${runtime.ffprobe.path ? ` (${runtime.ffprobe.path})` : ""}`);
+  if (runtime.warnings.length) {
+    for (const warning of runtime.warnings) console.log(`  warning: ${warning}`);
+  }
+  console.log("");
   for (const tool of tools) {
     const mark = tool.available ? "✓" : tool.required ? "✗ REQUIRED" : "○ optional";
     console.log(`${mark.padEnd(12)} ${tool.name}${tool.detected_by ? ` (${tool.detected_by})` : ""}`);
@@ -406,6 +416,7 @@ export function runPreflight(cwd = process.cwd()) {
   const tools = detectTools(cwd);
   const integrations = detectIntegrations(cwd);
   const missingRequired = tools.filter(t => t.required && !t.available);
+  const runtime = runtimeStatus();
   const knowledge = validateKnowledge(cwd);
 
   ws.tools = tools;
@@ -413,17 +424,20 @@ export function runPreflight(cwd = process.cwd()) {
   writeWorkspace(ws, cwd);
 
   return {
-    ok: missingRequired.length === 0 && knowledge.ok,
+    ok: runtime.ok && missingRequired.length === 0 && knowledge.ok,
     errors: [
+      ...runtime.errors,
       ...missingRequired.map(t => `Missing required tool: ${t.name}`),
       ...knowledge.errors
     ],
     warnings: [
+      ...runtime.warnings,
       ...knowledge.warnings,
       ...(systemSync ? [`AurorA system knowledge refreshed to ${systemSync.studio_version}`] : [])
     ],
     tools,
     integrations,
+    runtime,
     system: systemStatus(cwd)
   };
 }
