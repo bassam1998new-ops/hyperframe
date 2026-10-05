@@ -8,6 +8,8 @@ Search before building or generating.
 3. AurorA shared library
 4. HyperFrames media-use / catalog when the asset fits its media system
 5. Approved open-source / open-license catalogs, including 3D sources
+   - start with `aurora-studio assets search "<need>"` when Poly Haven fits the need
+   - otherwise use `aurora-studio asset-sources "<need>"` to pick the next source
 6. Procedural build with HyperFrames or Blender
 7. External generation services when configured and useful
 8. Manual/specialist build
