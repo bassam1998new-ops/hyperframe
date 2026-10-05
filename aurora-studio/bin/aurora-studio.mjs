@@ -21,7 +21,10 @@ import {
   searchLibraryRecords,
   listLibraryRecords,
   libraryStats,
-  importHyperframeRecords
+  importHyperframeRecords,
+  showBlenderInfo,
+  createBlenderJobRecord,
+  executeBlenderJob
 } from "../src/studio.mjs";
 
 const [command = "help", ...args] = process.argv.slice(2);
@@ -102,6 +105,13 @@ switch (command) {
     else console.error("library commands: add | search | import-hyperframe | list | stats");
     break;
 
+  case "blender":
+    if (args[0] === "doctor") await showBlenderInfo();
+    else if (args[0] === "create") await createBlenderJobRecord(args[1]);
+    else if (args[0] === "run") await executeBlenderJob(args[1], flagBool("--dry-run"));
+    else console.error("blender commands: doctor | create NAME | run JOB [--dry-run]");
+    break;
+
   case "route":
     await recommendRoute(args.join(" "));
     break;
@@ -160,6 +170,11 @@ Brain:
   aurora-studio library import-hyperframe [--root PATH]
   aurora-studio library list
   aurora-studio library stats
+
+Blender:
+  aurora-studio blender doctor
+  aurora-studio blender create NAME
+  aurora-studio blender run JOB [--dry-run]
 
 Production:
   aurora-studio route "TASK"
