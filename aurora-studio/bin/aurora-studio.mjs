@@ -102,9 +102,16 @@ switch (command) {
   case "route":
     await recommendRoute(args.join(" "));
     break;
-  case "plan":
-    await planProduction(args.join(" "));
+  case "plan": {
+    const ref = flag("--reference");
+    const filtered = args.filter((value, index) => {
+      if (value === "--reference") return false;
+      if (index > 0 && args[index - 1] === "--reference") return false;
+      return true;
+    });
+    await planProduction(filtered.join(" "), { referenceId: ref });
     break;
+  }
   case "status":
     await showRunStatus(args[0]);
     break;
@@ -152,7 +159,7 @@ Brain:
 
 Production:
   aurora-studio route "TASK"
-  aurora-studio plan "TASK"
+  aurora-studio plan "TASK" [--reference ID]
   aurora-studio status RUN_ID
   aurora-studio checkpoint RUN_ID STAGE STATUS [--artifact PATH] [--note TEXT] [--approved]
   aurora-studio budget ESTIMATED_USD [SPENT_USD]
