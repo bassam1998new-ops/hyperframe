@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AurorA Studio Style",
+  "type": "object",
+  "required": ["schema_version", "id", "name", "use_when", "avoid_when", "mood", "motion", "tool_notes", "approved"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "id": { "type": "string" },
+    "name": { "type": "string" },
+    "use_when": { "type": "array", "items": { "type": "string" } },
+    "avoid_when": { "type": "array", "items": { "type": "string" } },
+    "mood": { "type": "array", "items": { "type": "string" } },
+    "camera": { "type": "array", "items": { "type": "string" } },
+    "lighting": { "type": "array", "items": { "type": "string" } },
+    "palette_roles": { "type": "array", "items": { "type": "string" } },
+    "typography": { "type": "array", "items": { "type": "string" } },
+    "materials": { "type": "array", "items": { "type": "string" } },
+    "motion": { "type": "array", "items": { "type": "string" } },
+    "edit": { "type": "array", "items": { "type": "string" } },
+    "audio": { "type": "array", "items": { "type": "string" } },
+    "tool_notes": { "type": "object" },
+    "approved": { "type": "boolean" }
+  },
+  "additionalProperties": true
+}
