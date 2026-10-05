@@ -20,7 +20,8 @@ import {
   addLibraryRecord,
   searchLibraryRecords,
   listLibraryRecords,
-  libraryStats
+  libraryStats,
+  importHyperframeRecords
 } from "../src/studio.mjs";
 
 const [command = "help", ...args] = process.argv.slice(2);
@@ -94,9 +95,11 @@ switch (command) {
         limit: flag("--limit") || 10,
         approved_only: flagBool("--approved-only")
       });
+    } else if (args[0] === "import-hyperframe") {
+      await importHyperframeRecords(flag("--root"));
     } else if (args[0] === "list") await listLibraryRecords();
     else if (args[0] === "stats") await libraryStats();
-    else console.error("library commands: add | search | list | stats");
+    else console.error("library commands: add | search | import-hyperframe | list | stats");
     break;
 
   case "route":
@@ -154,6 +157,7 @@ Brain:
   aurora-studio reference list
   aurora-studio library add NAME --path PATH [--kind asset] [--type model] [--license CC0] [--tags a,b] [--tools blender] [--approved]
   aurora-studio library search QUERY [--kind KIND] [--approved-only] [--limit N]
+  aurora-studio library import-hyperframe [--root PATH]
   aurora-studio library list
   aurora-studio library stats
 
