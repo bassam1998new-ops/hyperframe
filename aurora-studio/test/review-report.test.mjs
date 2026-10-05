@@ -18,6 +18,7 @@ function passingReport() {
     schema_version: 1,
     run_id: "r",
     video: "final.mp4",
+    video_sha256: "a".repeat(64),
     status: "completed",
     technical: { ok: true, errors: [], warnings: [], metadata: {} },
     creative: {
