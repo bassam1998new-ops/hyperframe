@@ -48,3 +48,16 @@ This isolated install:
 - can be checked with `aurora-studio hyperframe doctor`
 
 Do not silently upgrade HyperFrames during an active production run.
+
+
+## Agent integration consent
+
+Setup may offer to install:
+- a small AurorA pointer in Claude/Codex project instructions
+- one SessionStart context hook
+
+Say clearly that a hook is being installed.
+
+The hook only loads compact AurorA project/tool/run context. It does not generate media, spend credits, delete files or access secrets.
+
+The user's normal Claude/Codex workspace trust rules still apply.
