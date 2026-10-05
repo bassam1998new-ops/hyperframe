@@ -5,6 +5,9 @@ import readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
+import { chooseRoute } from "./selector.mjs";
+import { createRun, loadRun, checkpoint, evaluateSpend } from "./governance.mjs";
+import { probeRender } from "./quality.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REGISTRY_PATH = path.resolve(HERE, "../knowledge/tools/registry.json");
@@ -79,7 +82,7 @@ function workspaceFile(cwd = process.cwd()) {
   return path.join(workspaceDir(cwd), "workspace.json");
 }
 
-function readWorkspace(cwd = process.cwd()) {
+export function readWorkspace(cwd = process.cwd()) {
   const file = workspaceFile(cwd);
   return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, "utf8")) : null;
 }
@@ -257,50 +260,159 @@ export async function recommendRoute(taskText = "", cwd = process.cwd()) {
   if (!preflight.ok) {
     for (const error of preflight.errors) console.error(error);
     process.exitCode = 2;
-    return;
+    return null;
   }
 
-  const q = taskText.toLowerCase();
-  const available = Object.fromEntries(preflight.tools.map(t => [t.id, t.available]));
-  const route = [];
+  const availability = Object.fromEntries(preflight.tools.map(t => [t.id, t.available]));
+  const decision = chooseRoute(taskText, availability);
 
-  const true3d = /(3d|avatar|character|rig|model|product render|physics)/.test(q);
-  const finishing = /(vfx|composit|tracking|after effects|ae finish)/.test(q);
-  const motion2d = /(caption|typography|kinetic|ui|explainer|social|html|gsap)/.test(q);
-
-  if (true3d) {
-    if (!available.blender) {
-      console.log("No safe automatic route: this task appears to need true 3D, but Blender is unavailable.");
-      process.exitCode = 2;
-      return;
-    }
-    route.push("blender");
-  }
-
-  if (finishing && available.after_effects) route.push("after_effects");
-
-  if (motion2d || route.length === 0) {
-    if (available.hyperframe) {
-      route.push("hyperframe");
-    } else if (motion2d) {
-      console.log("No safe automatic route: this task appears to need HyperFrames, but HyperFrames is unavailable.");
-      process.exitCode = 2;
-      return;
-    }
-  } else if (available.hyperframe && !finishing) {
-    route.push("hyperframe");
-  }
-
-  if (route.length === 0) {
-    console.log("No confident automatic route yet. Use Director mode for this task.");
+  if (!decision.selected) {
+    console.log(JSON.stringify({
+      task: taskText,
+      route: null,
+      confidence: 0,
+      reason: "No available production path meets the minimum task-fit threshold.",
+      next: "Use Director mode, install the missing capability, or change the production approach.",
+      candidates: decision.candidates.slice(0, 3)
+    }, null, 2));
     process.exitCode = 2;
-    return;
+    return null;
   }
 
   console.log(JSON.stringify({
     task: taskText,
-    route,
-    unavailable_optional_tools_are_not_errors: true,
-    note: "Foundation router: hard rules only. Later: asset search + prior-job retrieval + evaluated learned scoring."
+    route: decision.selected.route,
+    score: decision.selected.score,
+    confidence: decision.confidence,
+    requirements: decision.requirements,
+    alternatives: decision.candidates.slice(1, 4).map(c => ({ route: c.route, score: c.score }))
   }, null, 2));
+  return decision;
+}
+
+export async function planProduction(taskText = "", cwd = process.cwd()) {
+  if (!taskText.trim()) {
+    console.error("Provide a task to plan.");
+    process.exitCode = 2;
+    return null;
+  }
+
+  const preflight = runPreflight(cwd);
+  if (!preflight.ok) {
+    for (const error of preflight.errors) console.error(error);
+    process.exitCode = 2;
+    return null;
+  }
+
+  const ws = readWorkspace(cwd);
+  const availability = Object.fromEntries(preflight.tools.map(t => [t.id, t.available]));
+  const decision = chooseRoute(taskText, availability);
+
+  if (!decision.selected) {
+    console.error("No safe automatic route. Use Director mode or add the missing capability.");
+    process.exitCode = 2;
+    return null;
+  }
+
+  const budget = ws?.budget || {
+    mode: "observe",
+    cap_usd: null,
+    approval_threshold_usd: 0.50
+  };
+
+  const run = createRun({
+    cwd,
+    task: taskText,
+    mode: ws.default_mode,
+    routeDecision: decision,
+    budget
+  });
+
+  const decisionPath = path.join(run.dir, "decisions.jsonl");
+  fs.appendFileSync(decisionPath, JSON.stringify({
+    timestamp: new Date().toISOString(),
+    type: "route_selection",
+    selected: decision.selected,
+    alternatives: decision.candidates.slice(1, 4),
+    confidence: decision.confidence
+  }) + "\n");
+
+  console.log(JSON.stringify({
+    run_id: run.id,
+    mode: ws.default_mode,
+    route: decision.selected.route,
+    score: decision.selected.score,
+    confidence: decision.confidence,
+    first_stage: "understand",
+    plan: path.join(run.dir, "plan.json")
+  }, null, 2));
+  return run;
+}
+
+export async function showRunStatus(runId, cwd = process.cwd()) {
+  try {
+    const run = loadRun(cwd, runId);
+    console.log(JSON.stringify({
+      run_id: runId,
+      task: run.plan.task,
+      mode: run.plan.mode,
+      route: run.plan.route,
+      current_stage: run.state.current_stage,
+      status: run.state.status,
+      checkpoints: run.state.checkpoints
+    }, null, 2));
+    return run;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function writeRunCheckpoint(runId, stage, status, options = {}, cwd = process.cwd()) {
+  try {
+    const state = checkpoint({
+      cwd,
+      runId,
+      stage,
+      status,
+      artifact: options.artifact || null,
+      note: options.note || null,
+      humanApproved: Boolean(options.humanApproved)
+    });
+    console.log(JSON.stringify({
+      run_id: runId,
+      stage,
+      status,
+      run_status: state.status
+    }, null, 2));
+    return state;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function checkBudget(estimatedUsd, spentUsd = 0, cwd = process.cwd()) {
+  const ws = readWorkspace(cwd);
+  if (!ws) {
+    console.error("Workspace is not configured. Run: aurora-studio setup");
+    process.exitCode = 2;
+    return null;
+  }
+  const policy = ws.budget || { mode: "observe", cap_usd: null, approval_threshold_usd: 0.50 };
+  const result = evaluateSpend(policy, {
+    estimated_usd: Number(estimatedUsd || 0),
+    spent_usd: Number(spentUsd || 0)
+  });
+  console.log(JSON.stringify({ policy, ...result }, null, 2));
+  return result;
+}
+
+export async function reviewRender(file, cwd = process.cwd()) {
+  const result = probeRender(path.resolve(cwd, file));
+  console.log(JSON.stringify(result, null, 2));
+  if (!result.ok) process.exitCode = 2;
+  return result;
 }
