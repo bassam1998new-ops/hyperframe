@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AurorA Studio After Effects Job",
+  "type": "object",
+  "required": ["schema_version", "id", "operation", "quality"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "id": { "type": "string", "minLength": 1 },
+    "operation": { "enum": ["script", "render"] },
+    "project": { "type": ["string", "null"] },
+    "comp": { "type": ["string", "null"] },
+    "output": { "type": ["string", "null"] },
+    "start_frame": { "type": ["integer", "null"] },
+    "end_frame": { "type": ["integer", "null"] },
+    "reuse": { "type": "boolean" },
+    "script": { "type": ["string", "null"] },
+    "quality": { "enum": ["draft", "normal", "premium", "hero"] },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "operation": { "const": "script" } } },
+      "then": { "required": ["script"] }
+    },
+    {
+      "if": { "properties": { "operation": { "const": "render" } } },
+      "then": { "required": ["project"] }
+    }
+  ],
+  "additionalProperties": true
+}

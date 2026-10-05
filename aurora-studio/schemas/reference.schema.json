@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AurorA Studio Reference Analysis",
+  "type": "object",
+  "required": ["schema_version", "id", "name", "source", "analysis", "adaptation"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "id": { "type": "string", "minLength": 1 },
+    "name": { "type": "string", "minLength": 1 },
+    "source": {
+      "type": "object",
+      "required": ["type", "value"],
+      "properties": {
+        "type": { "type": "string" },
+        "value": { "type": ["string", "null"] }
+      }
+    },
+    "analysis": {
+      "type": "object",
+      "required": ["story_structure", "camera", "lighting", "materials", "motion_grammar", "asset_search_terms"],
+      "properties": {
+        "medium": { "type": ["string", "null"] },
+        "subject": { "type": ["string", "null"] },
+        "quality_tier": { "type": ["string", "null"] },
+        "story_structure": { "type": "array", "items": { "type": "string" } },
+        "camera": { "type": "array", "items": { "type": "string" } },
+        "lighting": { "type": "array", "items": { "type": "string" } },
+        "palette_roles": { "type": "array", "items": { "type": "string" } },
+        "typography": { "type": "array", "items": { "type": "string" } },
+        "materials": { "type": "array", "items": { "type": "string" } },
+        "motion_grammar": { "type": "array", "items": { "type": "string" } },
+        "edit_rhythm": { "type": "array", "items": { "type": "string" } },
+        "audio": { "type": "array", "items": { "type": "string" } },
+        "requires_true_3d": { "type": ["boolean", "null"] },
+        "requires_compositing": { "type": ["boolean", "null"] },
+        "asset_search_terms": { "type": "array", "items": { "type": "string" } },
+        "technical_constraints": { "type": "array", "items": { "type": "string" } },
+        "must_keep": { "type": "array", "items": { "type": "string" } },
+        "must_not_copy": { "type": "array", "items": { "type": "string" } },
+        "uncertainty": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "adaptation": {
+      "type": "object",
+      "properties": {
+        "project_fit": { "type": ["string", "null"] },
+        "changes_needed": { "type": "array", "items": { "type": "string" } },
+        "asset_strategy": { "type": ["string", "null"] },
+        "recommended_route": { "type": "array", "items": { "type": "string" } },
+        "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+      }
+    }
+  },
+  "additionalProperties": true
+}

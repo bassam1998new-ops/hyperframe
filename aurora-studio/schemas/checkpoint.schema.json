@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AurorA Studio Checkpoint",
+  "type": "object",
+  "required": ["status", "updated_at"],
+  "properties": {
+    "status": {
+      "enum": ["pending", "in_progress", "completed", "failed", "awaiting_human", "skipped"]
+    },
+    "updated_at": { "type": "string" },
+    "artifact": { "type": ["string", "null"] },
+    "note": { "type": ["string", "null"] },
+    "human_approved": { "type": "boolean" }
+  },
+  "additionalProperties": false
+}

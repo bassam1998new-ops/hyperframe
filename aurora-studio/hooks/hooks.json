@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "hooks": {
+    "session_context": {
+      "enabled": true,
+      "implemented": true,
+      "agents": ["claude", "codex"],
+      "event": "SessionStart",
+      "purpose": "Reload compact AurorA project/tool/resource/run context on startup, resume, clear and compaction."
+    },
+    "preflight": {
+      "enabled": true,
+      "implemented": true,
+      "purpose": "Validate workspace/knowledge and refresh available tools before routing/build work."
+    },
+    "post_approval": {
+      "enabled": true,
+      "implemented": true,
+      "command": "aurora-studio finalize",
+      "purpose": "Safely clean run-scoped temp and capture approved decisions/lessons."
+    },
+    "post_update": {
+      "enabled": true,
+      "implemented": false,
+      "blocked_by": "updater",
+      "purpose": "Validate schemas, knowledge files and compatibility after Studio updates."
+    }
+  }
+}

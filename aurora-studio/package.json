@@ -1,0 +1,58 @@
+{
+  "name": "aurora-studio-local",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Agent-first video studio brain for HyperFrames, Blender and optional After Effects",
+  "type": "module",
+  "bin": {
+    "aurora-studio": "./bin/aurora-studio.mjs"
+  },
+  "scripts": {
+    "setup": "node ./bin/aurora-studio.mjs setup",
+    "doctor": "node ./bin/aurora-studio.mjs doctor",
+    "tools": "node ./bin/aurora-studio.mjs tools",
+    "route": "node ./bin/aurora-studio.mjs route",
+    "test": "node --test",
+    "discover": "node ./bin/aurora-studio.mjs discover",
+    "validate": "node ./bin/aurora-studio.mjs validate",
+    "release:status": "node ./bin/aurora-studio.mjs release status",
+    "release:gate": "node ./bin/aurora-studio.mjs release gate"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bassam1998new-ops/hyperframe.git",
+    "directory": "aurora-studio"
+  },
+  "keywords": [
+    "video",
+    "ai",
+    "agents",
+    "hyperframes",
+    "blender",
+    "motion-graphics",
+    "creative-tools"
+  ],
+  "files": [
+    "bin",
+    "src",
+    "skills",
+    "agent-skills",
+    "knowledge",
+    "schemas",
+    "hooks",
+    "prompts",
+    "blender",
+    "README.md",
+    "CHANGELOG.md",
+    "release.json",
+    "studio.manifest.json",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

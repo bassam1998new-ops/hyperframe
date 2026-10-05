@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "id": "default-video-production",
+  "stages": [
+    "understand",
+    "concept",
+    "mood",
+    "assets",
+    "routing",
+    "build_plan",
+    "build",
+    "pre_render_review",
+    "render",
+    "post_render_review",
+    "approval",
+    "finalize"
+  ],
+  "mode_rules": {
+    "direct": {
+      "human_gates": [
+        "approval"
+      ],
+      "skippable": [
+        "concept",
+        "mood"
+      ],
+      "behavior": "minimum interruption; simple jobs may explicitly skip concept/mood, but asset search still happens before routing"
+    },
+    "director": {
+      "human_gates": [
+        "concept",
+        "approval"
+      ],
+      "skippable": [],
+      "behavior": "concept owner pick, tool-agnostic mood, asset search, then routing"
+    }
+  },
+  "principles": [
+    "understand before choosing tools",
+    "search before generate",
+    "mood stays tool agnostic",
+    "route after context mood and assets",
+    "choose tools by requirements availability quality cost and speed",
+    "estimate paid actions before spending",
+    "checkpoint after meaningful stages",
+    "review before and after final render",
+    "learn only from approved work",
+    "assign each build unit to an engine before execution",
+    "make cross-engine handoffs explicit"
+  ]
+}

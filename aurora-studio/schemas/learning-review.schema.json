@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AurorA Studio Learning Review",
+  "type": "object",
+  "required": ["schema_version", "run_id", "status", "summary", "outcome", "keep", "cleanup_notes", "lessons", "proposals"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "run_id": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["pending", "completed"] },
+    "summary": { "type": "string" },
+    "outcome": {
+      "type": "object",
+      "properties": {
+        "owner_approved": { "type": ["boolean", "null"] },
+        "reviewer_result": { "type": ["string", "null"] },
+        "revisions": { "type": ["integer", "null"], "minimum": 0 },
+        "quality_score": { "type": ["number", "null"], "minimum": 0, "maximum": 10 }
+      }
+    },
+    "keep": { "type": "array", "items": { "type": "string" } },
+    "cleanup_notes": { "type": "array", "items": { "type": "string" } },
+    "lessons": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["lesson"],
+        "properties": {
+          "lesson": { "type": "string", "minLength": 1 },
+          "applies_when": { "type": "array", "items": { "type": "string" } },
+          "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+        }
+      }
+    },
+    "proposals": {
+      "type": "object",
+      "required": ["styles", "skills", "assets"],
+      "properties": {
+        "styles": { "type": "array" },
+        "skills": { "type": "array" },
+        "assets": { "type": "array" }
+      }
+    }
+  },
+  "additionalProperties": true
+}
