@@ -17,6 +17,8 @@ Do not put these in a public issue, discussion, PR, log, screenshot, or test fix
 
 AurorA workspace files must not be used as a secrets vault.
 
+`.aurora/` is Git-ignored by default because it may contain project context, local paths, provider availability, review evidence and learning history. Review anything deliberately promoted out of that folder before committing it.
+
 ## Reporting a vulnerability
 
 Use GitHub's private **Security / Report a vulnerability** flow when it is available for this repository.
