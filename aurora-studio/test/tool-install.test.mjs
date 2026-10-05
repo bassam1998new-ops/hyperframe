@@ -185,3 +185,8 @@ test("Windows global npm shims are rejected for shell safety", () => {
     false
   );
 });
+
+
+test("HyperFrames compatibility pin is exact and release-driven", () => {
+  assert.equal(HYPERFRAMES_RANGE, "0.8.134");
+});
