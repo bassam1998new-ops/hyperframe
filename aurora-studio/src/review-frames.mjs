@@ -38,8 +38,20 @@ export function extractReviewFrames(video, {
 
   const dir = path.resolve(
     cwd,
-    outputDir || path.join(".aurora", "review-frames")
+    outputDir || path.join(".aurora", "runs", "review-frames")
   );
+  const safeRoot = path.resolve(cwd, ".aurora", "runs");
+  const relativeToSafeRoot = path.relative(safeRoot, dir);
+
+  if (
+    relativeToSafeRoot.startsWith("..") ||
+    path.isAbsolute(relativeToSafeRoot) ||
+    relativeToSafeRoot === ""
+  ) {
+    throw new Error(
+      "Review frame output must stay inside .aurora/runs/."
+    );
+  }
 
   fs.rmSync(dir, { recursive: true, force: true });
   fs.mkdirSync(dir, { recursive: true });
