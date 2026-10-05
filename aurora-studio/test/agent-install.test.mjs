@@ -27,6 +27,8 @@ test("installer preserves existing agent instructions and is idempotent", () => 
   assert.equal((agents.match(/AURORA-STUDIO:START/g) || []).length, 1);
   assert.equal((claude.match(/AURORA-STUDIO:START/g) || []).length, 1);
   assert.ok(fs.existsSync(path.join(cwd, ".aurora", "AGENT.md")));
+  assert.ok(fs.existsSync(path.join(cwd, ".claude", "skills", "aurora-direct", "SKILL.md")));
+  assert.ok(fs.existsSync(path.join(cwd, ".claude", "skills", "aurora-director", "SKILL.md")));
 });
 
 test("remove only removes AurorA owned block", () => {
@@ -38,4 +40,22 @@ test("remove only removes AurorA owned block", () => {
   const agents = fs.readFileSync(path.join(cwd, "AGENTS.md"), "utf8");
   assert.ok(agents.includes("# Existing"));
   assert.ok(!agents.includes("AURORA-STUDIO:START"));
+});
+
+
+test("Claude removal deletes only AurorA-owned native skills", () => {
+  const cwd = temp();
+  const userSkill = path.join(cwd, ".claude", "skills", "user-skill");
+  fs.mkdirSync(userSkill, { recursive: true });
+  fs.writeFileSync(path.join(userSkill, "SKILL.md"), "# keep");
+
+  installAgentInstructions("claude", cwd);
+  const result = removeAgentInstructions("claude", cwd);
+
+  assert.ok(result.native_skills_removed.length >= 1);
+  assert.equal(
+    fs.existsSync(path.join(cwd, ".claude", "skills", "aurora-direct", "SKILL.md")),
+    false
+  );
+  assert.equal(fs.existsSync(path.join(userSkill, "SKILL.md")), true);
 });
