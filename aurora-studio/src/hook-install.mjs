@@ -77,8 +77,8 @@ function installCodex(cwd) {
   if (!config.description) config.description = "Project hooks including AurorA Studio context.";
   addSessionStart(config, {
     type: "command",
-    command: 'node "$(git rev-parse --show-toplevel)/.aurora/hooks/session-start.mjs"',
-    commandWindows: 'node "$((git rev-parse --show-toplevel))/.aurora/hooks/session-start.mjs"',
+    command: "node .aurora/hooks/session-start.mjs",
+    commandWindows: "node .aurora\\hooks\\session-start.mjs",
     timeout: 10,
     statusMessage: "Loading AurorA Studio context",
     additionalContextLimit: 6000
