@@ -26,12 +26,14 @@ import { addLibraryItem, readLibrary, searchLibrary, summarizeLibrary } from "./
 import { importHyperframeLibrary } from "./importers/hyperframe.mjs";
 import {
   blenderInfo,
+  findBlender,
   createBlenderJob,
   runBlenderJob
 } from "./adapters/blender.mjs";
 import { packTransparentWebm } from "./adapters/blender-handoff.mjs";
 import {
   afterEffectsInfo,
+  findAfterEffects,
   createAfterEffectsJob,
   runAfterEffectsJob
 } from "./adapters/after-effects.mjs";
@@ -141,6 +143,33 @@ function detectTool(tool, cwd = process.cwd()) {
         required: Boolean(tool.required),
         available: true,
         detected_by: `${resolved.source}:${resolved.binary}`
+      };
+    }
+  }
+
+  if (tool.id === "blender") {
+    const executable = findBlender();
+    if (executable) {
+      return {
+        id: tool.id,
+        name: tool.name,
+        required: Boolean(tool.required),
+        available: true,
+        detected_by: `blender:${executable}`
+      };
+    }
+  }
+
+  if (tool.id === "after_effects") {
+    const executables = findAfterEffects();
+    const executable = executables.aerender || executables.afterfx;
+    if (executable) {
+      return {
+        id: tool.id,
+        name: tool.name,
+        required: Boolean(tool.required),
+        available: true,
+        detected_by: `after_effects:${executable}`
       };
     }
   }
