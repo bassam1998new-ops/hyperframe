@@ -6,7 +6,9 @@
       "name": "HyperFrames",
       "required": true,
       "availability": "detected_at_setup",
-      "detect_commands": ["hyperframes"],
+      "detect_commands": [
+        "hyperframes"
+      ],
       "npm_package": "hyperframes",
       "best_for": [
         "2d motion graphics",
@@ -28,7 +30,9 @@
       "name": "Blender",
       "required": false,
       "availability": "detected_at_setup",
-      "detect_commands": ["blender"],
+      "detect_commands": [
+        "blender"
+      ],
       "best_for": [
         "true 3d",
         "characters and avatars",
@@ -44,14 +48,18 @@
         "simple captions",
         "basic social typography"
       ],
-      "license_note": "GPL application; generated project outputs can be used normally."
+      "license_note": "GPL application; generated project outputs can be used normally.",
+      "env_path": "AURORA_BLENDER_PATH"
     },
     {
       "id": "after_effects",
       "name": "Adobe After Effects",
       "required": false,
       "availability": "detected_at_setup",
-      "detect_commands": ["afterfx", "aerender"],
+      "detect_commands": [
+        "afterfx",
+        "aerender"
+      ],
       "env_path": "AURORA_AFTER_EFFECTS_PATH",
       "best_for": [
         "compositing",
@@ -74,7 +82,9 @@
       "name": "Obsidian",
       "required": false,
       "role": "knowledge_ui",
-      "detect_commands": ["obsidian"],
+      "detect_commands": [
+        "obsidian"
+      ],
       "notes": "Optional UI over AurorA's plain Markdown/JSON brain. Never the source of truth."
     }
   ]
