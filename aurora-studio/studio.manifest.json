@@ -18,8 +18,8 @@
     "obsidian": { "required": false, "role": "knowledge_ui" }
   },
   "hooks": {
-    "preflight": true,
-    "post_approval": true,
-    "post_update": true
+    "preflight": { "enabled": true, "implemented": true },
+    "post_approval": { "enabled": true, "implemented": false, "blocked_by": "finalize_command" },
+    "post_update": { "enabled": true, "implemented": false, "blocked_by": "updater" }
   }
 }
