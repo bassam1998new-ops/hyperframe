@@ -117,11 +117,15 @@ export function scoreRoutes(taskText, availability = {}) {
 
 export function chooseRoute(taskText, availability = {}) {
   const result = scoreRoutes(taskText, availability);
+  const top = result.candidates[0] || null;
+  const safeTop = top && top.dimensions.task_fit >= 5 ? top : null;
   return {
     ...result,
-    selected: result.candidates[0] || null,
-    confidence: result.candidates.length < 2
-      ? (result.candidates.length ? 0.70 : 0)
-      : Number(Math.min(0.99, 0.55 + Math.max(0, result.candidates[0].score - result.candidates[1].score) / 10).toFixed(2))
+    selected: safeTop,
+    confidence: !safeTop
+      ? 0
+      : result.candidates.length < 2
+        ? 0.70
+        : Number(Math.min(0.99, 0.55 + Math.max(0, result.candidates[0].score - result.candidates[1].score) / 10).toFixed(2))
   };
 }
