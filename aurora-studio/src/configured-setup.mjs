@@ -7,6 +7,7 @@ import { saveDiscovery } from "./discovery.mjs";
 import { importHyperframeLibrary } from "./importers/hyperframe.mjs";
 import { installAgentInstructions } from "./agent-install.mjs";
 import { installAgentHooks } from "./hook-install.mjs";
+import { ensureWorkspacePrivacyFiles } from "./workspace-privacy.mjs";
 import {
   installHyperframesCore,
   resolveHyperframesBinary
@@ -86,6 +87,7 @@ export function writeConfiguredWorkspace(configInput, {
   fs.mkdirSync(path.join(aurora, "library"), { recursive: true });
   fs.mkdirSync(path.join(aurora, "temp"), { recursive: true });
   fs.mkdirSync(path.join(aurora, "references"), { recursive: true });
+  ensureWorkspacePrivacyFiles(cwd);
 
   const existing = readExistingWorkspace(cwd);
   const now = new Date().toISOString();
