@@ -43,9 +43,12 @@ If browser AI resources such as ChatGPT, Google Flow or Meta AI are configured, 
 After the final render is approved:
 - keep the final and files needed to reproduce it
 - keep useful approved assets/styles
-- clean safe temporary mess
-- review the session
-- save compact decisions/lessons
+- review the run's learning-review.json
+- propose a new/update style or skill only if the session truly taught something reusable
+- "nothing new" is a valid learning result
+- validate the learning review
+- finalize so only safe run-scoped temp is cleaned
+- do not auto-apply learning proposals
 - do not automatically train or change the routing model
 
 Keep your explanations to me simple unless I ask for technical detail.
