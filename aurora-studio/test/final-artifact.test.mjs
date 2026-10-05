@@ -45,6 +45,8 @@ test("same final content is idempotent", () => {
   });
 
   assert.equal(first.final_file, second.final_file);
+  assert.equal(first.receipt.copied, true);
+  assert.equal(second.receipt.copied, false);
 });
 
 test("different file with same name never silently overwrites prior final", () => {
