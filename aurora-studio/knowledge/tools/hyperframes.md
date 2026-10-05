@@ -117,3 +117,12 @@ Do not create AurorA duplicates of a stable HyperFrames capability unless:
 - https://github.com/heygen-com/hyperframes/blob/main/skills/hyperframes-cli/SKILL.md
 - https://github.com/heygen-com/hyperframes/blob/main/skills/media-use/SKILL.md
 - https://github.com/heygen-com/hyperframes/blob/main/docs/guides/remove-background.mdx
+
+
+## Compatibility pin
+
+AurorA Studio currently tests against **HyperFrames 0.8.134**.
+
+The workspace installer uses that exact version.
+
+Do not silently float to a newer HyperFrames release inside an active AurorA version. A newer upstream version should first pass AurorA CI and then be promoted in a normal AurorA release/update.
