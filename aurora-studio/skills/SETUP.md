@@ -12,16 +12,21 @@ Configure the workspace once without making paid services mandatory.
    - product/service
    - main video purpose
    - default mode: direct or director
-   - optional resources they already have access to
+   - optional browser/resources they already have access to
 4. Never ask for passwords, cookies, tokens, or account secrets inside workspace files.
-5. Re-detect local tools. Optional tools may be absent without failing setup.
+5. Re-detect local tools and integrations.
 6. Save capability status. The router must not select unavailable tools.
 
+## Production tools
+- HyperFrames: core programmable motion/video engine.
+- Blender: optional 3D engine.
+- After Effects: optional finishing/VFX engine.
+
+Missing Blender or After Effects must not break setup.
+
 ## Optional resources
-Browser resources such as ChatGPT, Google Flow and Meta AI, and services such as ElevenLabs, improve quality/cost when the owner already has access. They are never required.
+Browser resources such as ChatGPT, Google Flow and Meta AI, and services such as ElevenLabs, can improve quality/cost when the owner already has access. They are never required.
 
-## After Effects
-After Effects is optional. If unavailable, remove it from routing. Do not downgrade the whole Studio.
-
-## OpenMontage
-Treat OpenMontage as an optional external adapter. Do not copy its AGPL implementation into the AurorA core without an explicit license decision.
+## Obsidian
+If Obsidian is installed, detect it and use it as an optional UI over AurorA's Markdown/JSON knowledge.
+Do not make the Studio depend on Obsidian or its plugins.
