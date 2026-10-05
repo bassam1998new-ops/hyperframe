@@ -21,5 +21,6 @@
       "setup reruns preserve existing resource choices"
     ]
   },
-  "migrations": []
+  "migrations": [],
+  "hyperframes_version": null
 }
