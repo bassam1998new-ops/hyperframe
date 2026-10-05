@@ -64,6 +64,7 @@ import {
   executeHyperframesCore,
   checkHyperframesUpgrade,
   showReleaseReadiness,
+  assertReleaseReady,
   runConfiguredSetupFile,
   recordRunUsage,
   summarizeRunUsage,
@@ -144,7 +145,8 @@ switch (command) {
 
   case "release":
     if (args[0] === "status") await showReleaseReadiness();
-    else console.error("release commands: status");
+    else if (args[0] === "gate") await assertReleaseReady();
+    else console.error("release commands: status | gate");
     break;
 
   case "update":
@@ -373,6 +375,7 @@ Setup:
   aurora-studio system status
   aurora-studio system sync
   aurora-studio release status
+  aurora-studio release gate
   aurora-studio update check
   aurora-studio update plan
   aurora-studio update backup
