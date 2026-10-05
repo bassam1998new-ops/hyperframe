@@ -9,6 +9,7 @@ import {
   createRun,
   checkpoint,
   finalizeRun,
+  finalizationReadiness,
   makeRunId,
   setRunRoute,
   loadRun
@@ -127,4 +128,15 @@ test("agent cannot complete build before build_plan stage", () => {
     () => checkpoint({ cwd, runId: run.id, stage: "build", status: "completed" }),
     /earlier stages not complete/
   );
+});
+
+
+test("finalization readiness reports incomplete production stages before cleanup", () => {
+  const cwd = temp();
+  const run = createRun({ cwd, task: "test", mode: "direct", routeDecision: null });
+  const readiness = finalizationReadiness({ cwd, runId: run.id });
+
+  assert.equal(readiness.ok, false);
+  assert.ok(readiness.errors.some(error => error.includes("owner approval")));
+  assert.ok(readiness.errors.some(error => error.includes("earlier stages")));
 });
