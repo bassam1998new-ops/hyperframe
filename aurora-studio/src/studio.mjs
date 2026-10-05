@@ -317,7 +317,7 @@ export async function planProduction(taskText = "", cwd = process.cwd()) {
   const budget = ws?.budget || {
     mode: "observe",
     cap_usd: null,
-    approval_threshold_usd: 0.50
+    approval_threshold_usd: 1.00
   };
 
   const run = createRun({
@@ -401,7 +401,7 @@ export async function checkBudget(estimatedUsd, spentUsd = 0, cwd = process.cwd(
     process.exitCode = 2;
     return null;
   }
-  const policy = ws.budget || { mode: "observe", cap_usd: null, approval_threshold_usd: 0.50 };
+  const policy = ws.budget || { mode: "observe", cap_usd: null, approval_threshold_usd: 1.00 };
   const result = evaluateSpend(policy, {
     estimated_usd: Number(estimatedUsd || 0),
     spent_usd: Number(spentUsd || 0)
