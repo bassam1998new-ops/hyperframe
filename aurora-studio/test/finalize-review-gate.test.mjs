@@ -62,12 +62,34 @@ function advanceToApproval(cwd) {
   return { run, video };
 }
 
-function writePassingReview(run, video) {
+function writePassingReview(cwd, run, video) {
+  const frameDir = path.join(run.dir, "review-frames");
+  fs.mkdirSync(frameDir, { recursive: true });
+  const frames = [1, 2, 3].map(index => {
+    const file = path.join(frameDir, `frame-0${index}.jpg`);
+    fs.writeFileSync(file, `frame-${index}`);
+    return {
+      index,
+      time_seconds: index,
+      path: path.relative(cwd, file),
+      sha256: sha256File(file)
+    };
+  });
+  const videoSha = sha256File(video);
+
   const report = {
     schema_version: 1,
     run_id: run.id,
     video: "approved.mp4",
-    video_sha256: sha256File(video),
+    video_sha256: videoSha,
+    visual_evidence: {
+      video: "approved.mp4",
+      video_sha256: videoSha,
+      generated_at: new Date().toISOString(),
+      count: frames.length,
+      frames,
+      error: null
+    },
     status: "completed",
     technical: { ok: true, errors: [], warnings: [], metadata: {} },
     creative: {
@@ -119,7 +141,7 @@ test("finalization rejects a spoofed/stale post-review checkpoint without PASS r
 test("finalization succeeds once the independent PASS review exists", async () => {
   const cwd = temp();
   const { run, video } = advanceToApproval(cwd);
-  writePassingReview(run, video);
+  writePassingReview(cwd, run, video);
 
   const result = await finalizeProduction(run.id, video, null, cwd);
 
@@ -133,7 +155,7 @@ test("finalization succeeds once the independent PASS review exists", async () =
 test("finalization rejects a different file than the one that passed review", async () => {
   const cwd = temp();
   const { run, video } = advanceToApproval(cwd);
-  writePassingReview(run, video);
+  writePassingReview(cwd, run, video);
 
   const differentVideo = path.join(cwd, "different.mp4");
   fs.writeFileSync(differentVideo, "different-video");
