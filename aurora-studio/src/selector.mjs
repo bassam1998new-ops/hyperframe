@@ -7,9 +7,9 @@ const WEIGHTS = {
   speed: 0.10
 };
 
-export function inferRequirements(taskText = "") {
+export function inferRequirements(taskText = "", overrides = {}) {
   const q = taskText.toLowerCase();
-  return {
+  const detected = {
     true3d: /(\b3d\b|avatar|character|rig|modeling|product render|physics|cinematic 3d)/.test(q),
     compositing: /(vfx|composit|tracking|roto|after effects|ae finish|screen replacement)/.test(q),
     motion2d: /(caption|typography|kinetic|ui|explainer|social|html|gsap|motion graphic)/.test(q),
@@ -18,6 +18,12 @@ export function inferRequirements(taskText = "") {
     speed_sensitive: /(fast|quick|today|rapid|draft)/.test(q),
     premium: /(premium|hero|highest quality|cinematic|photoreal|high quality)/.test(q)
   };
+  return Object.fromEntries(
+    Object.entries(detected).map(([key, value]) => [
+      key,
+      typeof overrides[key] === "boolean" ? overrides[key] : value
+    ])
+  );
 }
 
 function routeKey(route) {
@@ -79,8 +85,8 @@ function weightedScore(dimensions) {
   );
 }
 
-export function scoreRoutes(taskText, availability = {}) {
-  const req = inferRequirements(taskText);
+export function scoreRoutes(taskText, availability = {}, requirementOverrides = {}) {
+  const req = inferRequirements(taskText, requirementOverrides);
   const candidates = [];
 
   const available = id => Boolean(availability[id]);
@@ -115,8 +121,8 @@ export function scoreRoutes(taskText, availability = {}) {
   return { requirements: req, candidates: scored };
 }
 
-export function chooseRoute(taskText, availability = {}) {
-  const result = scoreRoutes(taskText, availability);
+export function chooseRoute(taskText, availability = {}, requirementOverrides = {}) {
+  const result = scoreRoutes(taskText, availability, requirementOverrides);
   const top = result.candidates[0] || null;
   const safeTop = top && top.dimensions.task_fit >= 5 ? top : null;
   return {
