@@ -23,7 +23,7 @@ For each real production job:
 - complete the build_plan checkpoint before execution
 - check the budget before paid generation
 - run pre-render and post-render review
-- finalize only after I approve
+- finalize only after I approve, passing the exact approved video with `--video`
 
 When I give you a reference:
 - analyze its visual and production grammar
