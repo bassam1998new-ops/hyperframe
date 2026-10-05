@@ -65,13 +65,13 @@ Then run:
 - important decisions/lessons
 
 ## Cleanup
-Finalize automatically deletes only:
+Finalize first preserves the approved video under `renders/final/` with a SHA-256 receipt, then automatically deletes only:
 `.aurora/runs/<run>/temp/`
 
 Never delete original user media automatically.
 
 ## Finalize
 After learning review + owner approval:
-`aurora-studio finalize RUN_ID`
+`aurora-studio finalize RUN_ID --video path/to/approved.mp4`
 
 Learning proposals are logged as **pending review**. They are never auto-applied.
