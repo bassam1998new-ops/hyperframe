@@ -14,6 +14,7 @@ test("provider availability follows workspace resources", () => {
   fs.mkdirSync(path.join(cwd, ".aurora"), { recursive: true });
   fs.writeFileSync(path.join(cwd, ".aurora", "workspace.json"), JSON.stringify({
     resources: {
+      browser_control: true,
       chatgpt_browser: true,
       google_flow: true,
       meta_ai: false,
@@ -31,6 +32,7 @@ test("provider capability search prefers matching available service", () => {
   fs.mkdirSync(path.join(cwd, ".aurora"), { recursive: true });
   fs.writeFileSync(path.join(cwd, ".aurora", "workspace.json"), JSON.stringify({
     resources: {
+      browser_control: true,
       chatgpt_browser: true,
       google_flow: true,
       meta_ai: false,
@@ -40,4 +42,30 @@ test("provider capability search prefers matching available service", () => {
 
   const providers = providersFor("voiceover", cwd);
   assert.equal(providers[0].id, "elevenlabs");
+});
+
+
+test("browser provider is unavailable when account exists but browser control does not", () => {
+  const cwd = temp();
+  fs.mkdirSync(path.join(cwd, ".aurora"), { recursive: true });
+  fs.writeFileSync(path.join(cwd, ".aurora", "workspace.json"), JSON.stringify({
+    resources: {
+      browser_control: false,
+      google_flow: true,
+      chatgpt_browser: true,
+      meta_ai: true,
+      elevenlabs: true
+    }
+  }));
+
+  const providers = listProviders(cwd);
+  const flow = providers.find(x => x.id === "google_flow");
+  const eleven = providers.find(x => x.id === "elevenlabs");
+
+  assert.equal(flow.account_available, true);
+  assert.equal(flow.available, false);
+  assert.equal(flow.blocked_reason, "browser_control_unavailable");
+
+  assert.equal(eleven.available, true);
+  assert.equal(eleven.blocked_reason, null);
 });
