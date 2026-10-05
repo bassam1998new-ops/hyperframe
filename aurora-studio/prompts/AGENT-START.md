@@ -76,6 +76,9 @@ For coding agents, prefer:
     "meta_ai": false,
     "elevenlabs": true
   },
+  "local_paths": [
+    "D:/approved-brand-assets"
+  ],
   "agents": "all",
   "install_hyperframes": true
 }
@@ -88,3 +91,5 @@ aurora-studio setup --config aurora-setup.json
 ```
 
 The setup file contains preferences only, never secrets.
+
+`local_paths` is an explicit allowlist. Do not scan other folders just because they are visible on the machine.
