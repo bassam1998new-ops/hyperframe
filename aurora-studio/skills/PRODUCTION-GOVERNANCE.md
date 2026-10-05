@@ -172,6 +172,6 @@ Only after:
 - owner approval recorded
 
 Run:
-`aurora-studio finalize RUN --lesson "short reusable lesson"`
+`aurora-studio finalize RUN --video path/to/approved.mp4 --lesson "short reusable lesson"`
 
 Finalize may clean only run-scoped temporary files. Never original user media or unrelated files.
