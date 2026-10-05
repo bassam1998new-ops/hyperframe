@@ -23,7 +23,10 @@
         "complex rigging",
         "heavy physical simulation"
       ],
-      "notes": "Reuse upstream HyperFrames features before building duplicates."
+      "notes": "Reuse upstream HyperFrames features before building duplicates.",
+      "playbook": "knowledge/tools/hyperframes.md",
+      "upstream_update_command": "npx hyperframes upgrade --check --json",
+      "upstream_skill_update_command": "npx hyperframes skills update general-video"
     },
     {
       "id": "blender",
