@@ -46,7 +46,7 @@ node ./bin/aurora-studio.mjs mood validate <run-id>
 node ./bin/aurora-studio.mjs routing <run-id>
 node ./bin/aurora-studio.mjs status <run-id>
 node ./bin/aurora-studio.mjs review ./final.mp4
-node ./bin/aurora-studio.mjs finalize <run-id> --lesson "short reusable lesson"
+node ./bin/aurora-studio.mjs finalize <run-id> --video ./approved.mp4 --lesson "short reusable lesson"
 ```
 
 The package remains private during foundation work. Before public release we will choose the final npm name/scope and enable the one-line install.
