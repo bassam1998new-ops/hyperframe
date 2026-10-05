@@ -1653,3 +1653,19 @@ export async function showReleaseReadiness() {
     return null;
   }
 }
+
+
+export async function assertReleaseReady() {
+  try {
+    const result = releaseReadiness();
+    console.log(JSON.stringify(result, null, 2));
+    if (!result.ready) {
+      process.exitCode = 2;
+    }
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
