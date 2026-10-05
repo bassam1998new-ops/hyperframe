@@ -144,3 +144,48 @@ export function summarizeLibrary(cwd = process.cwd()) {
     by_kind: counts
   };
 }
+
+
+export function upsertLibraryItem(input, cwd = process.cwd()) {
+  const file = ensureIndex(cwd);
+  const items = readLibrary(cwd);
+  const now = new Date().toISOString();
+
+  if (!input.id) throw new Error("Upsert requires a stable item id.");
+
+  const existingIndex = items.findIndex(x => x.id === input.id);
+  const existing = existingIndex >= 0 ? items[existingIndex] : null;
+
+  const merged = {
+    schema_version: 1,
+    id: input.id,
+    kind: input.kind || existing?.kind || "asset",
+    name: String(input.name ?? existing?.name ?? "").trim(),
+    description: String(input.description ?? existing?.description ?? "").trim(),
+    type: String(input.type ?? existing?.type ?? "other").trim(),
+    path: input.path !== undefined ? (input.path ? path.normalize(String(input.path)) : null) : existing?.path ?? null,
+    source_url: input.source_url !== undefined ? input.source_url : existing?.source_url ?? null,
+    source_name: input.source_name !== undefined ? input.source_name : existing?.source_name ?? null,
+    license: {
+      id: input.license_id ?? existing?.license?.id ?? "unknown",
+      commercial_allowed: input.commercial_allowed !== undefined ? input.commercial_allowed : existing?.license?.commercial_allowed ?? null,
+      redistribution_allowed: input.redistribution_allowed !== undefined ? input.redistribution_allowed : existing?.license?.redistribution_allowed ?? null,
+      attribution_required: input.attribution_required !== undefined ? input.attribution_required : existing?.license?.attribution_required ?? null
+    },
+    tags: unique(Array.isArray(input.tags) ? input.tags : existing?.tags || []),
+    tools: unique(Array.isArray(input.tools) ? input.tools : existing?.tools || []),
+    approved: input.approved !== undefined ? Boolean(input.approved) : Boolean(existing?.approved),
+    quality_tier: input.quality_tier ?? existing?.quality_tier ?? "unknown",
+    created_at: existing?.created_at || now,
+    updated_at: now
+  };
+
+  if (!merged.name) throw new Error("Library item requires a name.");
+  if (!merged.path && !merged.source_url) throw new Error("Library item requires a local path or source URL.");
+
+  if (existingIndex >= 0) items[existingIndex] = merged;
+  else items.push(merged);
+
+  fs.writeFileSync(file, items.map(item => JSON.stringify(item)).join("\n") + (items.length ? "\n" : ""));
+  return { item: merged, created: existingIndex < 0 };
+}
