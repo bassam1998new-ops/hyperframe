@@ -38,10 +38,21 @@ export function detectMediaRuntime() {
   };
 }
 
+export function ffmpegInstallHint(platform = process.platform) {
+  if (platform === "win32") {
+    return "Install a 64-bit FFmpeg build, add its bin folder to PATH, or set AURORA_FFMPEG_PATH to ffmpeg.exe.";
+  }
+  if (platform === "darwin") {
+    return "Install FFmpeg with: brew install ffmpeg";
+  }
+  return "Install FFmpeg with your system package manager (for Debian/Ubuntu: sudo apt install ffmpeg).";
+}
+
 export function evaluateRuntime({
   nodeVersion = process.versions.node,
   ffmpeg = null,
-  ffprobe = null
+  ffprobe = null,
+  platform = process.platform
 } = {}) {
   const errors = [];
   const warnings = [];
@@ -51,8 +62,13 @@ export function evaluateRuntime({
     errors.push(`Node 22+ is required; found Node ${nodeVersion || "unknown"}.`);
   }
 
+  const installHint = ffmpegInstallHint(platform);
+
   if (!ffmpeg) {
-    errors.push("FFmpeg is required for AurorA/HyperFrames rendering and media workflows.");
+    errors.push(
+      "FFmpeg is required for AurorA/HyperFrames rendering and media workflows. " +
+      installHint
+    );
   }
 
   if (!ffprobe) {
@@ -68,7 +84,8 @@ export function evaluateRuntime({
     },
     ffmpeg: {
       available: Boolean(ffmpeg),
-      path: ffmpeg
+      path: ffmpeg,
+      install_hint: ffmpeg ? null : installHint
     },
     ffprobe: {
       available: Boolean(ffprobe),
