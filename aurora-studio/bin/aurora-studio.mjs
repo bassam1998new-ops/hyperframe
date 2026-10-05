@@ -47,7 +47,10 @@ import {
   createLearningReviewRecord,
   showLearningReview,
   validateLearningReviewRecord,
-  routeProductionRun
+  routeProductionRun,
+  checkStudioUpdate,
+  planStudioUpdate,
+  backupStudioWorkspace
 } from "../src/studio.mjs";
 
 const [command = "help", ...args] = process.argv.slice(2);
@@ -115,6 +118,13 @@ switch (command) {
   case "discover":
     await discoverLocalWorkspace();
     break;
+  case "update":
+    if (args[0] === "check") await checkStudioUpdate({ url: flag("--url") });
+    else if (args[0] === "plan") await planStudioUpdate();
+    else if (args[0] === "backup") await backupStudioWorkspace();
+    else console.error("update commands: check [--url URL] | plan | backup");
+    break;
+
   case "agent":
     if (args[0] === "install") await installAgentPointers(args[1] || "all");
     else if (args[0] === "remove") await removeAgentPointers(args[1] || "all");
@@ -276,6 +286,9 @@ Setup:
   aurora-studio assets search "studio hdri" [--type hdris] [--limit 10]
   aurora-studio assets files POLY_HAVEN_ID
   aurora-studio discover
+  aurora-studio update check
+  aurora-studio update plan
+  aurora-studio update backup
   aurora-studio agent install [all|claude|codex]
   aurora-studio agent remove [all|claude|codex]
 
