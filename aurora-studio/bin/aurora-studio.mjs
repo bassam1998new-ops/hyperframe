@@ -62,7 +62,10 @@ import {
   installHyperframesWorkspace,
   showHyperframesCoreInfo,
   executeHyperframesCore,
-  checkHyperframesUpgrade
+  checkHyperframesUpgrade,
+  recordRunUsage,
+  summarizeRunUsage,
+  checkRunPaidUsage
 } from "../src/studio.mjs";
 
 const [command = "help", ...args] = process.argv.slice(2);
@@ -300,6 +303,37 @@ switch (command) {
     });
     break;
   }
+  case "usage":
+    if (args[0] === "check") {
+      await checkRunPaidUsage({
+        run_id: args[1],
+        provider: flag("--provider"),
+        operation: flag("--operation") || "generation",
+        quantity: Number(flag("--quantity") || 0),
+        unit: flag("--unit") || "credits",
+        estimated_usd: flag("--usd")
+      });
+    } else if (args[0] === "record") {
+      await recordRunUsage({
+        run_id: args[1],
+        phase: flag("--phase") || "actual",
+        provider: flag("--provider"),
+        operation: flag("--operation") || "generation",
+        model: flag("--model"),
+        quantity: Number(flag("--quantity") || 0),
+        unit: flag("--unit") || "credits",
+        usd: flag("--usd"),
+        output_count: flag("--outputs"),
+        resolution: flag("--resolution"),
+        note: flag("--note")
+      });
+    } else if (args[0] === "summary") {
+      await summarizeRunUsage(args[1]);
+    } else {
+      console.error("usage commands: check RUN_ID --provider ID --operation NAME --quantity N --unit UNIT [--usd USD] | record RUN_ID ... | summary RUN_ID");
+    }
+    break;
+
   case "budget":
     await checkBudget(args[0], args[1] || 0);
     break;
@@ -388,6 +422,9 @@ Production:
   aurora-studio routing RUN_ID
   aurora-studio status RUN_ID
   aurora-studio checkpoint RUN_ID STAGE STATUS [--artifact PATH] [--note TEXT] [--approved]
+  aurora-studio usage check RUN_ID --provider google_flow --operation video_generation --quantity 6 --unit credits [--usd 0.20]
+  aurora-studio usage record RUN_ID --provider google_flow --operation video_generation --quantity 6 --unit credits [--usd 0.20] [--model MODEL] [--resolution 360p]
+  aurora-studio usage summary RUN_ID
   aurora-studio budget ESTIMATED_USD [SPENT_USD]
   aurora-studio review VIDEO_PATH
   aurora-studio finalize RUN_ID [--lesson TEXT]
