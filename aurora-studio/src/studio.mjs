@@ -20,6 +20,7 @@ import {
   createAfterEffectsJob,
   runAfterEffectsJob
 } from "./adapters/after-effects.mjs";
+import { retrieveContext } from "./retrieval.mjs";
 import {
   ensureProjectProfile,
   readProject,
@@ -383,28 +384,21 @@ export async function planProduction(taskText = "", options = {}, cwd = process.
     budget
   });
 
-  const assetTerms = referenceAnalysis.asset_search_terms || [];
-  const libraryQuery = [taskText, ...assetTerms].filter(Boolean).join(" ");
-  const libraryMatches = searchLibrary(libraryQuery, { limit: 8, approved_only: true }, cwd);
+  const contextPacket = retrieveContext({
+    query: taskText,
+    referenceId: referenceRecord?.reference?.id || null,
+    cwd,
+    libraryLimit: 8,
+    memoryLimit: 5
+  });
   fs.writeFileSync(path.join(run.dir, "context.json"), JSON.stringify({
-    schema_version: 1,
-    captured_at: new Date().toISOString(),
-    project,
-    reference: referenceRecord?.reference || null,
-    library_query: libraryQuery,
-    library_matches: libraryMatches.map(item => ({
-      id: item.id,
-      kind: item.kind,
-      name: item.name,
-      type: item.type,
-      path: item.path,
-      source_url: item.source_url,
-      license: item.license,
-      tools: item.tools,
-      quality_tier: item.quality_tier,
-      search_score: item.search_score
-    }))
+    ...contextPacket,
+    captured_at: new Date().toISOString()
   }, null, 2) + "\n");
+  const libraryMatches = [
+    ...(contextPacket.reusable?.styles || []),
+    ...(contextPacket.reusable?.assets || [])
+  ];
 
   const decisionPath = path.join(run.dir, "decisions.jsonl");
   fs.appendFileSync(decisionPath, JSON.stringify({
@@ -733,6 +727,19 @@ export async function executeAfterEffectsJob(jobPath, dryRun = false, cwd = proc
     console.log(JSON.stringify(result, null, 2));
     if (result.ok === false) process.exitCode = 2;
     return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+
+export async function showRetrievedContext(query, referenceId = null, cwd = process.cwd()) {
+  try {
+    const packet = retrieveContext({ query, referenceId, cwd });
+    console.log(JSON.stringify(packet, null, 2));
+    return packet;
   } catch (error) {
     console.error(error.message);
     process.exitCode = 2;
