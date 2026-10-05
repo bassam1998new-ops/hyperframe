@@ -12,6 +12,7 @@ function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
     encoding: "utf8",
     maxBuffer: 64 * 1024 * 1024,
+    shell: process.platform === "win32" && /\.(cmd|bat)$/i.test(command),
     ...options
   });
 
@@ -19,6 +20,7 @@ function run(command, args, options = {}) {
     throw new Error(
       [
         `Command failed: ${command} ${args.join(" ")}`,
+        result.error ? String(result.error) : "",
         result.stdout || "",
         result.stderr || ""
       ].join("\n")
