@@ -45,7 +45,7 @@ export function createReviewReport(runId, video, cwd = process.cwd()) {
       camera_crop_safe_zones: null,
       audio: null,
       three_d_vfx_quality: null,
-      ai_slop: null,
+      ai_slop_free: null,
       notes: []
     },
     assets: existing?.assets || {
@@ -81,7 +81,7 @@ function completedCreativeChecks(creative = {}) {
     "typography",
     "camera_crop_safe_zones",
     "audio",
-    "ai_slop"
+    "ai_slop_free"
   ];
 
   return required.filter(key => creative[key] === null || creative[key] === undefined);
