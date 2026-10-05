@@ -44,6 +44,9 @@ import {
   createMoodRecord,
   showMoodRecord,
   validateMoodRecord,
+  createLearningReviewRecord,
+  showLearningReview,
+  validateLearningReviewRecord,
   routeProductionRun
 } from "../src/studio.mjs";
 
@@ -139,6 +142,13 @@ switch (command) {
     else if (args[0] === "show") await showMoodRecord(args[1]);
     else if (args[0] === "validate") await validateMoodRecord(args[1]);
     else console.error("mood commands: create RUN_ID | show RUN_ID | validate RUN_ID");
+    break;
+
+  case "learn":
+    if (args[0] === "create") await createLearningReviewRecord(args[1]);
+    else if (args[0] === "show") await showLearningReview(args[1]);
+    else if (args[0] === "validate") await validateLearningReviewRecord(args[1]);
+    else console.error("learn commands: create RUN_ID | show RUN_ID | validate RUN_ID");
     break;
 
   case "reference":
@@ -274,6 +284,9 @@ Brain:
   aurora-studio mood create RUN_ID
   aurora-studio mood show RUN_ID
   aurora-studio mood validate RUN_ID
+  aurora-studio learn create RUN_ID
+  aurora-studio learn show RUN_ID
+  aurora-studio learn validate RUN_ID
   aurora-studio project
   aurora-studio project set FIELD VALUE
   aurora-studio reference create NAME [--source VALUE]
