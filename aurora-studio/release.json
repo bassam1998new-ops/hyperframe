@@ -13,7 +13,8 @@
       "project/reference/mood brain",
       "asset/style library with license gates",
       "Blender and optional After Effects adapters",
-      "Windows + Linux CI"
+      "Windows + Linux CI",
+      "portable .aurora/system knowledge snapshot for npx/community installs"
     ],
     "fixed": [
       "routing now happens after context, mood and asset search",
