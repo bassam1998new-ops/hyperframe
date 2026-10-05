@@ -31,7 +31,7 @@ function passingReport() {
       camera_crop_safe_zones: true,
       audio: true,
       three_d_vfx_quality: null,
-      ai_slop: true,
+      ai_slop_free: true,
       notes: []
     },
     assets: {
