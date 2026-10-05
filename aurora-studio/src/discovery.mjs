@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 
 const IGNORE_DIRS = new Set([
@@ -68,7 +69,7 @@ export function discoverWorkspace(cwd = process.cwd(), options = {}) {
       const full = path.join(dir, entry.name);
       if (entry.isDirectory()) {
         if (IGNORE_DIRS.has(entry.name)) continue;
-        if (entry.name.startsWith(".") && entry.name !== ".claude" && entry.name !== ".codex") continue;
+        if (entry.name.startsWith(".")) continue;
         walk(full, depth + 1);
         continue;
       }
@@ -145,6 +146,29 @@ export function discoverWorkspace(cwd = process.cwd(), options = {}) {
 
 export const scanWorkspace = discoverWorkspace;
 
+function samePath(a, b) {
+  return path.resolve(a) === path.resolve(b);
+}
+
+export function isDangerouslyBroadExternalRoot(root, {
+  platform = process.platform,
+  home = os.homedir()
+} = {}) {
+  const resolved = path.resolve(root);
+  const parsed = path.parse(resolved);
+
+  if (samePath(resolved, parsed.root)) return true;
+  if (home && samePath(resolved, home)) return true;
+
+  if (platform === "win32") {
+    const normalized = resolved.replace(/\\+$/, "").toLowerCase();
+    const homeNormalized = String(home || "").replace(/\\+$/, "").toLowerCase();
+    if (homeNormalized && normalized === homeNormalized) return true;
+  }
+
+  return false;
+}
+
 export function saveDiscovery(cwd = process.cwd(), options = {}) {
   const result = discoverWorkspace(cwd, options);
   const extraRoots = Array.isArray(options.extraRoots) ? options.extraRoots : [];
@@ -160,6 +184,15 @@ export function saveDiscovery(cwd = process.cwd(), options = {}) {
           root,
           available: false,
           error: "not_found"
+        };
+      }
+
+      if (isDangerouslyBroadExternalRoot(root)) {
+        return {
+          root,
+          available: false,
+          error: "too_broad",
+          note: "Choose a specific asset/project folder instead of a filesystem root or home directory."
         };
       }
 
