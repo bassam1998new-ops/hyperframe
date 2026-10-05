@@ -13,6 +13,7 @@ const SYSTEM_ITEMS = [
   "bin",
   "src",
   "skills",
+  "agent-skills",
   "knowledge",
   "schemas",
   path.join("hooks", "runtime"),
