@@ -5,8 +5,16 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { createInterface } from 'node:readline/promises';
 import {
-  appendJsonl, fileSha256, findWorkspace, initWorkspace, readJson,
-  setDotted, setMode, writeJson
+  appendJsonl,
+  checkConfig,
+  fileSha256,
+  findWorkspace,
+  initWorkspace,
+  migrateConfig,
+  readJson,
+  setDotted,
+  setMode,
+  writeJson
 } from '../lib/workspace.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -27,7 +35,10 @@ Commands:
   aurora status                 Show workspace state
   aurora resources              Show enabled resources/providers
   aurora doctor                 Check local production tools
+  aurora config check          Check missing config fields
+  aurora config migrate        Add new config fields safely
   aurora config set <path> <v> Change one setting
+  aurora skills sync           Install AurorA skills into .claude/skills
   aurora finalize <video> --approved [--clean]
                                Save approved final and optionally clean tmp
   aurora clean [--yes]          Preview or clean workspace tmp only
@@ -66,11 +77,12 @@ async function setupWorkspace(ws) {
     config.resources.providers.elevenlabs.enabled = /^y(es)?$/i.test(eleven.trim());
     writeJson(ws.configPath, config);
 
-    fs.writeFileSync(path.join(ws.root, 'PROJECT.md'),
-      `# Project\n\nProduct / service: ${config.product.name || 'TBD'}\nType: ${config.product.type || 'TBD'}\nAudience: ${config.product.audience || 'TBD'}\nWebsite: ${config.product.website || 'TBD'}\n\n## Goal\nMake videos that accurately represent this product/service.\n\n## Non-negotiables\n- Search this workspace before creating new assets.\n- Reuse approved brand facts, style rules and assets.\n- Ask before changing product-level setup.\n`,
-      'utf8');
+    const project = `# Project\n\nProduct / service: ${config.product.name || 'TBD'}\nType: ${config.product.type || 'TBD'}\nAudience: ${config.product.audience || 'TBD'}\nWebsite: ${config.product.website || 'TBD'}\n\n## Goal\nMake videos that accurately represent this product/service.\n\n## Non-negotiables\n- Search this workspace before creating new assets.\n- Reuse approved brand facts, style rules and assets.\n- Ask before changing product-level setup.\n`;
+    fs.writeFileSync(path.join(ws.root, 'PROJECT.md'), project, 'utf8');
     out('Workspace setup saved.');
-  } finally { rl.close(); }
+  } finally {
+    rl.close();
+  }
 }
 
 function commandExists(cmd, versionArgs = ['--version']) {
@@ -93,7 +105,7 @@ function doctor() {
   };
   out('AurorA Studio doctor');
   for (const [name, state] of Object.entries(tools)) out(`${state.found ? '✓' : '·'} ${name}: ${state.detail}`);
-  out('\nAfter Effects is optional and proprietary. Adapters can use exact paths later.');
+  out('\nNote: After Effects is optional and proprietary. HyperFrames/Blender may also be installed outside PATH; adapters can be pointed to exact paths later.');
 }
 
 function status(ws) {
@@ -111,6 +123,8 @@ function resources(ws) {
   const r = ws.config.resources;
   out('Local folders:');
   if (!r.local_paths.length) out('  none yet'); else r.local_paths.forEach(x => out(`  - ${x}`));
+  out('Websites:');
+  if (!r.websites.length) out('  none yet'); else r.websites.forEach(x => out(`  - ${x}`));
   out('Providers:');
   for (const [name, value] of Object.entries(r.providers)) out(`  - ${name}: ${value.enabled ? 'enabled' : 'disabled'}${value.experimental ? ' / experimental' : ''}`);
   out('\nCredentials are never stored in workspace Markdown or committed config.');
@@ -137,11 +151,15 @@ function finalize(ws, source, approved, cleanTmp) {
   const target = path.join(targetDir, path.basename(input));
   if (path.resolve(target) !== input) fs.copyFileSync(input, target);
   appendJsonl(path.join(ws.root, '.aurora', 'decisions.jsonl'), {
-    type: 'finalize', at: new Date().toISOString(), approved: true,
-    file: path.relative(ws.root, target), sha256: fileSha256(target), mode: ws.config.mode
+    type: 'finalize',
+    at: new Date().toISOString(),
+    approved: true,
+    file: path.relative(ws.root, target),
+    sha256: fileSha256(target),
+    mode: ws.config.mode
   });
   out(`Final saved: ${target}`);
-  out('Next: review the session and promote only reusable lessons/styles.');
+  out('Next: the agent should review the session and promote only reusable lessons/styles.');
   if (cleanTmp) clean(ws, true);
 }
 
@@ -151,7 +169,8 @@ switch (command) {
   case 'init': {
     const folder = args[1] || '.';
     const root = path.resolve(process.cwd(), folder);
-    const ws = initWorkspace(root, { name: path.basename(root), version: pkg.version });
+    const name = path.basename(root);
+    const ws = initWorkspace(root, { name, version: pkg.version });
     out(`AurorA workspace ready: ${ws.root}`);
     out('Next: run `aurora setup`, then open this folder with Claude/Codex/your agent.');
     break;
@@ -167,11 +186,43 @@ switch (command) {
   case 'resources': resources(currentWorkspace()); break;
   case 'doctor': doctor(); break;
   case 'config': {
-    if (args[1] !== 'set') fail('Current alpha supports: `aurora config set <path> <value>`.');
     const ws = currentWorkspace();
+    if (args[1] === 'check') {
+      const result = checkConfig(ws.config, { name: path.basename(ws.root), version: pkg.version });
+      if (result.ok) out('Config is current.');
+      else { out('Missing config fields:'); result.missing.forEach(x => out(`  - ${x}`)); }
+      break;
+    }
+    if (args[1] === 'migrate') {
+      migrateConfig(ws.root, { name: path.basename(ws.root), version: pkg.version });
+      out('Config migrated. Existing values were preserved.');
+      break;
+    }
+    if (args[1] !== 'set') fail('Use `aurora config check`, `aurora config migrate`, or `aurora config set <path> <value>`.');
     if (!args[2]) fail('Config path is required.');
     const config = setDotted(ws.root, args[2], args.slice(3).join(' '));
     out(JSON.stringify(config, null, 2));
+    break;
+  }
+  case 'skills': {
+    if (args[1] !== 'sync') fail('Current alpha supports: `aurora skills sync [--hyperframes]`.');
+    const ws = currentWorkspace();
+    const source = path.join(here, '..', 'skills');
+    const target = path.join(ws.root, '.claude', 'skills');
+    fs.mkdirSync(target, { recursive: true });
+    for (const entry of fs.readdirSync(source, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      fs.cpSync(path.join(source, entry.name), path.join(target, entry.name), { recursive: true, force: true });
+    }
+    out('AurorA skills synced to .claude/skills.');
+    if (args.includes('--hyperframes')) {
+      try {
+        execFileSync(process.platform === 'win32' ? 'npx.cmd' : 'npx', ['hyperframes', 'skills', 'update'], { cwd: ws.root, stdio: 'inherit', timeout: 120000 });
+        out('HyperFrames official skills refreshed.');
+      } catch {
+        fail('AurorA skills installed, but HyperFrames skill refresh failed. Run `npx hyperframes skills update` manually.');
+      }
+    }
     break;
   }
   case 'clean': clean(currentWorkspace(), args.includes('--yes')); break;
