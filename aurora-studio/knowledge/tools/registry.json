@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "tools": [
+    {
+      "id": "hyperframe",
+      "name": "HyperFrames",
+      "required": true,
+      "availability": "detected_at_setup",
+      "detect_commands": [
+        "hyperframes"
+      ],
+      "npm_package": "hyperframes",
+      "best_for": [
+        "2d motion graphics",
+        "html and gsap animation",
+        "captions",
+        "ui and technical explainers",
+        "social variants",
+        "deterministic programmable video"
+      ],
+      "avoid_for": [
+        "true 3d character modeling",
+        "complex rigging",
+        "heavy physical simulation"
+      ],
+      "notes": "Reuse upstream HyperFrames features before building duplicates.",
+      "playbook": "knowledge/tools/hyperframes.md",
+      "upstream_update_command": "npx hyperframes upgrade --check --json",
+      "upstream_skill_update_command": "npx hyperframes skills update general-video"
+    },
+    {
+      "id": "blender",
+      "name": "Blender",
+      "required": false,
+      "availability": "detected_at_setup",
+      "detect_commands": [
+        "blender"
+      ],
+      "best_for": [
+        "true 3d",
+        "characters and avatars",
+        "modeling",
+        "rigging",
+        "materials",
+        "lighting",
+        "camera animation",
+        "physics",
+        "3d product shots"
+      ],
+      "avoid_for": [
+        "simple captions",
+        "basic social typography"
+      ],
+      "license_note": "GPL application; generated project outputs can be used normally.",
+      "env_path": "AURORA_BLENDER_PATH",
+      "playbook": "knowledge/tools/blender.md"
+    },
+    {
+      "id": "after_effects",
+      "name": "Adobe After Effects",
+      "required": false,
+      "availability": "detected_at_setup",
+      "detect_commands": [
+        "afterfx",
+        "aerender"
+      ],
+      "env_path": "AURORA_AFTER_EFFECTS_PATH",
+      "best_for": [
+        "compositing",
+        "vfx finishing",
+        "tracking",
+        "layered motion graphics",
+        "post effects",
+        "template based finishing"
+      ],
+      "avoid_for": [
+        "making the studio depend on Adobe",
+        "jobs that HyperFrames or Blender can finish cleanly without it"
+      ],
+      "license_note": "Proprietary optional tool. Never required for AurorA Studio to work.",
+      "playbook": "knowledge/tools/after-effects.md"
+    }
+  ],
+  "integrations": [
+    {
+      "id": "obsidian",
+      "name": "Obsidian",
+      "required": false,
+      "role": "knowledge_ui",
+      "detect_commands": [
+        "obsidian"
+      ],
+      "notes": "Optional UI over AurorA's plain Markdown/JSON brain. Never the source of truth."
+    }
+  ]
+}

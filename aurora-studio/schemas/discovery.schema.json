@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AurorA Studio Local Discovery",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "scanned_at",
+    "root",
+    "limits",
+    "scanned_files",
+    "truncated",
+    "counts",
+    "directories",
+    "samples"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "scanned_at": {
+      "type": "string"
+    },
+    "root": {
+      "type": "string"
+    },
+    "limits": {
+      "type": "object",
+      "required": [
+        "max_depth",
+        "max_files"
+      ],
+      "properties": {
+        "max_depth": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_files": {
+          "type": "integer",
+          "minimum": 100
+        }
+      }
+    },
+    "scanned_files": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "truncated": {
+      "type": "boolean"
+    },
+    "counts": {
+      "type": "object"
+    },
+    "directories": {
+      "type": "array"
+    },
+    "samples": {
+      "type": "object"
+    },
+    "external_roots": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "root",
+          "available"
+        ],
+        "properties": {
+          "root": {
+            "type": "string"
+          },
+          "available": {
+            "type": "boolean"
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "scanned_files": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "matched_files": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "truncated": {
+            "type": "boolean"
+          },
+          "counts": {
+            "type": "object"
+          },
+          "by_kind": {
+            "type": "object"
+          },
+          "samples": {
+            "type": "object"
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

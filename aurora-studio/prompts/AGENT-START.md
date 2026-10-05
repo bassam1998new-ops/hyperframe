@@ -1,0 +1,99 @@
+# AurorA Studio — Agent Start Prompt
+
+Use AurorA Studio for this workspace.
+
+First:
+1. Read `.aurora/system/README.md`.
+2. Read `.aurora/system/skills/PROJECT-CONTEXT.md` first for a new workspace, then only the other skills relevant to the active job. Read provider/tool knowledge in `.aurora/system/knowledge/` when relevant.
+3. Run `aurora-studio doctor` when available. Otherwise use the workspace-safe fallback: `node .aurora/system/bin/aurora-studio.mjs doctor`.
+4. If `.aurora/workspace.json` is missing, ask me once for the product/service, website if available, main video purpose, default mode and optional resources. Prefer writing a small setup JSON file and running `aurora-studio setup --config <file>` so setup is deterministic for agents.
+5. Read `.aurora/project.json` and `.aurora/discovery.json` before asking me for information that may already exist locally.
+6. If the project has a website and browser access is available, inspect the site when it materially improves understanding of the product/brand; save stable findings into the project profile, not secrets or session data.
+7. Never ask me for passwords, browser cookies or secrets to store in the workspace.
+8. If `aurora-studio` is not on PATH, use `node .aurora/system/bin/aurora-studio.mjs` as the workspace-safe fallback for all AurorA commands.
+
+For each real production job:
+- create an AurorA production run with `aurora-studio plan`
+- do NOT lock the production tool at plan time
+- checkpoint meaningful stages so the work can resume after interruption
+- in Director mode: concept → owner pick → mood → asset-plan → routing
+- in Direct mode: simple jobs may explicitly skip concept/mood, but a completed asset-plan still happens before routing
+- run `aurora-studio routing RUN_ID` only after the early stages are ready
+- fill/validate the generated build-plan.json and assign each shot/build unit to the right routed engine
+- complete the build_plan checkpoint before execution
+- check the budget before paid generation
+- create review.json after the final render; AurorA extracts visual review frames
+- inspect every generated review frame before filling creative PASS/FIX/REBUILD fields
+- only PASS can complete post_render_review
+- FIX/REBUILD loops back into production
+- finalize only after I approve, passing the exact approved video with `--video`
+
+When I give you a reference:
+- analyze its visual and production grammar
+- read my saved project/product context
+- search local/project/AurorA assets and saved styles first
+- record each need in the run's asset-plan.json
+- decide REUSE / MODIFY / BUILD_NEW / NOT_NEEDED
+- for REUSE/MODIFY, use tracked AurorA library IDs
+- validate/complete the asset plan
+- only then choose the tool path
+- never select an unavailable optional tool
+- use HyperFrames features that already exist instead of rebuilding them
+
+Direct mode:
+Work fast with minimum checkpoints.
+
+Director mode:
+Give me a small number of genuinely different concepts first, explain why they fit this project, then follow the Director flow after I choose.
+
+Resources:
+If browser AI resources such as ChatGPT, Google Flow or Meta AI are configured **and** `browser_control=true`, you may use them when they improve quality or reduce cost. An account alone does not mean this agent can operate it. Prefer cheap previews first. For example, generate low-resolution exploration before spending on high-quality output. ElevenLabs is optional for voice/audio when configured.
+
+After the final render is approved:
+- keep the final and files needed to reproduce it
+- keep useful approved assets/styles
+- review the run's learning-review.json
+- propose a new/update style or skill only if the session truly taught something reusable
+- "nothing new" is a valid learning result
+- validate the learning review
+- finalize so only safe run-scoped temp is cleaned
+- do not auto-apply learning proposals
+- do not automatically train or change the routing model
+
+Keep your explanations to me simple unless I ask for technical detail.
+
+
+## Configured setup example
+
+For coding agents, prefer:
+
+```json
+{
+  "product": "Example product",
+  "purpose": "product and social videos",
+  "website": "https://example.com",
+  "mode": "direct",
+  "resources": {
+    "browser_control": true,
+    "chatgpt_browser": true,
+    "google_flow": true,
+    "meta_ai": false,
+    "elevenlabs": true
+  },
+  "local_paths": [
+    "D:/approved-brand-assets"
+  ],
+  "agents": "all",
+  "install_hyperframes": true
+}
+```
+
+Then:
+
+```bash
+aurora-studio setup --config aurora-setup.json
+```
+
+The setup file contains preferences only, never secrets.
+
+`local_paths` is an explicit allowlist. Do not scan other folders just because they are visible on the machine.

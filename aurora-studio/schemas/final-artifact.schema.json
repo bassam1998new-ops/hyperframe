@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AurorA Studio Final Artifact Receipt",
+  "type": "object",
+  "required": ["schema_version", "run_id", "approved_at", "final_path", "sha256", "bytes", "copied"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "run_id": { "type": "string", "minLength": 1 },
+    "approved_at": { "type": "string" },
+    "final_path": { "type": "string", "minLength": 1 },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "bytes": { "type": "integer", "minimum": 0 },
+    "copied": { "type": "boolean" },
+    "source_was_inside_workspace": { "type": "boolean" }
+  },
+  "additionalProperties": false
+}

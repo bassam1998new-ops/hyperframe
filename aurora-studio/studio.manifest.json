@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "studio_version": "0.2.0-dev",
+  "channel": "dev",
+  "name": "AurorA Studio",
+  "modes": ["direct", "director"],
+  "core": {
+    "knowledge_first": true,
+    "ui_last": true,
+    "learn_only_after_approval": true
+  },
+  "tools": {
+    "hyperframe": { "required": true },
+    "blender": { "required": false },
+    "after_effects": { "required": false }
+  },
+  "integrations": {
+    "obsidian": { "required": false, "role": "knowledge_ui" }
+  },
+  "hooks": {
+    "session_context": {
+      "enabled": true,
+      "implemented": true,
+      "agents": ["claude", "codex"],
+      "event": "SessionStart"
+    },
+    "preflight": {
+      "enabled": true,
+      "implemented": true
+    },
+    "post_approval": {
+      "enabled": true,
+      "implemented": true,
+      "command": "aurora-studio finalize"
+    },
+    "post_update": {
+      "enabled": true,
+      "implemented": false,
+      "blocked_by": "updater"
+    }
+  }
+}

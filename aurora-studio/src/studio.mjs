@@ -1,0 +1,1811 @@
+import fs from "node:fs";
+import path from "node:path";
+import { spawnSync } from "node:child_process";
+import readline from "node:readline/promises";
+import { stdin as input, stdout as output } from "node:process";
+import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
+import { chooseRoute, applyExperiencePrior } from "./selector.mjs";
+import {
+  createRun,
+  loadRun,
+  checkpoint,
+  evaluateSpend,
+  finalizeRun,
+  finalizationReadiness,
+  setRunRoute
+} from "./governance.mjs";
+import { probeRender } from "./quality.mjs";
+import {
+  createReviewReport,
+  readReviewReport,
+  validateReviewReportFile
+} from "./review-report.mjs";
+import { preserveFinalArtifact, sha256File } from "./final-artifact.mjs";
+import { addLibraryItem, readLibrary, searchLibrary, summarizeLibrary } from "./library.mjs";
+import { importHyperframeLibrary } from "./importers/hyperframe.mjs";
+import {
+  blenderInfo,
+  findBlender,
+  createBlenderJob,
+  runBlenderJob
+} from "./adapters/blender.mjs";
+import { packTransparentWebm } from "./adapters/blender-handoff.mjs";
+import {
+  afterEffectsInfo,
+  findAfterEffects,
+  createAfterEffectsJob,
+  runAfterEffectsJob
+} from "./adapters/after-effects.mjs";
+import { retrieveContext } from "./retrieval.mjs";
+import { listAssetSources, recommendAssetSources, sourceImportDefaults, licenseGate } from "./asset-sources.mjs";
+import { searchPolyHaven, getPolyHavenFiles } from "./open-assets/poly-haven.mjs";
+import { listProviders, providersFor } from "./providers.mjs";
+import { validateKnowledge } from "./validate.mjs";
+import { obsidianInfo, searchObsidian } from "./integrations/obsidian.mjs";
+import { installAgentInstructions, removeAgentInstructions } from "./agent-install.mjs";
+import { installAgentHooks, removeAgentHooks } from "./hook-install.mjs";
+import { saveDiscovery } from "./discovery.mjs";
+import { createMood, readMood, validateMoodFile } from "./mood.mjs";
+import {
+  createBuildPlan,
+  readBuildPlan,
+  validateBuildPlanFile
+} from "./build-plan.mjs";
+import {
+  createAssetPlan,
+  readAssetPlan,
+  validateAssetPlanFile,
+  assetRoutingEvidence
+} from "./asset-plan.mjs";
+import {
+  createLearningReview,
+  readLearningReview,
+  validateLearningReviewFile,
+  completedLearningPayload
+} from "./learning.mjs";
+import { syncSystemKnowledge, systemStatus } from "./system-install.mjs";
+import {
+  recordUsage,
+  summarizeUsage,
+  checkPaidAction
+} from "./usage.mjs";
+import { runtimeStatus } from "./runtime.mjs";
+import { ensureWorkspacePrivacyFiles } from "./workspace-privacy.mjs";
+import {
+  installHyperframesCore,
+  resolveHyperframesBinary,
+  runWorkspaceHyperframes,
+  HYPERFRAMES_RANGE
+} from "./tool-install.mjs";
+import { releaseReadiness } from "./release-readiness.mjs";
+import {
+  checkForUpdate,
+  backupWorkspaceState,
+  planWorkspaceMigration
+} from "./update.mjs";
+import {
+  readSetupConfig,
+  writeConfiguredWorkspace
+} from "./configured-setup.mjs";
+import {
+  ensureProjectProfile,
+  readProject,
+  writeProject,
+  createReference,
+  readReference,
+  listReferences
+} from "./brain.mjs";
+
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const REGISTRY_PATH = path.resolve(HERE, "../knowledge/tools/registry.json");
+const require = createRequire(import.meta.url);
+
+function registry() {
+  return JSON.parse(fs.readFileSync(REGISTRY_PATH, "utf8"));
+}
+
+function existsOnPath(command) {
+  const finder = process.platform === "win32" ? "where" : "which";
+  const result = spawnSync(finder, [command], { stdio: "ignore" });
+  return result.status === 0;
+}
+
+function localBinExists(command, cwd = process.cwd()) {
+  const name = process.platform === "win32" ? `${command}.cmd` : command;
+  return (
+    fs.existsSync(path.join(cwd, "node_modules", ".bin", name)) ||
+    fs.existsSync(path.join(cwd, ".aurora", "tools", "node_modules", ".bin", name))
+  );
+}
+
+function packageExists(packageName, cwd = process.cwd()) {
+  if (!packageName) return false;
+  try {
+    require.resolve(`${packageName}/package.json`, { paths: [cwd] });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function envPathExists(name) {
+  const value = process.env[name];
+  return Boolean(value && fs.existsSync(value));
+}
+
+function detectTool(tool, cwd = process.cwd()) {
+  if (tool.id === "hyperframe") {
+    const resolved = resolveHyperframesBinary(cwd);
+    if (resolved.available) {
+      return {
+        id: tool.id,
+        name: tool.name,
+        required: Boolean(tool.required),
+        available: true,
+        detected_by: `${resolved.source}:${resolved.binary}`
+      };
+    }
+  }
+
+  if (tool.id === "blender") {
+    const executable = findBlender();
+    if (executable) {
+      return {
+        id: tool.id,
+        name: tool.name,
+        required: Boolean(tool.required),
+        available: true,
+        detected_by: `blender:${executable}`
+      };
+    }
+  }
+
+  if (tool.id === "after_effects") {
+    const executables = findAfterEffects();
+    const executable = executables.aerender || executables.afterfx;
+    if (executable) {
+      return {
+        id: tool.id,
+        name: tool.name,
+        required: Boolean(tool.required),
+        available: true,
+        detected_by: `after_effects:${executable}`
+      };
+    }
+  }
+
+  const command = (tool.detect_commands || []).find(cmd => existsOnPath(cmd) || localBinExists(cmd, cwd));
+  const pkgDetected = tool.npm_package ? packageExists(tool.npm_package, cwd) : false;
+  const envDetected = tool.env_path ? envPathExists(tool.env_path) : false;
+  return {
+    id: tool.id,
+    name: tool.name,
+    required: Boolean(tool.required),
+    available: Boolean(command || pkgDetected || envDetected),
+    detected_by: command
+      ? `command:${command}`
+      : pkgDetected
+        ? `package:${tool.npm_package}`
+        : envDetected
+          ? `env:${tool.env_path}`
+          : null
+  };
+}
+
+export function detectTools(cwd = process.cwd()) {
+  return registry().tools.map(tool => detectTool(tool, cwd));
+}
+
+export function detectIntegrations(cwd = process.cwd()) {
+  return (registry().integrations || []).map(tool => detectTool(tool, cwd));
+}
+
+function yes(value) {
+  return /^(y|yes|true|1)$/i.test(String(value).trim());
+}
+
+function yesOrExisting(value, existing = false) {
+  const normalized = String(value ?? "").trim();
+  if (!normalized) return Boolean(existing);
+  return yes(normalized);
+}
+
+function workspaceDir(cwd = process.cwd()) {
+  return path.join(cwd, ".aurora");
+}
+
+function workspaceFile(cwd = process.cwd()) {
+  return path.join(workspaceDir(cwd), "workspace.json");
+}
+
+export function readWorkspace(cwd = process.cwd()) {
+  const file = workspaceFile(cwd);
+  return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, "utf8")) : null;
+}
+
+function writeWorkspace(workspace, cwd = process.cwd()) {
+  fs.mkdirSync(workspaceDir(cwd), { recursive: true });
+  workspace.updated_at = new Date().toISOString();
+  fs.writeFileSync(workspaceFile(cwd), JSON.stringify(workspace, null, 2) + "\n");
+}
+
+export async function runSetup(cwd = process.cwd()) {
+  const dir = workspaceDir(cwd);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.mkdirSync(path.join(dir, "styles"), { recursive: true });
+  fs.mkdirSync(path.join(dir, "library"), { recursive: true });
+  fs.mkdirSync(path.join(dir, "temp"), { recursive: true });
+
+  const rl = readline.createInterface({ input, output });
+  const existing = readWorkspace(cwd);
+
+  console.log("\nAurorA Studio setup");
+  console.log("No passwords or API keys are requested here.\n");
+
+  const product = await rl.question(`Product/service [${existing?.project?.product || ""}]: `);
+  const purpose = await rl.question(`What do you mainly make videos for? [${existing?.project?.purpose || ""}]: `);
+  const website = await rl.question(`Website/product URL (optional) [${existing?.project?.website || ""}]: `);
+  const modeAnswer = await rl.question(`Default mode direct/director [${existing?.default_mode || "direct"}]: `);
+
+  console.log("\nOptional browser/account resources. Answer y/n. Availability only.");
+  const browserControl = await rl.question(
+    `Can this agent control/use your browser for creative sites? [${existing?.resources?.browser_control ? "Y/n" : "y/N"}]: `
+  );
+  const chatgpt = await rl.question(`ChatGPT in browser available? [${existing?.resources?.chatgpt_browser ? "Y/n" : "y/N"}]: `);
+  const flow = await rl.question(`Google Flow available? [${existing?.resources?.google_flow ? "Y/n" : "y/N"}]: `);
+  const meta = await rl.question(`Meta AI available? [${existing?.resources?.meta_ai ? "Y/n" : "y/N"}]: `);
+  const eleven = await rl.question(`ElevenLabs available? [${existing?.resources?.elevenlabs ? "Y/n" : "y/N"}]: `);
+  const existingLocalPaths = existing?.resources?.local_paths || [];
+  const localPathsAnswer = await rl.question(
+    `Approved extra local folders, comma separated (optional) [${existingLocalPaths.join(", ")}]: `
+  );
+  const installPointers = await rl.question(
+    "Install AurorA instructions + the small SessionStart context hook for Claude/Codex? [Y/n]: "
+  );
+
+  const hyperframesBefore = detectTools(cwd).find(tool => tool.id === "hyperframe");
+  let installHyperframesAnswer = "";
+  if (!hyperframesBefore?.available) {
+    installHyperframesAnswer = await rl.question(
+      `HyperFrames core is missing. Install it inside this workspace (${HYPERFRAMES_RANGE})? [Y/n]: `
+    );
+  }
+
+  rl.close();
+
+  let hyperframesInstall = null;
+  if (!hyperframesBefore?.available && !/^(n|no|false|0)$/i.test(installHyperframesAnswer.trim())) {
+    try {
+      console.log("\nInstalling HyperFrames into .aurora/tools ...");
+      hyperframesInstall = installHyperframesCore({ cwd });
+    } catch (error) {
+      console.warn(`HyperFrames install warning: ${error.message}`);
+    }
+  }
+
+  const tools = detectTools(cwd);
+  const integrations = detectIntegrations(cwd);
+  const now = new Date().toISOString();
+  const mode = ["direct", "director"].includes(modeAnswer.trim().toLowerCase())
+    ? modeAnswer.trim().toLowerCase()
+    : existing?.default_mode || "direct";
+
+  const workspace = {
+    schema_version: 1,
+    studio: "AurorA Studio",
+    created_at: existing?.created_at || now,
+    updated_at: now,
+    default_mode: mode,
+    project: {
+      product: product.trim() || existing?.project?.product || "",
+      purpose: purpose.trim() || existing?.project?.purpose || "",
+      website: website.trim() || existing?.project?.website || ""
+    },
+    tools,
+    integrations,
+    resources: {
+      browser_control: yesOrExisting(browserControl, existing?.resources?.browser_control),
+      chatgpt_browser: yesOrExisting(chatgpt, existing?.resources?.chatgpt_browser),
+      google_flow: yesOrExisting(flow, existing?.resources?.google_flow),
+      meta_ai: yesOrExisting(meta, existing?.resources?.meta_ai),
+      elevenlabs: yesOrExisting(eleven, existing?.resources?.elevenlabs),
+      local_paths: localPathsAnswer.trim()
+        ? [...new Set(localPathsAnswer.split(",").map(value => value.trim()).filter(Boolean))]
+        : existingLocalPaths
+    },
+    learning: {
+      decision_log: ".aurora/decisions.jsonl",
+      lesson_log: ".aurora/lessons.jsonl",
+      approved_only: true
+    }
+  };
+
+  writeWorkspace(workspace, cwd);
+  const system = syncSystemKnowledge(cwd);
+  const projectProfile = ensureProjectProfile({
+    product: workspace.project.product,
+    purpose: workspace.project.purpose,
+    website: workspace.project.website
+  }, cwd);
+  projectProfile.product = workspace.project.product;
+  projectProfile.purpose = workspace.project.purpose;
+  projectProfile.website = workspace.project.website;
+  projectProfile.claims_to_protect ||= [];
+  projectProfile.sources ||= [];
+  writeProject(projectProfile, cwd);
+  readLibrary(cwd);
+  const discovery = saveDiscovery(cwd, {
+    extraRoots: workspace.resources.local_paths
+  });
+  fs.mkdirSync(path.join(dir, "references"), { recursive: true });
+  ensureWorkspacePrivacyFiles(cwd);
+
+  try {
+    importHyperframeLibrary({ cwd });
+  } catch {
+    // Fine for non-HyperFrames workspaces.
+  }
+
+  const shouldInstallAgents = !/^(n|no|false|0)$/i.test(installPointers.trim());
+
+  for (const log of ["decisions.jsonl", "lessons.jsonl"]) {
+    const file = path.join(dir, log);
+    if (!fs.existsSync(file)) fs.writeFileSync(file, "");
+  }
+
+  const styleReadme = path.join(dir, "styles", "README.md");
+  if (!fs.existsSync(styleReadme)) {
+    fs.writeFileSync(
+      styleReadme,
+      "# Workspace styles\n\nOnly save styles that were useful, approved, or intentionally kept for reuse.\n"
+    );
+  }
+
+  let agentSetup = null;
+  if (shouldInstallAgents) {
+    try {
+      agentSetup = {
+        instructions: installAgentInstructions("all", cwd),
+        hooks: installAgentHooks("all", cwd)
+      };
+    } catch (error) {
+      console.warn(`Agent integration warning: ${error.message}`);
+    }
+  }
+
+  console.log(`\nWorkspace ready: ${dir}`);
+  console.log(`System knowledge: ${system.studio_version} synced to .aurora/system`);
+  if (hyperframesInstall?.ok) {
+    console.log("HyperFrames core: installed privately in .aurora/tools");
+  }
+  console.log(`Discovery: ${discovery.result.matched_files} useful files across ${Object.keys(discovery.result.by_kind).length} categories.`);
+  if (agentSetup?.hooks?.trust_review_required) {
+    console.log("Claude/Codex project hooks installed. Review/trust them in your agent before they run.");
+  }
+  await runDoctor(cwd);
+}
+
+export async function runDoctor(cwd = process.cwd()) {
+  const tools = detectTools(cwd);
+  const integrations = detectIntegrations(cwd);
+  const ws = readWorkspace(cwd);
+  const system = systemStatus(cwd);
+  const runtime = runtimeStatus();
+
+  console.log("\nAurorA Studio doctor\n");
+  console.log("Runtime");
+  console.log(`${runtime.node.ok ? "✓" : "✗"} Node ${runtime.node.version}`);
+  console.log(`${runtime.ffmpeg.available ? "✓" : "✗"} FFmpeg${runtime.ffmpeg.path ? ` (${runtime.ffmpeg.path})` : ""}`);
+  console.log(`${runtime.ffprobe.available ? "✓" : "○"} ffprobe${runtime.ffprobe.path ? ` (${runtime.ffprobe.path})` : ""}`);
+  if (runtime.warnings.length) {
+    for (const warning of runtime.warnings) console.log(`  warning: ${warning}`);
+  }
+  console.log("");
+  for (const tool of tools) {
+    const mark = tool.available ? "✓" : tool.required ? "✗ REQUIRED" : "○ optional";
+    console.log(`${mark.padEnd(12)} ${tool.name}${tool.detected_by ? ` (${tool.detected_by})` : ""}`);
+  }
+
+  if (integrations.length) {
+    console.log("\nIntegrations");
+    for (const item of integrations) {
+      console.log(`${item.available ? "✓" : "○ optional"} ${item.name}${item.detected_by ? ` (${item.detected_by})` : ""}`);
+    }
+  }
+
+  if (!ws) {
+    console.log("\nWorkspace: not configured. Run: aurora-studio setup");
+  } else {
+    console.log(`\nWorkspace: configured | mode=${ws.default_mode}`);
+    console.log(`System knowledge: ${system.installed ? system.installed_version : "missing"}${system.needs_sync ? " (sync needed)" : ""}`);
+    const r = ws.resources || {};
+    console.log(
+      `Resources: BrowserControl=${!!r.browser_control} ChatGPT=${!!r.chatgpt_browser} Flow=${!!r.google_flow} MetaAI=${!!r.meta_ai} ElevenLabs=${!!r.elevenlabs}`
+    );
+  }
+}
+
+export async function printTools(cwd = process.cwd()) {
+  const live = Object.fromEntries(detectTools(cwd).map(t => [t.id, t]));
+  for (const tool of registry().tools) {
+    console.log(`\n${tool.name} — ${live[tool.id]?.available ? "AVAILABLE" : tool.required ? "MISSING REQUIRED" : "NOT INSTALLED / OPTIONAL"}`);
+    console.log("Best for: " + tool.best_for.join(", "));
+    console.log("Avoid for: " + tool.avoid_for.join(", "));
+  }
+}
+
+export async function setMode(mode, cwd = process.cwd()) {
+  if (!["direct", "director"].includes(mode)) {
+    console.error("Mode must be: direct or director");
+    process.exitCode = 2;
+    return;
+  }
+
+  const ws = readWorkspace(cwd);
+  if (!ws) {
+    console.error("Workspace is not configured. Run: aurora-studio setup");
+    process.exitCode = 2;
+    return;
+  }
+
+  ws.default_mode = mode;
+  writeWorkspace(ws, cwd);
+  console.log(`AurorA Studio mode: ${mode}`);
+}
+
+export async function showWorkspace(cwd = process.cwd()) {
+  const ws = readWorkspace(cwd);
+  if (!ws) {
+    console.log("Workspace is not configured. Run: aurora-studio setup");
+    return;
+  }
+  console.log(JSON.stringify(ws, null, 2));
+}
+
+export function runPreflight(cwd = process.cwd()) {
+  const ws = readWorkspace(cwd);
+  if (!ws) {
+    return { ok: false, errors: ["Workspace is not configured. Run: aurora-studio setup"], tools: [], integrations: [] };
+  }
+
+  const systemBefore = systemStatus(cwd);
+  let systemSync = null;
+  if (systemBefore.needs_sync) {
+    try {
+      systemSync = syncSystemKnowledge(cwd);
+    } catch (error) {
+      return {
+        ok: false,
+        errors: [`AurorA system knowledge could not sync: ${error.message}`],
+        warnings: [],
+        tools: [],
+        integrations: []
+      };
+    }
+  }
+
+  const tools = detectTools(cwd);
+  const integrations = detectIntegrations(cwd);
+  const missingRequired = tools.filter(t => t.required && !t.available);
+  const runtime = runtimeStatus();
+  const knowledge = validateKnowledge(cwd);
+
+  ws.tools = tools;
+  ws.integrations = integrations;
+  writeWorkspace(ws, cwd);
+
+  return {
+    ok: runtime.ok && missingRequired.length === 0 && knowledge.ok,
+    errors: [
+      ...runtime.errors,
+      ...missingRequired.map(t => `Missing required tool: ${t.name}`),
+      ...knowledge.errors
+    ],
+    warnings: [
+      ...runtime.warnings,
+      ...knowledge.warnings,
+      ...(systemSync ? [`AurorA system knowledge refreshed to ${systemSync.studio_version}`] : [])
+    ],
+    tools,
+    integrations,
+    runtime,
+    system: systemStatus(cwd)
+  };
+}
+
+export async function recommendRoute(taskText = "", cwd = process.cwd()) {
+  const preflight = runPreflight(cwd);
+  if (!preflight.ok) {
+    for (const error of preflight.errors) console.error(error);
+    process.exitCode = 2;
+    return null;
+  }
+
+  const availability = Object.fromEntries(preflight.tools.map(t => [t.id, t.available]));
+  const decision = chooseRoute(taskText, availability);
+
+  if (!decision.selected) {
+    console.log(JSON.stringify({
+      task: taskText,
+      route: null,
+      confidence: 0,
+      reason: "No available production path meets the minimum task-fit threshold.",
+      next: "Use Director mode, install the missing capability, or change the production approach.",
+      candidates: decision.candidates.slice(0, 3)
+    }, null, 2));
+    process.exitCode = 2;
+    return null;
+  }
+
+  console.log(JSON.stringify({
+    task: taskText,
+    route: decision.selected.route,
+    score: decision.selected.score,
+    confidence: decision.confidence,
+    requirements: decision.requirements,
+    alternatives: decision.candidates.slice(1, 4).map(c => ({ route: c.route, score: c.score }))
+  }, null, 2));
+  return decision;
+}
+
+export async function planProduction(taskText = "", options = {}, cwd = process.cwd()) {
+  if (!taskText.trim()) {
+    console.error("Provide a task to plan.");
+    process.exitCode = 2;
+    return null;
+  }
+
+  const preflight = runPreflight(cwd);
+  if (!preflight.ok) {
+    for (const error of preflight.errors) console.error(error);
+    process.exitCode = 2;
+    return null;
+  }
+
+  const ws = readWorkspace(cwd);
+  let referenceRecord = null;
+
+  if (options.referenceId) {
+    try {
+      referenceRecord = readReference(options.referenceId, cwd);
+    } catch (error) {
+      console.error(error.message);
+      process.exitCode = 2;
+      return null;
+    }
+  }
+
+  const budget = ws?.budget || {
+    mode: "observe",
+    cap_usd: null,
+    approval_threshold_usd: 1.00
+  };
+
+  const run = createRun({
+    cwd,
+    task: taskText,
+    mode: ws.default_mode,
+    routeDecision: null,
+    budget
+  });
+
+  let moodRecord = null;
+  if (ws.default_mode === "director") {
+    moodRecord = createMood(run.id, cwd);
+  }
+  const assetPlanRecord = createAssetPlan(run.id, cwd);
+  const learningRecord = createLearningReview(run.id, cwd);
+
+  const contextPacket = retrieveContext({
+    query: taskText,
+    referenceId: referenceRecord?.reference?.id || null,
+    cwd,
+    libraryLimit: 8,
+    memoryLimit: 5
+  });
+
+  fs.writeFileSync(path.join(run.dir, "context.json"), JSON.stringify({
+    ...contextPacket,
+    captured_at: new Date().toISOString()
+  }, null, 2) + "\n");
+
+  const libraryMatches = [
+    ...(contextPacket.reusable?.styles || []),
+    ...(contextPacket.reusable?.assets || [])
+  ];
+
+  const decisionPath = path.join(run.dir, "decisions.jsonl");
+  fs.appendFileSync(decisionPath, JSON.stringify({
+    timestamp: new Date().toISOString(),
+    type: "run_created",
+    routing: "deferred",
+    mode: ws.default_mode,
+    reference: referenceRecord?.reference?.id || null
+  }) + "\n");
+
+  console.log(JSON.stringify({
+    run_id: run.id,
+    mode: ws.default_mode,
+    route: null,
+    routing: "deferred_until_after_mood_and_assets",
+    first_stage: "understand",
+    plan: path.join(run.dir, "plan.json"),
+    context: path.join(run.dir, "context.json"),
+    mood: moodRecord?.file || null,
+    asset_plan: assetPlanRecord.file,
+    learning_review: learningRecord.file,
+    reference: referenceRecord?.reference?.id || null,
+    library_matches: libraryMatches.slice(0, 3).map(x => ({
+      id: x.id,
+      name: x.name,
+      score: x.search_score
+    }))
+  }, null, 2));
+
+  return run;
+}
+
+export async function routeProductionRun(runId, cwd = process.cwd()) {
+  const preflight = runPreflight(cwd);
+  if (!preflight.ok) {
+    for (const error of preflight.errors) console.error(error);
+    process.exitCode = 2;
+    return null;
+  }
+
+  try {
+    const run = loadRun(cwd, runId);
+    const contextFile = path.join(run.dir, "context.json");
+    const context = fs.existsSync(contextFile)
+      ? JSON.parse(fs.readFileSync(contextFile, "utf8"))
+      : {};
+
+    const referenceAnalysis = context.reference?.analysis || {};
+    const requirementOverrides = {
+      ...(referenceAnalysis.requires_true_3d === true ? { true3d: true } : {}),
+      ...(referenceAnalysis.requires_compositing === true ? { compositing: true } : {})
+    };
+
+    const moodRecord = readMood(runId, cwd);
+    if (moodRecord && run.state.checkpoints?.mood?.status === "completed") {
+      const moodValidation = validateMoodFile(runId, cwd);
+      if (!moodValidation.ok) {
+        console.error("Mood validation failed: " + moodValidation.errors.join("; "));
+        process.exitCode = 2;
+        return null;
+      }
+    }
+
+    const assetPlanRecord = readAssetPlan(runId, cwd);
+    const assetValidation = validateAssetPlanFile(runId, cwd);
+    if (!assetPlanRecord || assetPlanRecord.plan.status !== "completed" || !assetValidation.ok) {
+      console.error(
+        "Asset plan must be completed and valid before routing. " +
+        (assetValidation.errors || []).join("; ")
+      );
+      process.exitCode = 2;
+      return null;
+    }
+
+    const assetEvidence = assetRoutingEvidence(assetPlanRecord.plan);
+    const selectedIds = new Set(
+      (assetPlanRecord.plan.needs || [])
+        .flatMap(need => need.selected_library_ids || [])
+    );
+    const selectedAssets = readLibrary(cwd).filter(item => selectedIds.has(item.id));
+
+    const routeEvidence = [
+      run.plan.task,
+      context.reference?.analysis?.medium,
+      context.reference?.analysis?.subject,
+      ...(context.reference?.analysis?.technical_constraints || []),
+      moodRecord?.mood?.intent?.one_sentence,
+      ...(moodRecord?.mood?.visual?.camera_behavior || []),
+      ...(moodRecord?.mood?.visual?.materials_texture || []),
+      ...(moodRecord?.mood?.motion?.subject_motion || []),
+      ...(moodRecord?.mood?.motion?.camera_motion || []),
+      assetEvidence.text,
+      ...selectedAssets.flatMap(item => [
+        item.name,
+        item.type,
+        ...(item.tools || []),
+        ...(item.tags || [])
+      ])
+    ].filter(Boolean).join(" ");
+
+    const mergedRequirements = {
+      ...requirementOverrides,
+      ...assetEvidence.requirement_overrides
+    };
+
+    const availability = Object.fromEntries(preflight.tools.map(tool => [tool.id, tool.available]));
+    const baseDecision = chooseRoute(routeEvidence || run.plan.task, availability, mergedRequirements);
+    const decision = applyExperiencePrior(
+      baseDecision,
+      context.experience?.decisions || []
+    );
+
+    if (!decision.selected) {
+      console.error("No safe production route after context/mood/assets. Change the approach or add the missing capability.");
+      process.exitCode = 2;
+      return null;
+    }
+
+    const routed = setRunRoute({ cwd, runId, routeDecision: decision });
+    const buildPlanRecord = createBuildPlan(runId, cwd);
+    const decisionPath = path.join(run.dir, "decisions.jsonl");
+    fs.appendFileSync(decisionPath, JSON.stringify({
+      timestamp: new Date().toISOString(),
+      type: "route_selection",
+      selected: decision.selected,
+      alternatives: decision.candidates.slice(1, 4),
+      confidence: decision.confidence,
+      experience_used: decision.experience_used || 0,
+      experience_adjusted: Boolean(decision.experience_adjusted),
+      evidence_stage: "after_mood_and_assets"
+    }) + "\n");
+
+    console.log(JSON.stringify({
+      run_id: runId,
+      route: routed.plan.route,
+      score: routed.plan.route_score,
+      confidence: routed.plan.route_confidence,
+      alternatives: routed.plan.alternatives,
+      experience_used: decision.experience_used || 0,
+      experience_adjusted: Boolean(decision.experience_adjusted),
+      asset_plan: assetPlanRecord.file,
+      build_plan: buildPlanRecord.file,
+      selected_assets: selectedAssets.map(item => ({
+        id: item.id,
+        name: item.name,
+        tools: item.tools,
+        type: item.type
+      }))
+    }, null, 2));
+
+    return routed;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function showRunStatus(runId, cwd = process.cwd()) {
+  try {
+    const run = loadRun(cwd, runId);
+    console.log(JSON.stringify({
+      run_id: runId,
+      task: run.plan.task,
+      mode: run.plan.mode,
+      route: run.plan.route,
+      current_stage: run.state.current_stage,
+      status: run.state.status,
+      checkpoints: run.state.checkpoints
+    }, null, 2));
+    return run;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function writeRunCheckpoint(runId, stage, status, options = {}, cwd = process.cwd()) {
+  try {
+    let artifact = options.artifact || null;
+
+    if (stage === "build_plan" && status === "completed") {
+      const validation = validateBuildPlanFile(runId, cwd);
+      if (!validation.ok) {
+        throw new Error("Build plan is invalid: " + validation.errors.join("; "));
+      }
+    }
+
+    if (stage === "render" && status === "completed") {
+      if (!artifact) {
+        throw new Error("Render completion requires --artifact VIDEO_PATH.");
+      }
+
+      const renderFile = path.resolve(cwd, artifact);
+      if (!fs.existsSync(renderFile) || !fs.statSync(renderFile).isFile()) {
+        throw new Error("Render artifact not found: " + artifact);
+      }
+
+      createReviewReport(runId, artifact, cwd);
+    }
+
+    if (stage === "post_render_review" && status === "completed") {
+      const validation = validateReviewReportFile(runId, cwd);
+      if (!validation.can_complete_post_review) {
+        throw new Error(
+          "Post-render review cannot complete: " +
+          (validation.errors || []).join("; ")
+        );
+      }
+
+      const review = readReviewReport(runId, cwd);
+      artifact ||= review?.file || null;
+    }
+
+    const state = checkpoint({
+      cwd,
+      runId,
+      stage,
+      status,
+      artifact,
+      note: options.note || null,
+      humanApproved: Boolean(options.humanApproved)
+    });
+    console.log(JSON.stringify({
+      run_id: runId,
+      stage,
+      status,
+      run_status: state.status
+    }, null, 2));
+    return state;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function checkBudget(estimatedUsd, spentUsd = 0, cwd = process.cwd()) {
+  const ws = readWorkspace(cwd);
+  if (!ws) {
+    console.error("Workspace is not configured. Run: aurora-studio setup");
+    process.exitCode = 2;
+    return null;
+  }
+  const policy = ws.budget || { mode: "observe", cap_usd: null, approval_threshold_usd: 1.00 };
+  const result = evaluateSpend(policy, {
+    estimated_usd: Number(estimatedUsd || 0),
+    spent_usd: Number(spentUsd || 0)
+  });
+  console.log(JSON.stringify({ policy, ...result }, null, 2));
+  return result;
+}
+
+export async function reviewRender(file, cwd = process.cwd()) {
+  const result = probeRender(path.resolve(cwd, file));
+  console.log(JSON.stringify(result, null, 2));
+  if (!result.ok) process.exitCode = 2;
+  return result;
+}
+
+
+export async function createRunReview(runId, video, cwd = process.cwd()) {
+  try {
+    const result = createReviewReport(runId, video, cwd);
+    console.log(JSON.stringify({
+      file: result.file,
+      report: result.report
+    }, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function showRunReview(runId, cwd = process.cwd()) {
+  try {
+    const result = readReviewReport(runId, cwd);
+    if (!result) throw new Error("Review report not found.");
+    console.log(JSON.stringify(result.report, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function validateRunReview(runId, cwd = process.cwd()) {
+  try {
+    const result = validateReviewReportFile(runId, cwd);
+    console.log(JSON.stringify(result, null, 2));
+    if (!result.ok) process.exitCode = 2;
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+
+export async function finalizeProduction(runId, video, lesson = null, cwd = process.cwd()) {
+  try {
+    const existingRun = loadRun(cwd, runId);
+    const existingReceiptFile = path.join(existingRun.dir, "final.json");
+
+    if (existingRun.state.status === "completed" && fs.existsSync(existingReceiptFile)) {
+      const existingReceipt = JSON.parse(fs.readFileSync(existingReceiptFile, "utf8"));
+      const response = {
+        run_id: runId,
+        status: "completed",
+        already_finalized: true,
+        final: existingReceipt,
+        final_receipt: existingReceiptFile
+      };
+      console.log(JSON.stringify(response, null, 2));
+      return { run: existingRun, response, already_finalized: true };
+    }
+
+    const readiness = finalizationReadiness({ cwd, runId });
+    if (!readiness.ok) {
+      throw new Error("Cannot finalize: " + readiness.errors.join("; "));
+    }
+
+    const reviewValidation = validateReviewReportFile(runId, cwd);
+    if (!reviewValidation.can_complete_post_review) {
+      throw new Error(
+        "Cannot finalize: structured review is not PASS. " +
+        (reviewValidation.errors || []).join("; ")
+      );
+    }
+    const review = readReviewReport(runId, cwd);
+
+    const approvedVideo = path.resolve(cwd, video || "");
+    if (!video || !fs.existsSync(approvedVideo) || !fs.statSync(approvedVideo).isFile()) {
+      throw new Error("Cannot finalize: approved video file is missing.");
+    }
+
+    const approvedVideoSha256 = sha256File(approvedVideo);
+    if (review?.report?.video_sha256 !== approvedVideoSha256) {
+      throw new Error(
+        "Cannot finalize: approved video does not match the exact file that passed review."
+      );
+    }
+
+    const learning = completedLearningPayload(runId, cwd);
+    if (!learning) {
+      throw new Error(
+        "Cannot finalize: learning review is still pending. Complete it, even if the result is 'nothing new'."
+      );
+    }
+
+    const finalArtifact = preserveFinalArtifact({
+      runId,
+      source: video,
+      cwd
+    });
+
+    const result = finalizeRun({ cwd, runId });
+    const globalDecisionLog = path.join(cwd, ".aurora", "decisions.jsonl");
+    const globalLessonLog = path.join(cwd, ".aurora", "lessons.jsonl");
+    const proposalLog = path.join(cwd, ".aurora", "learning-proposals.jsonl");
+    const usage = summarizeUsage(runId, cwd);
+
+    fs.appendFileSync(globalDecisionLog, JSON.stringify({
+      timestamp: new Date().toISOString(),
+      run_id: runId,
+      task_type: "video_production",
+      task: result.run.plan.task,
+      route: result.run.plan.route,
+      approved: true,
+      mode: result.run.plan.mode,
+      quality_score: learning?.review?.outcome?.quality_score ?? null,
+      revisions: learning?.review?.outcome?.revisions ?? null,
+      reviewer_result:
+        learning?.review?.outcome?.reviewer_result ??
+        review?.report?.decision ??
+        null,
+      actual_usd: usage.actual_usd,
+      provider_units: usage.actual_units,
+      final_path: finalArtifact.receipt.final_path,
+      final_sha256: finalArtifact.receipt.sha256,
+      final_bytes: finalArtifact.receipt.bytes
+    }) + "\n");
+
+    let lessonsSaved = 0;
+    if (lesson && lesson.trim()) {
+      fs.appendFileSync(globalLessonLog, JSON.stringify({
+        timestamp: new Date().toISOString(),
+        run_id: runId,
+        lesson: lesson.trim(),
+        source: "manual_finalize",
+        approved: true
+      }) + "\n");
+      lessonsSaved++;
+    }
+
+    let proposalsSaved = 0;
+    for (const item of learning.review.lessons || []) {
+      fs.appendFileSync(globalLessonLog, JSON.stringify({
+        timestamp: new Date().toISOString(),
+        run_id: runId,
+        ...item,
+        source: "session_review",
+        approved: true
+      }) + "\n");
+      lessonsSaved++;
+    }
+
+    for (const [kind, proposals] of Object.entries(learning.review.proposals || {})) {
+      for (const proposal of proposals || []) {
+        fs.appendFileSync(proposalLog, JSON.stringify({
+          timestamp: new Date().toISOString(),
+          run_id: runId,
+          kind,
+          proposal,
+          status: "pending_review"
+        }) + "\n");
+        proposalsSaved++;
+      }
+    }
+
+    const response = {
+      run_id: runId,
+      status: "completed",
+      final: finalArtifact.receipt,
+      final_receipt: finalArtifact.receipt_file,
+      removed_run_temp: result.removed_run_temp,
+      decision_saved: true,
+      lessons_saved: lessonsSaved,
+      learning_review: "completed",
+      proposals_saved: proposalsSaved,
+      proposals_auto_applied: false,
+      usage,
+      review: {
+        decision: review?.report?.decision || null,
+        summary: review?.report?.summary || null
+      }
+    };
+
+    console.log(JSON.stringify(response, null, 2));
+    return { ...result, finalArtifact, response };
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+function parseValue(value) {
+  if (value === undefined) return "";
+  const trimmed = String(value).trim();
+  if (!trimmed) return "";
+  if (
+    (trimmed.startsWith("[") && trimmed.endsWith("]")) ||
+    (trimmed.startsWith("{") && trimmed.endsWith("}")) ||
+    trimmed === "true" ||
+    trimmed === "false" ||
+    trimmed === "null" ||
+    /^-?\d+(\.\d+)?$/.test(trimmed)
+  ) {
+    try { return JSON.parse(trimmed); } catch {}
+  }
+  return value;
+}
+
+function setDeep(target, dottedKey, value) {
+  const parts = String(dottedKey || "").split(".").filter(Boolean);
+  if (!parts.length) throw new Error("Project field is required.");
+  let cursor = target;
+  for (const part of parts.slice(0, -1)) {
+    if (!cursor[part] || typeof cursor[part] !== "object" || Array.isArray(cursor[part])) cursor[part] = {};
+    cursor = cursor[part];
+  }
+  cursor[parts.at(-1)] = value;
+}
+
+export async function showProject(cwd = process.cwd()) {
+  const project = readProject(cwd);
+  if (!project) {
+    console.error("Project profile not found. Run: aurora-studio setup");
+    process.exitCode = 2;
+    return null;
+  }
+  console.log(JSON.stringify(project, null, 2));
+  return project;
+}
+
+export async function setProjectValue(key, rawValue, cwd = process.cwd()) {
+  const project = readProject(cwd);
+  if (!project) {
+    console.error("Project profile not found. Run: aurora-studio setup");
+    process.exitCode = 2;
+    return null;
+  }
+  try {
+    setDeep(project, key, parseValue(rawValue));
+    writeProject(project, cwd);
+    console.log(JSON.stringify({ updated: key, value: parseValue(rawValue) }, null, 2));
+    return project;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function createReferenceRecord(name, source = null, cwd = process.cwd()) {
+  try {
+    const result = createReference(name, source, cwd);
+    console.log(JSON.stringify({
+      id: result.reference.id,
+      file: result.file,
+      next: "Agent should fill analysis + adaptation using REFERENCE-ANALYSIS.md."
+    }, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function showReferenceRecord(idOrPath, cwd = process.cwd()) {
+  try {
+    const result = readReference(idOrPath, cwd);
+    console.log(JSON.stringify(result.reference, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function listReferenceRecords(cwd = process.cwd()) {
+  const items = listReferences(cwd);
+  console.log(JSON.stringify(items, null, 2));
+  return items;
+}
+
+export async function addLibraryRecord(input, cwd = process.cwd()) {
+  try {
+    let finalInput = { ...input };
+    if (input.source_id) {
+      const verified = input.license_id && input.license_id !== "unknown" ? input.license_id : null;
+      const defaults = sourceImportDefaults(input.source_id, verified);
+      finalInput = {
+        ...finalInput,
+        source_name: finalInput.source_name || defaults.source.name,
+        license_id: verified || defaults.license_id,
+        commercial_allowed: input.commercial_allowed ?? defaults.commercial_allowed,
+        redistribution_allowed: input.redistribution_allowed ?? defaults.redistribution_allowed,
+        attribution_required: input.attribution_required ?? defaults.attribution_required
+      };
+      if (defaults.requires_verification && (
+        !finalInput.license_id ||
+        finalInput.license_id === "unknown" ||
+        finalInput.commercial_allowed === null ||
+        finalInput.commercial_allowed === undefined
+      )) {
+        throw new Error(defaults.source.name + " requires exact asset license verification before import.");
+      }
+    }
+    const item = addLibraryItem(finalInput, cwd);
+    console.log(JSON.stringify(item, null, 2));
+    return item;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function searchLibraryRecords(query, options = {}, cwd = process.cwd()) {
+  const items = searchLibrary(query, options, cwd);
+  console.log(JSON.stringify(items, null, 2));
+  return items;
+}
+
+export async function listLibraryRecords(cwd = process.cwd()) {
+  const items = readLibrary(cwd);
+  console.log(JSON.stringify(items, null, 2));
+  return items;
+}
+
+export async function libraryStats(cwd = process.cwd()) {
+  const stats = summarizeLibrary(cwd);
+  console.log(JSON.stringify(stats, null, 2));
+  return stats;
+}
+
+
+export async function importHyperframeRecords(root = null, cwd = process.cwd()) {
+  try {
+    const result = importHyperframeLibrary({ root, cwd });
+    console.log(JSON.stringify(result, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+
+export async function showBlenderInfo() {
+  const info = blenderInfo();
+  console.log(JSON.stringify(info, null, 2));
+  if (!info.available) process.exitCode = 2;
+  return info;
+}
+
+export async function createBlenderJobRecord(name, cwd = process.cwd()) {
+  try {
+    const result = createBlenderJob(name, cwd);
+    console.log(JSON.stringify({ id: result.job.id, file: result.file }, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function executeBlenderJob(jobPath, dryRun = false, cwd = process.cwd()) {
+  try {
+    const result = runBlenderJob(jobPath, { cwd, dryRun });
+    console.log(JSON.stringify(result, null, 2));
+    if (result.ok === false) process.exitCode = 2;
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+
+export async function executeBlenderHandoff(inputPattern, output, options = {}, cwd = process.cwd()) {
+  try {
+    const result = packTransparentWebm({
+      inputPattern,
+      output,
+      fps: Number(options.fps || 30),
+      quality: options.quality || "normal"
+    }, {
+      cwd,
+      dryRun: Boolean(options.dryRun)
+    });
+    console.log(JSON.stringify(result, null, 2));
+    if (result.ok === false) process.exitCode = 2;
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+
+export async function showAfterEffectsInfo() {
+  const info = afterEffectsInfo();
+  console.log(JSON.stringify(info, null, 2));
+  if (!info.available) process.exitCode = 2;
+  return info;
+}
+
+export async function createAfterEffectsJobRecord(name, cwd = process.cwd()) {
+  try {
+    const result = createAfterEffectsJob(name, cwd);
+    console.log(JSON.stringify({ id: result.job.id, file: result.file }, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function executeAfterEffectsJob(jobPath, dryRun = false, cwd = process.cwd()) {
+  try {
+    const result = runAfterEffectsJob(jobPath, { cwd, dryRun });
+    console.log(JSON.stringify(result, null, 2));
+    if (result.ok === false) process.exitCode = 2;
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+
+export async function showRetrievedContext(query, referenceId = null, cwd = process.cwd()) {
+  try {
+    const packet = retrieveContext({ query, referenceId, cwd });
+    console.log(JSON.stringify(packet, null, 2));
+    return packet;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+
+export async function validateStudio(cwd = process.cwd()) {
+  const result = validateKnowledge(cwd);
+  console.log(JSON.stringify(result, null, 2));
+  if (!result.ok) process.exitCode = 2;
+  return result;
+}
+
+export async function showObsidianInfo() {
+  const info = obsidianInfo();
+  console.log(JSON.stringify(info, null, 2));
+  if (!info.available) process.exitCode = 2;
+  return info;
+}
+
+export async function searchObsidianKnowledge(query, vault = null) {
+  try {
+    const result = searchObsidian(query, { vault });
+    console.log(JSON.stringify(result, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+
+export async function showResources(capability = null, cwd = process.cwd()) {
+  const resources = capability ? providersFor(capability, cwd) : listProviders(cwd);
+  console.log(JSON.stringify(resources, null, 2));
+  return resources;
+}
+
+
+export async function installAgentPointers(target = "all", cwd = process.cwd()) {
+  try {
+    const status = systemStatus(cwd);
+    const system = status.needs_sync ? syncSystemKnowledge(cwd) : status;
+    const result = {
+      system,
+      instructions: installAgentInstructions(target, cwd),
+      hooks: installAgentHooks(target, cwd)
+    };
+    console.log(JSON.stringify(result, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function removeAgentPointers(target = "all", cwd = process.cwd()) {
+  try {
+    const result = {
+      instructions: removeAgentInstructions(target, cwd),
+      hooks: removeAgentHooks(target, cwd)
+    };
+    console.log(JSON.stringify(result, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+
+export async function discoverLocalWorkspace(cwd = process.cwd()) {
+  const workspace = readWorkspace(cwd);
+  const saved = saveDiscovery(cwd, {
+    extraRoots: workspace?.resources?.local_paths || []
+  });
+  console.log(JSON.stringify({
+    file: saved.file,
+    scanned_files: saved.result.scanned_files,
+    matched_files: saved.result.matched_files,
+    truncated: saved.result.truncated,
+    by_kind: Object.fromEntries(
+      Object.entries(saved.result.by_kind).map(([key, files]) => [key, files.length])
+    )
+  }, null, 2));
+  return saved;
+}
+
+
+export async function showAssetSources(query = null) {
+  const result = query ? recommendAssetSources(query) : listAssetSources();
+  console.log(JSON.stringify(result, null, 2));
+  return result;
+}
+
+export async function checkAssetLicense(assetId, forBundling = false, cwd = process.cwd()) {
+  const asset = readLibrary(cwd).find(item => item.id === assetId);
+  if (!asset) {
+    console.error("Library item not found: " + assetId);
+    process.exitCode = 2;
+    return null;
+  }
+  const result = licenseGate(asset, { forBundling });
+  console.log(JSON.stringify({ asset_id: assetId, for_bundling: forBundling, ...result }, null, 2));
+  if (!result.allowed) process.exitCode = 2;
+  return result;
+}
+
+
+export async function createMoodRecord(runId, cwd = process.cwd()) {
+  try {
+    const result = createMood(runId, cwd);
+    console.log(JSON.stringify({ file: result.file, created: result.created, mood: result.mood }, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function showMoodRecord(runId, cwd = process.cwd()) {
+  try {
+    const result = readMood(runId, cwd);
+    console.log(JSON.stringify(result.mood, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function validateMoodRecord(runId, cwd = process.cwd()) {
+  try {
+    const result = validateMoodFile(runId, cwd);
+    console.log(JSON.stringify(result, null, 2));
+    if (!result.ok) process.exitCode = 2;
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+
+export async function searchOpenAssets(query, options = {}, cwd = process.cwd()) {
+  try {
+    const result = await searchPolyHaven(query, {
+      type: options.type || "all",
+      limit: options.limit || 10,
+      forceRefresh: Boolean(options.forceRefresh),
+      cwd
+    });
+    console.log(JSON.stringify(result, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function showOpenAssetFiles(assetId) {
+  try {
+    const result = await getPolyHavenFiles(assetId);
+    console.log(JSON.stringify(result, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+
+export async function createLearningReviewRecord(runId, cwd = process.cwd()) {
+  try {
+    const result = createLearningReview(runId, cwd);
+    console.log(JSON.stringify({ file: result.file, created: result.created, review: result.review }, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function showLearningReview(runId, cwd = process.cwd()) {
+  try {
+    const result = readLearningReview(runId, cwd);
+    if (!result) throw new Error("Learning review file not found.");
+    console.log(JSON.stringify(result.review, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function validateLearningReviewRecord(runId, cwd = process.cwd()) {
+  try {
+    const result = validateLearningReviewFile(runId, cwd);
+    console.log(JSON.stringify(result, null, 2));
+    if (!result.ok) process.exitCode = 2;
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+
+export async function checkStudioUpdate(options = {}) {
+  try {
+    const result = await checkForUpdate({
+      ...(options.url ? { url: options.url } : {})
+    });
+    console.log(JSON.stringify(result, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function planStudioUpdate(cwd = process.cwd()) {
+  try {
+    const result = planWorkspaceMigration({ cwd });
+    console.log(JSON.stringify(result, null, 2));
+    if (result.blocked) process.exitCode = 2;
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function backupStudioWorkspace(cwd = process.cwd()) {
+  try {
+    const result = backupWorkspaceState(cwd);
+    console.log(JSON.stringify(result, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+
+export async function syncStudioSystem(cwd = process.cwd()) {
+  try {
+    const result = syncSystemKnowledge(cwd);
+    console.log(JSON.stringify(result, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function showStudioSystemStatus(cwd = process.cwd()) {
+  try {
+    const result = systemStatus(cwd);
+    console.log(JSON.stringify(result, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+
+export async function createAssetPlanRecord(runId, cwd = process.cwd()) {
+  try {
+    const result = createAssetPlan(runId, cwd);
+    console.log(JSON.stringify({ file: result.file, created: result.created, plan: result.plan }, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function showAssetPlanRecord(runId, cwd = process.cwd()) {
+  try {
+    const result = readAssetPlan(runId, cwd);
+    if (!result) throw new Error("Asset plan file not found.");
+    console.log(JSON.stringify(result.plan, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function validateAssetPlanRecord(runId, cwd = process.cwd()) {
+  try {
+    const result = validateAssetPlanFile(runId, cwd);
+    console.log(JSON.stringify(result, null, 2));
+    if (!result.ok) process.exitCode = 2;
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+
+export async function createBuildPlanRecord(runId, cwd = process.cwd()) {
+  try {
+    const result = createBuildPlan(runId, cwd);
+    console.log(JSON.stringify({ file: result.file, created: result.created, plan: result.plan }, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function showBuildPlanRecord(runId, cwd = process.cwd()) {
+  try {
+    const result = readBuildPlan(runId, cwd);
+    if (!result) throw new Error("Build plan file not found.");
+    console.log(JSON.stringify(result.plan, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function validateBuildPlanRecord(runId, cwd = process.cwd()) {
+  try {
+    const result = validateBuildPlanFile(runId, cwd);
+    console.log(JSON.stringify(result, null, 2));
+    if (!result.ok) process.exitCode = 2;
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+
+export async function installHyperframesWorkspace(dryRun = false, cwd = process.cwd()) {
+  try {
+    const result = installHyperframesCore({ cwd, dryRun });
+    console.log(JSON.stringify(result, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function showHyperframesCoreInfo(cwd = process.cwd()) {
+  const resolved = resolveHyperframesBinary(cwd);
+  const tool = detectTools(cwd).find(item => item.id === "hyperframe") || null;
+  const result = {
+    ...resolved,
+    required: true,
+    compatible_range: HYPERFRAMES_RANGE,
+    detected_by: tool?.detected_by || null
+  };
+  console.log(JSON.stringify(result, null, 2));
+  if (!result.available) process.exitCode = 2;
+  return result;
+}
+
+export async function executeHyperframesCore(args = [], options = {}, cwd = process.cwd()) {
+  try {
+    const result = runWorkspaceHyperframes(args, {
+      cwd,
+      dryRun: Boolean(options.dryRun)
+    });
+    console.log(JSON.stringify(result, null, 2));
+    if (result.ok === false) process.exitCode = 2;
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function checkHyperframesUpgrade(cwd = process.cwd()) {
+  return executeHyperframesCore(["upgrade", "--check", "--json"], {}, cwd);
+}
+
+
+export async function recordRunUsage(input, cwd = process.cwd()) {
+  try {
+    const result = recordUsage(input, cwd);
+    console.log(JSON.stringify(result, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function summarizeRunUsage(runId, cwd = process.cwd()) {
+  try {
+    const result = summarizeUsage(runId, cwd);
+    console.log(JSON.stringify(result, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function checkRunPaidUsage(input, cwd = process.cwd()) {
+  try {
+    const result = checkPaidAction(input, cwd);
+    console.log(JSON.stringify(result, null, 2));
+    if (result.allowed === false) process.exitCode = 2;
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+
+export async function runConfiguredSetupFile(file, cwd = process.cwd()) {
+  try {
+    const loaded = readSetupConfig(file, cwd);
+    const result = writeConfiguredWorkspace(loaded.config, { cwd });
+    console.log(JSON.stringify({
+      config_file: loaded.file,
+      ...result
+    }, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+
+export async function showReleaseReadiness() {
+  try {
+    const result = releaseReadiness();
+    console.log(JSON.stringify(result, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+
+export async function assertReleaseReady() {
+  try {
+    const result = releaseReadiness();
+    console.log(JSON.stringify(result, null, 2));
+    if (!result.ready) {
+      process.exitCode = 2;
+    }
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}

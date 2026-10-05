@@ -1,0 +1,72 @@
+name: AurorA Studio Tests
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "aurora-studio/**"
+      - ".github/workflows/aurora-studio-tests.yml"
+  pull_request:
+    paths:
+      - "aurora-studio/**"
+      - ".github/workflows/aurora-studio-tests.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aurora-studio-tests-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Node 22 / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+
+    defaults:
+      run:
+        working-directory: aurora-studio
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Use Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          package-manager-cache: false
+
+      - name: CLI smoke
+        run: node ./bin/aurora-studio.mjs help
+
+      - name: HyperFrames install plan smoke
+        run: node ./bin/aurora-studio.mjs hyperframe install --dry-run
+
+      - name: HyperFrames exact core compatibility smoke
+        run: |
+          node ./bin/aurora-studio.mjs hyperframe install
+          node ./bin/aurora-studio.mjs hyperframe doctor
+          node ./bin/aurora-studio.mjs hyperframe run --help
+
+      - name: Run tests
+        run: npm test
+
+      - name: Package dry run
+        run: npm pack --dry-run
+
+      - name: Package audit
+        run: node ./scripts/package-audit.mjs
+
+      - name: Installed package smoke
+        run: node ./scripts/package-smoke.mjs
+
+      - name: Release readiness status
+        run: npm run release:status

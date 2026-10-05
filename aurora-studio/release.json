@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "product": "AurorA Studio",
+  "channel": "dev",
+  "latest_version": "0.2.0",
+  "minimum_node": "22",
+  "workspace_schema_version": 1,
+  "public_install_ready": false,
+  "package_name": null,
+  "notes": {
+    "new": [
+      "Direct and Director modes",
+      "project/reference/mood brain",
+      "asset/style library with license gates",
+      "Blender and optional After Effects adapters",
+      "Windows + Linux CI",
+      "portable .aurora/system knowledge snapshot for npx/community installs"
+    ],
+    "fixed": [
+      "routing now happens after context, mood and asset search",
+      "setup reruns preserve existing resource choices",
+      "HyperFrames core is pinned to an exact tested version before public release"
+    ]
+  },
+  "migrations": [],
+  "hyperframes_version": "0.8.134"
+}

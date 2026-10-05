@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="ar">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <title>laptop-desk-zoom 9:16 demo</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/DrawSVGPlugin.min.js"></script>
+    <link rel="stylesheet" href="../../assets/kits/node-explainer/nx.css" />
+    <style>
+      @font-face { font-family: "Cairo"; src: url("https://cdn.jsdelivr.net/fontsource/fonts/cairo@latest/arabic-800-normal.woff2") format("woff2"); font-weight: 800; font-display: block;
+        unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF; }
+      @font-face { font-family: "Cairo"; src: url("https://cdn.jsdelivr.net/fontsource/fonts/cairo@latest/latin-800-normal.woff2") format("woff2"); font-weight: 800; font-display: block; }
+      @font-face { font-family: "Cairo"; src: url("https://cdn.jsdelivr.net/fontsource/fonts/cairo@latest/arabic-900-normal.woff2") format("woff2"); font-weight: 900; font-display: block;
+        unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF; }
+      @font-face { font-family: "Cairo"; src: url("https://cdn.jsdelivr.net/fontsource/fonts/cairo@latest/latin-900-normal.woff2") format("woff2"); font-weight: 900; font-display: block; }
+
+      *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1080px; height: 1920px; overflow: hidden; background: #efe6d6; }
+
+      /* ====================================================================
+         laptop-desk-zoom 9:16 demo (6 s). Warm paper desk, a laptop with real
+         screenshots, one virtual camera (#ld-cam: translate + scale, origin 0 0),
+         Aurora drawn in screen space from the camera so she stays sharp, and a
+         Node-kit mini diagram that slides in beside the laptop.
+         DESK COORDS (camera at rest = screen coords):
+           laptop 80..1000 x 520..1150 · screen rect 130..950 x 560..1072 (820x512)
+           Aurora feet at (175, 1440) · title band 300..460 (fixed, outside the camera)
+         BEATS: 0.0 wide + wave + badge «١» · 0.9 HARD CUT punch-in + click ring ·
+                1.8 screenshot swap + 3% push · 2.6 glide out 0.75 s, Aurora points ·
+                3.4 slide: laptop half off left, LLM → + أدوات → Agent ⟳ ·
+                4.6 slide back, badge «٢» · 5.0 Aurora ^ ^ cut-in · 5.4 punch-in on the result · cut 6.0
+         SWAP POINTS: #ld-laptop-img (3D Artist mockup) · #ld-s1 / #ld-s2 (screenshots)
+         ==================================================================== */
+      #ld-root { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; overflow: hidden;
+        --ld-paper: #efe6d6; --ld-paper-hi: #f8f2e7; --ld-device: #b9bec6; --ld-accent: #ff6a3d; --ld-ink: #2a2522;
+        font-family: "Cairo", system-ui, sans-serif; }
+      #ld-cam { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; transform-origin: 0 0; will-change: transform; }
+      #ld-desk { position: absolute; left: -1400px; top: -1400px; width: 3880px; height: 4720px;
+        background: radial-gradient(ellipse 1300px 900px at 1940px 1700px, var(--ld-paper-hi), var(--ld-paper) 70%); }
+      #ld-grain { position: absolute; inset: 0; opacity: 0.9; mix-blend-mode: multiply;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.45 0 0 0 0 0.38 0 0 0 0 0.3 0 0 0 0.35 0'/></filter><rect width='240' height='240' filter='url(%23n)'/></svg>"); }
+
+      /* laptop: the 3D Artist's front mockup (2339x1907, screen hole 1920x1080 at 209.28,129.93), box scaled 0.4 */
+      #ld-laptop { position: absolute; left: 27px; top: 566px; width: 2339px; height: 1907px; transform: scale(0.4387); transform-origin: 0 0; }
+      #ld-laptop > img { position: absolute; left: 0; top: 0; width: 2339px; height: 1907px; }
+      #ld-screen { position: absolute; left: 209.28px; top: 129.93px; width: 1920px; height: 1080px; overflow: hidden; background: #d9dce1; }
+      .ld-phw { position: absolute; left: 0; top: 0; width: 820px; height: 512px; transform: scale(2.3415, 2.1094); transform-origin: 0 0; }
+      .ld-shot { position: absolute; inset: 0; width: 1920px; height: 1080px; object-fit: cover; }
+      /* placeholder screens (timing only, never final frames) */
+      .ld-ph { position: absolute; inset: 0; background: #c9cdd3; }
+      .ld-ph i { position: absolute; display: block; background: #aeb3ba; border-radius: 6px; }
+      .ld-ph b { position: absolute; display: block; background: #8f959d; border-radius: 8px; }
+      .ld-ph .ld-phl { position: absolute; left: 10px; top: 8px; font: 700 18px monospace; color: #6b7178; letter-spacing: .12em; }
+
+      #ld-ring { position: absolute; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%;
+        border: 8px solid var(--ld-accent); opacity: 0; }
+      .ld-r3 { position: absolute; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; border: 8px solid var(--ld-accent); opacity: 0; }
+      #ld-ring2 { position: absolute; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%;
+        border: 8px solid var(--ld-accent); opacity: 0; }
+
+      /* top band: step badge + title (outside the camera) */
+      #ld-head { position: absolute; left: 60px; top: 300px; width: 900px; height: 150px; display: flex; flex-direction: row-reverse; align-items: center; gap: 26px; }
+      .ld-badge { position: absolute; right: 0; top: 15px; width: 120px; height: 120px; border-radius: 50%; background: var(--ld-accent); color: #fff;
+        display: flex; align-items: center; justify-content: center; font-size: 76px; font-weight: 900; box-shadow: 0 8px 0 rgba(0,0,0,.12); }
+      .ld-title { position: absolute; right: 150px; top: 14px; padding: 0 34px; border-radius: 30px; background: var(--ld-paper-hi); box-shadow: 0 8px 0 rgba(0,0,0,.08); font-size: 84px; font-weight: 900; color: var(--ld-ink); line-height: 1.3; white-space: nowrap; }
+
+      /* mini diagram (Node kit, light mode) */
+      #ld-dia { position: absolute; left: 560px; top: 470px; width: 460px; height: 900px; transform-origin: 0 0; }
+      #ld-dia .nx-tile { width: 380px; height: 170px; left: 40px; font-size: 52px; }
+      #ld-llm { top: 0; }
+      #ld-tools { position: absolute; left: 110px; top: 362px; font-size: 44px !important; padding: 10px 30px !important; }
+      #ld-agent { top: 620px; }
+      #ld-loop { position: absolute; left: 0; top: 0; width: 460px; height: 900px; overflow: visible; }
+      .ld-rip { position: absolute; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; border: 5px solid var(--ld-accent); opacity: 0; }
+      #ld-cur { position: absolute; width: 16px; height: 22px; left: 0; top: 0; opacity: 0; filter: drop-shadow(0 3px 2px rgba(0,0,0,.3)); }
+      #ld-rays { position: absolute; width: 400px; height: 400px; margin: -200px 0 0 -200px; overflow: visible; opacity: 0; }
+      /* answer reveal: a mask in the screenshot's own background colour slides down line by line (real text, never fake) */
+      #ld-mask { position: absolute; left: 470px; top: 265px; width: 960px; height: 390px; background: rgb(252,252,251); }
+      /* the folder loads its files left to right: a mask in the window's own white (real files, never fake) */
+      /* Explorer selection (its own colours), month folders and flying files, all in screenshot pixels */
+      #ld-sel { position: absolute; background: rgba(0,120,215,.18); border: 2px solid #0078d7; opacity: 0; }
+      .ld-hl { position: absolute; width: 128px; height: 166px; background: rgba(204,232,255,.75); border: 2px solid #99d1ff; mix-blend-mode: multiply; opacity: 0; }
+      .ld-hole { position: absolute; width: 132px; height: 170px; background: #fff; opacity: 0; }
+      .ld-fold { position: absolute; width: 240px; height: 190px; opacity: 0; font-family: "Cairo", sans-serif; }
+      .ld-fold span { position: absolute; left: 20px; top: 10px; width: 200px; height: 140px; border-radius: 10px; background: linear-gradient(#ffd75e, #f2b53a); box-shadow: inset 0 -6px 0 rgba(0,0,0,.08); }
+      .ld-fold span::before { content: ""; position: absolute; left: 0; top: -14px; width: 80px; height: 24px; border-radius: 8px 8px 0 0; background: #f2b53a; }
+      .ld-fold i { position: absolute; left: 0; top: 150px; width: 240px; text-align: center; font-style: normal; font-weight: 800; font-size: 34px; color: #222; }
+      .ld-fold b { position: absolute; right: 6px; top: -6px; width: 64px; height: 64px; border-radius: 50%; background: #ff6a3d; color: #fff; font-size: 40px; font-weight: 900; line-height: 64px; text-align: center; }
+      .ld-fly { position: absolute; width: 128px; height: 166px; background-image: url("../../assets/kits/laptop/screens/ep02-04-folder-before.png"); background-size: 1920px 1080px; opacity: 0; }
+      #ld-spin { position: absolute; left: 0; top: 475px; width: 460px; height: 460px; overflow: visible; }
+      #ld-flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+      .ld-tool { position: absolute; top: 818px; font-size: 22px !important; padding: 6px 12px !important; opacity: 0; }
+      #ld-k1 { left: 52px; } #ld-k2 { left: 186px; } #ld-k3 { left: 296px; }
+      #ld-aur { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; pointer-events: none; }
+      #ld-drv { position: absolute; width: 1px; height: 1px; opacity: 0; }
+    #ld-cutin{position:absolute;inset:0;background:#fff4d6;visibility:hidden;overflow:hidden}
+#ld-cutin-burst{position:absolute;left:540px;top:1000px;width:2400px;height:2400px;margin:-1200px 0 0 -1200px;border-radius:50%;
+ background:repeating-conic-gradient(#ffe39a 0 10deg,#fff4d6 10deg 20deg)}
+</style>
+  </head>
+  <body>
+    <div id="ld-root" class="nx" data-composition-id="laptop-desk-zoom-9x16" data-start="0" data-duration="6" data-width="1080" data-height="1920">
+      <div id="ld-cam">
+        <div id="ld-desk"><div id="ld-grain"></div></div>
+        <div id="ld-laptop">
+          <img src="../../assets/kits/laptop/laptop-front-shadow.png" />
+          <div id="ld-screen">
+          <img class="ld-shot" id="ld-s1" src="../../assets/kits/laptop/screens/ep02-01-chat-steps.png" />
+            <div id="ld-mask"></div>
+            <img class="ld-shot" id="ld-s2" src="../../assets/kits/laptop/screens/ep02-04-folder-before.png" style="visibility:hidden" />
+            <div id="ld-sel"></div>
+            <i class="ld-hl" id="ld-h0"></i><i class="ld-hl" id="ld-h1"></i><i class="ld-hl" id="ld-h2"></i><i class="ld-hl" id="ld-h3"></i>
+            <i class="ld-hole" id="ld-hole0"></i><i class="ld-hole" id="ld-hole1"></i><i class="ld-hole" id="ld-hole2"></i><i class="ld-hole" id="ld-hole3"></i><i class="ld-hole" id="ld-hole4"></i>
+            <div class="ld-fold" id="ld-f0"><span></span><i></i><b>٠</b></div><div class="ld-fold" id="ld-f1"><span></span><i></i><b>٠</b></div><div class="ld-fold" id="ld-f2"><span></span><i></i><b>٠</b></div>
+            <div class="ld-fly" id="ld-fly0"></div><div class="ld-fly" id="ld-fly1"></div><div class="ld-fly" id="ld-fly2"></div><div class="ld-fly" id="ld-fly3"></div><div class="ld-fly" id="ld-fly4"></div>
+          </div>
+          <img src="../../assets/kits/laptop/laptop-front-body.png" />
+          <img src="../../assets/kits/laptop/laptop-front-glass.png" />
+        </div>
+        <div id="ld-ring"></div>
+        <div id="ld-ring2"></div>
+        <div id="ld-ring3" class="ld-r3"></div>
+        <div class="ld-rip" id="ld-rip1"></div><div class="ld-rip" id="ld-rip2"></div>
+        <svg id="ld-cur" viewBox="0 0 40 56"><path d="M2 2 L2 46 L13 35 L21 54 L29 50 L21 32 L37 32 Z" fill="#fff" stroke="#111" stroke-width="3.5" stroke-linejoin="round"/></svg>
+        <svg id="ld-rays" viewBox="-200 -200 400 400"></svg>
+      </div>
+
+      <div id="ld-dia">
+        <svg id="ld-spin" viewBox="0 0 460 460"><circle cx="230" cy="230" r="215" fill="none" stroke="#2a9d8f" stroke-width="10" stroke-dasharray="60 34" stroke-linecap="round" opacity="0.55"/></svg>
+        <svg id="ld-loop" class="nx-lines"><path id="ld-l1" class="nx-line" d="M230 170 L230 362" /><path id="ld-l2" class="nx-line" d="M230 440 L230 620" />
+          <path id="ld-arc" class="nx-line nx-line--hot" d="M40 705 C -70 705, -70 85, 40 85" /></svg>
+        <div class="nx-tile nx-tile--ai" id="ld-llm">LLM</div>
+        <span class="nx-chip nx-chip--big nx-chip--role" id="ld-tools" dir="rtl">+ أدوات</span>
+        <div class="nx-tile nx-tile--mcp" id="ld-agent">Agent</div>
+        <span class="nx-chip nx-chip--big nx-chip--warn ld-tool" id="ld-k1">FILES</span>
+        <span class="nx-chip nx-chip--big nx-chip--warn ld-tool" id="ld-k2">WEB</span>
+        <span class="nx-chip nx-chip--big nx-chip--warn ld-tool" id="ld-k3">CODE</span>
+      </div>
+
+      <div id="ld-head">
+        <div class="ld-badge" id="ld-b1">١</div>
+        <div class="ld-title" id="ld-t1" dir="rtl">افتح التطبيق</div>
+        <div class="ld-badge" id="ld-b2" style="visibility:hidden">٢</div>
+        <div class="ld-title" id="ld-t2" dir="rtl" style="visibility:hidden">شوف النتيجة</div>
+      </div>
+      <div id="ld-flash"></div>
+      <div id="ld-cutin"><div id="ld-cutin-burst"></div></div>
+      <canvas id="ld-aur" width="1080" height="1920"></canvas>
+
+      <div id="ld-drv" class="clip" data-start="0" data-duration="6" data-track-index="0"></div>
+    </div>
+
+    <script src="../../assets/kits/node-explainer/nx.js"></script>
+    <script src="../../assets/kits/hatch/hatch.js"></script>
+    <script src="../../assets/kits/aurora/aurora.js"></script>
+    <script>
+      (function () {
+        window.__timelines = window.__timelines || {};
+        gsap.registerPlugin(DrawSVGPlugin);
+        var DUR = 6, CX = 540, CY = 880;
+        var root = document.getElementById("ld-root");
+        var $ = function (id) { return document.getElementById(id); };
+        NX.theme(root, "light");
+        var tl = gsap.timeline({ paused: true });
+        function ft(el, a, b, at) { b.immediateRender = at < 0.001; return tl.fromTo(el, a, b, at); }
+
+        /* ---- camera: C = {s, px, py, ox} = zoom s centred on desk point (px,py), plus a sideways offset ox ---- */
+        var C = { s: 1, px: CX, py: CY, ox: 0 };
+        var lastT = 0;
+        function applyCam() { if (typeof drawA === "function") drawA(lastT); $("ld-cam").style.transform = "translate(" + (CX - C.s * C.px + C.ox) + "px," + (CY - C.s * C.py) + "px) scale(" + C.s + ")"; }
+        // seek-safe: every move is a fromTo from the tracked state (no .to, no .set reading live values)
+        var cur = { s: 1, px: CX, py: CY, ox: 0 };
+        function cut(at, s, px, py) { var to = { s: s, px: px, py: py, ox: cur.ox }; ft(C, Object.assign({}, to), Object.assign({ duration: 0.001, onUpdate: applyCam }, to), at); cur = to; }
+        function move(at, dur, to, ease) { var nx = Object.assign({}, cur, to); ft(C, Object.assign({}, cur), Object.assign({ duration: dur, ease: ease || "none", onUpdate: applyCam }, nx), at); cur = nx; }
+
+        /* desk coords from screenshot coords: the 1920x1080 screen sits at (118.8, 623) at 0.4387 */
+        function D(x, y) { return [118.8 + x * 0.4387, 623 + y * 0.4387]; }
+        var PICK = [660, 707], PRING = [598, 707];           // request bubble (camera) · ring at the start of its text
+        cut(0, 1, CX, CY);
+        move(0, 0.9, { s: 1.03 });                           // wide hold, 3% push
+        cut(0.9, 3.3 * 1.12, PICK[0], PICK[1]); move(0.9, 0.18, { s: 3.3 }, "power3.out");   // HARD CUT punch-in, lands a hair close and settles
+        move(1.08, 0.72, { s: 3.3 * 1.06 });                 // push
+        ring($("ld-ring"), PRING, 1.08);
+        tl.set($("ld-s1"), { visibility: "hidden" }, 1.8); tl.set($("ld-s2"), { visibility: "visible" }, 1.8);
+        cut(1.8, 3.35 * 1.12, 514, 741); move(1.8, 0.18, { s: 3.35 }, "power3.out");   // HARD CUT on the invoices
+        move(1.98, 0.62, { s: 3.35 * 1.06 });
+        move(2.6, 0.75, { s: 1, px: CX, py: CY }, "power3.inOut"); // glide out to wide
+        move(3.4, 0.45, { ox: -660 }, "power2.inOut");       // slide: laptop off left, diagram in
+        move(4.6, 0.4, { ox: 0 }, "power2.inOut");           // slide back
+        var RES = D(1000, 470);                              // 5.0–5.4 Aurora cut-in, then the result
+        cut(5.4, 2.2 * 1.1, RES[0], RES[1]); move(5.4, 0.18, { s: 2.2 }, "power3.out");
+        move(5.58, 0.42, { s: 2.2 * 1.05 });
+
+        /* ---- folder punch-in: cursor travels, clicks, drags a selection box over 4 invoices ---- */
+        var S0 = [700, 168], S1 = [1232, 352];
+        ftC(1.8, D(560, 470), D(S0[0], S0[1]), 0.15);
+        ring($("ld-ring3"), D(S0[0], S0[1]), 1.95);
+        ft($("ld-sel"), { left: S0[0], top: S0[1], width: 0, height: 0, opacity: 1 }, { left: S0[0], top: S0[1], width: S1[0] - S0[0], height: S1[1] - S0[1], opacity: 1, duration: 0.42, ease: "power1.inOut" }, 2.0);
+        ftC(2.0, D(S0[0], S0[1]), D(S1[0], S1[1]), 0.42, "power1.inOut");
+        tl.set($("ld-sel"), { opacity: 0 }, 2.5);
+        tl.set([0,1,2,3].map(function (i) { return $("ld-h" + i); }), { opacity: 0 }, 5.4);
+        [759, 894, 1029, 1164].forEach(function (x, i) {
+          var h = $("ld-h" + i); gsap.set(h, { left: x - 64, top: 170, opacity: 0 });
+          ft(h, { opacity: 0 }, { opacity: 1, duration: 0.04 }, 2.04 + i * 0.1);
+        });
+
+        /* ---- result: the invoices fly into month folders, each folder counts up ---- */
+        var FOLD = [[640, 690, "يوليو"], [1000, 690, "أغسطس"], [1360, 690, "سبتمبر"]];
+        FOLD.forEach(function (f, i) {
+          var el = $("ld-f" + i); gsap.set(el, { left: f[0] - 120, top: f[1] - 95 }); el.querySelector("i").textContent = f[2];
+          ft(el, { scale: 0, opacity: 1 }, { scale: 1, opacity: 1, duration: 0.2, ease: "back.out(1.8)" }, 5.42 + i * 0.05);
+        });
+        var FLY = [[894, 0], [1029, 0], [1299, 1], [1569, 1], [1164, 2]], cnt = [0, 0, 0];
+        FLY.forEach(function (f, i) {
+          var el = $("ld-fly" + i), at = 5.5 + i * 0.06, tx = FOLD[f[1]][0], ty = FOLD[f[1]][1];
+          el.style.backgroundPosition = (-(f[0] - 64)) + "px -170px";
+          gsap.set(el, { left: f[0] - 64, top: 170 });
+          tl.set($("ld-hole" + i), { left: f[0] - 66, top: 168, opacity: 1 }, at);
+          ft(el, { x: 0, y: 0, scale: 1, opacity: 1 }, { x: tx - f[0], y: ty - 250, scale: 0.35, opacity: 1, duration: 0.2, ease: "power2.in" }, at);
+          tl.set(el, { opacity: 0 }, at + 0.21);
+          cnt[f[1]]++;
+          var b = $("ld-f" + f[1]).querySelector("b"), n = cnt[f[1]];
+          tl.set(b, { textContent: String.fromCharCode(0x660 + n) }, at + 0.2);
+          ft(b, { scale: 1.6 }, { scale: 1, duration: 0.16, ease: "back.out(2)" }, at + 0.2);
+        });
+        rays($("ld-rays"), D(1000, 690), 5.86);
+        tl.set($("ld-cutin"), { visibility: "visible" }, 5.0); tl.set($("ld-cutin"), { visibility: "hidden" }, 5.4);
+        ft($("ld-cutin-burst"), { rotation: 0, scale: 0.6 }, { rotation: 40, scale: 1, duration: 0.4, ease: "power2.out" }, 5.0);
+
+        /* ---- opening: the laptop lands on the desk, its screen wakes ---- */
+        ft($("ld-laptop"), { y: 700, rotation: 4 }, { y: 0, rotation: 0, duration: 0.42, ease: "back.out(1.3)" }, 0);
+        ft($("ld-s1"), { filter: "brightness(2.4)" }, { filter: "brightness(1)", duration: 0.35, ease: "power2.out" }, 0.4);
+        /* cursor glides to the target inside the punch, then clicks */
+        ftC(0.9, [PRING[0] - 70, PRING[1] + 90], [PRING[0] - 2, PRING[1] - 2], 0.2);
+        tl.set($("ld-cur"), { opacity: 0 }, 2.55);
+        ripple($("ld-rip1"), PRING, 1.2); ripple($("ld-rip2"), PRING, 1.4);
+        ft($("ld-mask"), { top: 265, height: 390 }, { top: 655, height: 0, duration: 0.55, ease: "steps(9)" }, 1.18);
+        tl.set($("ld-mask"), { visibility: "hidden" }, 1.8);
+        /* the new screen opens: a quick pop from the clicked spot */
+        ft($("ld-s2"), { scale: 0.3, transformOrigin: "50% 50%" }, { scale: 1, duration: 0.25, ease: "back.out(1.4)" }, 1.8);
+
+
+        [[0.9, 0.35], [1.8, 0.35], [5.4, 0.35], [3.4, 0.25], [4.6, 0.25], [5.0, 0.3]].forEach(function (f) { ft($("ld-flash"), { opacity: f[1] }, { opacity: 0, duration: 0.1, ease: "power2.out" }, f[0]); }); // card: 2–3 frames, ≤35%
+        /* diagram parts slam in from the right as they light */
+        ft($("ld-llm"), { x: 300 }, { x: 0, duration: 0.2, ease: "back.out(1.4)" }, 3.6);
+        ft($("ld-agent"), { x: 300 }, { x: 0, duration: 0.2, ease: "back.out(1.4)" }, 4.22);
+
+        /* ---- step badge + title: whole on the word ---- */
+        ft($("ld-b1"), { scale: 0, rotation: -40 }, { scale: 1, rotation: 0, duration: 0.25, ease: "back.out(1.7)" }, 0);
+        ft($("ld-t1"), { x: 120, opacity: 0 }, { x: 0, opacity: 1, duration: 0.25, ease: "power3.out" }, 0);
+        tl.set([$("ld-b1"), $("ld-t1")], { visibility: "hidden" }, 4.6);
+        tl.set([$("ld-b2"), $("ld-t2")], { visibility: "visible" }, 4.6);
+        ft($("ld-b2"), { scale: 0, rotation: -40 }, { scale: 1, rotation: 0, duration: 0.25, ease: "back.out(1.7)" }, 4.65);
+        ft($("ld-t2"), { x: 120, opacity: 0 }, { x: 0, opacity: 1, duration: 0.25, ease: "power3.out" }, 4.65);
+
+        /* ---- mini diagram: slides in with the laptop, builds part by part ---- */
+        gsap.set($("ld-dia"), { x: 700, scale: 1.15 });
+        ft($("ld-dia"), { x: 700 }, { x: -80, duration: 0.45, ease: "power2.inOut" }, 3.4);
+        ft($("ld-dia"), { x: -80 }, { x: 700, duration: 0.45, ease: "power2.inOut" }, 4.6);
+        NX.ghost($("ld-llm")); NX.ghost($("ld-agent")); gsap.set($("ld-tools"), { scale: 0 });
+        gsap.set([$("ld-l1"), $("ld-l2"), $("ld-arc")], { drawSVG: "0%" });
+        NX.ignite(tl, $("ld-llm"), 3.6, { fromGhost: true });
+        NX.draw(tl, $("ld-l1"), 3.78, 0.2);
+        ft($("ld-tools"), { scale: 0 }, { scale: 1, duration: 0.25, ease: "back.out(1.7)" }, 3.92);
+        NX.draw(tl, $("ld-l2"), 4.1, 0.2);
+        NX.ignite(tl, $("ld-agent"), 4.22, { fromGhost: true });
+        NX.draw(tl, $("ld-arc"), 4.38, 0.3);
+        for (var k = 0; k < 8; k++) NX.packet(tl, $("ld-arc"), 4.4 + k * 0.07, 0.2, { hot: true });
+        for (var k2 = 0; k2 < 4; k2++) { NX.packet(tl, $("ld-l1"), 3.98 + k2 * 0.12, 0.15); NX.packet(tl, $("ld-l2"), 4.3 + k2 * 0.12, 0.15); }
+        gsap.set($("ld-spin"), { opacity: 0 });
+        ["ld-k1", "ld-k2", "ld-k3"].forEach(function (id, i) { // the tools land under the agent, one by one
+          ft($(id), { opacity: 1, y: -420, scale: 0.4 }, { opacity: 1, y: 0, scale: 1, duration: 0.22, ease: "back.out(1.6)" }, 4.0 + i * 0.13);
+        });
+        ft($("ld-spin"), { opacity: 0, scale: 0.4, rotation: 0 }, { opacity: 1, scale: 1, rotation: 120, duration: 0.3, ease: "back.out(1.6)" }, 4.22);
+        ft($("ld-spin"), { rotation: 120 }, { rotation: 400, duration: 0.6, ease: "none" }, 4.52);
+        ft($("ld-dia"), { scale: 1.357 }, { scale: 1.15, duration: 0.25, ease: "power3.out" }, 4.22);
+        ft($("ld-dia"), { scale: 1.288 }, { scale: 1.15, duration: 0.22, ease: "power3.out" }, 3.92);
+        ft($("ld-dia"), { scale: 1.265 }, { scale: 1.15, duration: 0.2, ease: "power3.out" }, 3.6);
+        ft($("ld-agent"), { scale: 1.12 }, { scale: 1, duration: 0.2, ease: "back.out(2)" }, 4.62);
+        ft($("ld-llm"), { scale: 1.12 }, { scale: 1, duration: 0.2, ease: "back.out(2)" }, 4.3);
+        
+
+        /* ---- Aurora: drawn in screen space from the camera ---- */
+        var K = HATCH.kit({ w: 1080, h: 1920, seed: 20261003, theme: "midnight" });
+        var A = AURORA.create(K, { glow: false });
+        var AX = 250, AY = 1600, AS = 1.35, cv = $("ld-aur");
+        function drawA(t) {
+          if (!cv || !A) return;
+          var c = cv.getContext("2d"); c.clearRect(0, 0, 1080, 1920);
+          if (t >= 5.0 && t < 5.4) {           // reaction cut-in: big ^ ^ pop
+            var u = (t - 5.0) / 0.4, ps = 3.0 * (u < 0.3 ? HATCH.clamp(u / 0.3, 0, 1) * (1 + 0.3 * Math.sin(u / 0.3 * Math.PI)) : 1 + 0.04 * Math.sin((u - 0.3) * 12));
+            var sp = AURORA.pose("happy", t - 5.0); sp.eyes = "happy"; sp.glowAmt = 0;
+            A.draw(c, 540, 1250 - (sp.hop || 0) * ps, ps, sp); return;
+          }
+          if (C.s > 1.15) return;                 // punch-ins: she is out of shot
+          var x = 250, y = 1600, sc = 1.0 * (t < 0.3 ? HATCH.clamp(t / 0.3, 0, 1) * (1 + 0.25 * Math.sin(t / 0.3 * Math.PI)) : 1);
+          var st;
+          if (t < 2.6) { st = AURORA.pose("wave", t); }
+          else if (t < 4.4) { st = AURORA.pose("point", t - 2.6, { dir: 1 }); }
+          else { st = AURORA.pose("happy", t - 4.4); st.eyes = "happy"; }
+          st.glowAmt = 0;
+          A.draw(c, x, y - (st.hop || 0) * sc, sc, st);
+        }
+        var proxy = { t: 0 };
+        tl.fromTo(proxy, { t: 0 }, { t: DUR, duration: DUR, ease: "none", onUpdate: function () { lastT = proxy.t; drawA(proxy.t); } }, 0);
+
+        tl.set({}, {}, DUR);
+        window.__timelines["laptop-desk-zoom-9x16"] = tl;
+
+        function ripple(el, p, at) {
+          gsap.set(el, { left: p[0], top: p[1] });
+          ft(el, { scale: 0.6, opacity: 0.9 }, { scale: 2.6, opacity: 0, duration: 0.5, ease: "power2.out" }, at);
+        }
+        function rays(svg, p, at) {
+          var ns = "http://www.w3.org/2000/svg";
+          for (var i = 0; i < 12; i++) { var a = i * Math.PI / 6, l = document.createElementNS(ns, "line");
+            l.setAttribute("x1", Math.cos(a) * 62); l.setAttribute("y1", Math.sin(a) * 62); l.setAttribute("x2", Math.cos(a) * 105); l.setAttribute("y2", Math.sin(a) * 105);
+            l.setAttribute("stroke", "#ff6a3d"); l.setAttribute("stroke-width", "7"); l.setAttribute("stroke-linecap", "round"); svg.appendChild(l); }
+          gsap.set(svg, { left: p[0], top: p[1] });
+          ft(svg, { scale: 0.3, rotation: 0, opacity: 1 }, { scale: 1.2, rotation: 30, opacity: 1, duration: 0.3, ease: "power3.out" }, at);
+          ft(svg, { opacity: 1 }, { opacity: 0, duration: 0.25 }, at + 0.3);
+        }
+        function ftC(at, p0, p1, dur, ease) { // the cursor travels p0 → p1 (desk coords)
+          ft($("ld-cur"), { left: p0[0], top: p0[1], opacity: 1 }, { left: p1[0], top: p1[1], opacity: 1, duration: dur, ease: ease || "power3.out" }, at);
+        }
+        function ring(el, p, at) {
+          gsap.set(el, { left: p[0], top: p[1] });
+          ft(el, { scale: 0.2, opacity: 1 }, { scale: 1, opacity: 1, duration: 0.35, ease: "back.out(1.7)" }, at);
+          tl.to(el, { scale: 1.5, opacity: 0, duration: 0.3, ease: "power2.out" }, at + 0.45);
+        }
+      })();
+    </script>
+  </body>
+</html>

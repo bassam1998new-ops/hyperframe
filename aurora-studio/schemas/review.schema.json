@@ -1,0 +1,238 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AurorA Studio Post-Render Review",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "run_id",
+    "video",
+    "video_sha256",
+    "visual_evidence",
+    "status",
+    "technical",
+    "creative",
+    "assets",
+    "issues",
+    "decision",
+    "summary"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "video": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "status": {
+      "enum": [
+        "pending",
+        "completed"
+      ]
+    },
+    "technical": {
+      "type": "object"
+    },
+    "creative": {
+      "type": "object",
+      "properties": {
+        "reference_fit": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "project_fit": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "story_clarity": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "motion_intentional": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "typography": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "captions": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "arabic": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "camera_crop_safe_zones": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "audio": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "three_d_vfx_quality": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "ai_slop_free": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "assets": {
+      "type": "object",
+      "properties": {
+        "licenses_ok": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "watermark_free": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "issues": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "decision": {
+      "enum": [
+        "PENDING",
+        "PASS",
+        "FIX",
+        "REBUILD"
+      ]
+    },
+    "summary": {
+      "type": "string"
+    },
+    "video_sha256": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "visual_evidence": {
+      "type": "object",
+      "required": [
+        "video",
+        "video_sha256",
+        "generated_at",
+        "count",
+        "frames"
+      ],
+      "properties": {
+        "video": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "video_sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "generated_at": {
+          "type": "string"
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "error": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "frames": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "index",
+              "time_seconds",
+              "path",
+              "sha256"
+            ],
+            "properties": {
+              "index": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "time_seconds": {
+                "type": "number",
+                "minimum": 0
+              },
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}
