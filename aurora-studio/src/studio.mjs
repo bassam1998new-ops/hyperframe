@@ -223,6 +223,8 @@ export async function runSetup(cwd = process.cwd()) {
   projectProfile.product = workspace.project.product;
   projectProfile.purpose = workspace.project.purpose;
   projectProfile.website = workspace.project.website;
+  projectProfile.claims_to_protect ||= [];
+  projectProfile.sources ||= [];
   writeProject(projectProfile, cwd);
   readLibrary(cwd);
   const discovery = saveDiscovery(cwd);
