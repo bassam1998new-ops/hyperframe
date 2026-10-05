@@ -21,10 +21,28 @@ Using an asset in a finished video and redistributing the raw asset are two diff
 - Unknown license = do not use until verified.
 
 ## Poly Haven live API
-If using the live API:
-- identify AurorA Studio with a unique User-Agent
-- visibly record Poly Haven as the source
-- remember that API attribution is separate from the CC0 asset license
+AurorA has a live Poly Haven adapter.
+
+Search:
+```bash
+aurora-studio assets search "studio sunset" --type hdris
+aurora-studio assets search "office chair" --type models
+aurora-studio assets search "brushed metal" --type textures
+```
+
+Inspect available files for a chosen result:
+```bash
+aurora-studio assets files ASSET_ID
+```
+
+The adapter:
+- identifies AurorA Studio with its User-Agent
+- caches catalog data for 6 hours
+- falls back to stale cache if the live API is unavailable
+- returns CC0 metadata
+- marks that Poly Haven must be visibly credited as the source when AurorA uses the live API
+
+API-service attribution is separate from the CC0 asset license.
 
 ## Import record
 Store source URL, source name, exact license, commercial-use permission, redistribution permission, attribution requirement, local path and approval state.
