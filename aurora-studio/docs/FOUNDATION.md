@@ -76,3 +76,10 @@ Keep updates simple:
 - Maybe later
 - no forced Adobe/Blender/Obsidian installs
 - migrations validated before applying
+
+Current CLI foundation:
+- `update check` reads signed-in-independent public release metadata only
+- `update plan` checks workspace schema compatibility
+- `update backup` snapshots AurorA source-of-truth state
+- no arbitrary remote script execution
+- no `update apply` until the public package identity and migration rules are locked
