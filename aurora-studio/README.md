@@ -101,7 +101,12 @@ No hook runs on every tool call.
 npx <final-package>@latest setup
 ```
 
-Setup can install the small Claude/Codex pointers and SessionStart hook automatically. The bundled bootstrap prompt is still available for other compatible agents.
+Setup can install the small Claude/Codex pointers, project-local native AurorA skills, and the SessionStart hook automatically.
+
+- Claude skills: `.claude/skills/aurora-*`
+- Codex skills: `.agents/skills/aurora-*`
+
+The bundled bootstrap prompt is still available for other compatible agents.
 
 ## UI
 UI/UX comes later. The file contracts and agent behavior must be stable first.
