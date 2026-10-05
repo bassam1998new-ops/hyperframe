@@ -1021,7 +1021,8 @@ export async function showResources(capability = null, cwd = process.cwd()) {
 
 export async function installAgentPointers(target = "all", cwd = process.cwd()) {
   try {
-    const system = syncSystemKnowledge(cwd);
+    const status = systemStatus(cwd);
+    const system = status.needs_sync ? syncSystemKnowledge(cwd) : status;
     const result = {
       system,
       instructions: installAgentInstructions(target, cwd),
