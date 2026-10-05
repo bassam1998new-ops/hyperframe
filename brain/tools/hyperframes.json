@@ -1,0 +1,8 @@
+{
+  "id": "hyperframes",
+  "role": "programmable-2d-motion-and-video-assembly",
+  "license": "Apache-2.0",
+  "strengths": ["html", "gsap", "2d-motion", "captions", "ui", "social-variants", "timeline", "render", "transcription", "tts", "beats", "background-removal", "audio-normalization", "qa"],
+  "avoid_when": ["true-3d-modeling", "character-rigging", "complex-3d-lighting"],
+  "routing_note": "Use upstream HyperFrames skills/CLI for capabilities it already provides. AurorA adds project memory and routing around it."
+}
