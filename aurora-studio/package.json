@@ -1,0 +1,19 @@
+{
+  "name": "aurora-studio-local",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AurorA Studio foundation CLI and agent knowledge layer",
+  "type": "module",
+  "bin": {
+    "aurora-studio": "./bin/aurora-studio.mjs"
+  },
+  "scripts": {
+    "setup": "node ./bin/aurora-studio.mjs setup",
+    "doctor": "node ./bin/aurora-studio.mjs doctor",
+    "tools": "node ./bin/aurora-studio.mjs tools",
+    "route": "node ./bin/aurora-studio.mjs route"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
