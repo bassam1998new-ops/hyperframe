@@ -19,6 +19,18 @@ function passingReport() {
     run_id: "r",
     video: "final.mp4",
     video_sha256: "a".repeat(64),
+    visual_evidence: {
+      video: "final.mp4",
+      video_sha256: "a".repeat(64),
+      generated_at: new Date().toISOString(),
+      count: 3,
+      error: null,
+      frames: [
+        { index: 1, time_seconds: 1, path: ".aurora/runs/r/review-frames/frame-01.jpg", sha256: "b".repeat(64) },
+        { index: 2, time_seconds: 2, path: ".aurora/runs/r/review-frames/frame-02.jpg", sha256: "c".repeat(64) },
+        { index: 3, time_seconds: 3, path: ".aurora/runs/r/review-frames/frame-03.jpg", sha256: "d".repeat(64) }
+      ]
+    },
     status: "completed",
     technical: { ok: true, errors: [], warnings: [], metadata: {} },
     creative: {
@@ -102,4 +114,23 @@ test("PASS rejects unresolved issues", () => {
   assert.equal(validation.ok, false);
   assert.equal(validation.can_complete_post_review, false);
   assert.ok(validation.errors.some(error => error.includes("unresolved issues")));
+});
+
+
+test("completed review rejects missing visual evidence", () => {
+  const report = passingReport();
+  report.visual_evidence = null;
+
+  const validation = validateReviewReport(report);
+  assert.equal(validation.ok, false);
+  assert.ok(validation.errors.some(error => error.includes("visual_evidence")));
+});
+
+test("completed review rejects visual evidence from another render", () => {
+  const report = passingReport();
+  report.visual_evidence.video_sha256 = "f".repeat(64);
+
+  const validation = validateReviewReport(report);
+  assert.equal(validation.ok, false);
+  assert.ok(validation.errors.some(error => error.includes("does not belong")));
 });
