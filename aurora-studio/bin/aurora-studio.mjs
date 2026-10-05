@@ -31,7 +31,8 @@ import {
   showRetrievedContext,
   validateStudio,
   showObsidianInfo,
-  searchObsidianKnowledge
+  searchObsidianKnowledge,
+  showResources
 } from "../src/studio.mjs";
 
 const [command = "help", ...args] = process.argv.slice(2);
@@ -68,6 +69,9 @@ switch (command) {
     break;
   case "workspace":
     await showWorkspace();
+    break;
+  case "resources":
+    await showResources(args.join(" ") || null);
     break;
 
   case "project":
@@ -194,6 +198,7 @@ Setup:
   aurora-studio tools
   aurora-studio mode direct|director
   aurora-studio workspace
+  aurora-studio resources ["CAPABILITY"]
 
 Brain:
   aurora-studio context "TASK" [--reference ID]
