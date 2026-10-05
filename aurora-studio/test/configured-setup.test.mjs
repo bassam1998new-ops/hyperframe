@@ -55,7 +55,7 @@ test("setup config file is normalized", () => {
   assert.equal(result.config.product, "X");
   assert.equal(result.config.agents, "codex");
   assert.equal(result.config.resources.google_flow, true);
-  assert.equal(result.config.resources.elevenlabs, false);
+  assert.equal(result.config.resources.elevenlabs, null);
 });
 
 test("configured setup never calls HyperFrames installer when disabled", () => {
@@ -76,4 +76,37 @@ test("configured setup never calls HyperFrames installer when disabled", () => {
   });
 
   assert.equal(installs, 0);
+});
+
+
+test("configured setup preserves omitted existing resources", () => {
+  const cwd = temp();
+
+  writeConfiguredWorkspace({
+    product: "X",
+    mode: "direct",
+    agents: "none",
+    install_hyperframes: false,
+    resources: {
+      google_flow: true,
+      elevenlabs: true
+    }
+  }, { cwd });
+
+  writeConfiguredWorkspace({
+    product: "X",
+    agents: "none",
+    install_hyperframes: false,
+    resources: {
+      google_flow: false
+    }
+  }, { cwd });
+
+  const workspace = JSON.parse(
+    fs.readFileSync(path.join(cwd, ".aurora", "workspace.json"), "utf8")
+  );
+
+  assert.equal(workspace.resources.google_flow, false);
+  assert.equal(workspace.resources.elevenlabs, true);
+  assert.equal(workspace.default_mode, "direct");
 });
