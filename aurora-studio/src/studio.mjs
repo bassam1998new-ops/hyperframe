@@ -230,9 +230,38 @@ export async function showWorkspace(cwd = process.cwd()) {
   console.log(JSON.stringify(ws, null, 2));
 }
 
+export function runPreflight(cwd = process.cwd()) {
+  const ws = readWorkspace(cwd);
+  if (!ws) {
+    return { ok: false, errors: ["Workspace is not configured. Run: aurora-studio setup"], tools: [], integrations: [] };
+  }
+
+  const tools = detectTools(cwd);
+  const integrations = detectIntegrations(cwd);
+  const missingRequired = tools.filter(t => t.required && !t.available);
+
+  ws.tools = tools;
+  ws.integrations = integrations;
+  writeWorkspace(ws, cwd);
+
+  return {
+    ok: missingRequired.length === 0,
+    errors: missingRequired.map(t => `Missing required tool: ${t.name}`),
+    tools,
+    integrations
+  };
+}
+
 export async function recommendRoute(taskText = "", cwd = process.cwd()) {
+  const preflight = runPreflight(cwd);
+  if (!preflight.ok) {
+    for (const error of preflight.errors) console.error(error);
+    process.exitCode = 2;
+    return;
+  }
+
   const q = taskText.toLowerCase();
-  const available = Object.fromEntries(detectTools(cwd).map(t => [t.id, t.available]));
+  const available = Object.fromEntries(preflight.tools.map(t => [t.id, t.available]));
   const route = [];
 
   const true3d = /(3d|avatar|character|rig|model|product render|physics)/.test(q);
