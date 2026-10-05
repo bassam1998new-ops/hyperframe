@@ -3,7 +3,11 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { scanWorkspace, writeDiscovery } from "../src/discovery.mjs";
+import {
+  scanWorkspace,
+  writeDiscovery,
+  isDangerouslyBroadExternalRoot
+} from "../src/discovery.mjs";
 
 function temp() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "aurora-discovery-"));
@@ -71,4 +75,63 @@ test("missing approved external root is reported, not guessed", async () => {
 
   assert.equal(saved.result.external_roots[0].available, false);
   assert.equal(saved.result.external_roots[0].error, "not_found");
+});
+
+
+test("discovery ignores Claude and Codex config folders", () => {
+  const cwd = temp();
+  fs.mkdirSync(path.join(cwd, ".claude"), { recursive: true });
+  fs.mkdirSync(path.join(cwd, ".codex"), { recursive: true });
+  fs.writeFileSync(path.join(cwd, ".claude", "settings.json"), "{}");
+  fs.writeFileSync(path.join(cwd, ".codex", "hooks.json"), "{}");
+  fs.writeFileSync(path.join(cwd, "brief.md"), "# brief");
+
+  const result = scanWorkspace(cwd);
+
+  assert.equal(result.counts.document, 1);
+  assert.ok(result.files.every(item => !item.path.includes(".claude")));
+  assert.ok(result.files.every(item => !item.path.includes(".codex")));
+});
+
+test("broad external roots are rejected", () => {
+  const cwd = temp();
+
+  assert.equal(
+    isDangerouslyBroadExternalRoot(path.parse(cwd).root, {
+      platform: process.platform,
+      home: os.homedir()
+    }),
+    true
+  );
+
+  assert.equal(
+    isDangerouslyBroadExternalRoot(os.homedir(), {
+      platform: process.platform,
+      home: os.homedir()
+    }),
+    true
+  );
+
+  assert.equal(
+    isDangerouslyBroadExternalRoot(path.join(cwd, "assets"), {
+      platform: process.platform,
+      home: os.homedir()
+    }),
+    false
+  );
+});
+
+test("specific external asset folder is scanned", () => {
+  const cwd = temp();
+  const external = path.join(cwd, "external-assets");
+  fs.mkdirSync(external, { recursive: true });
+  fs.writeFileSync(path.join(external, "avatar.glb"), "");
+
+  const result = writeDiscovery(cwd, {
+    extraRoots: [external]
+  });
+
+  assert.equal(result.discovery.external_roots.length, 1);
+  assert.equal(result.discovery.external_roots[0].available, true);
+  assert.equal(result.discovery.external_roots[0].counts.three_d, 1);
 });
