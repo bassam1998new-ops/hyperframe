@@ -24,6 +24,7 @@ import { retrieveContext } from "./retrieval.mjs";
 import { listProviders, providersFor } from "./providers.mjs";
 import { validateKnowledge } from "./validate.mjs";
 import { obsidianInfo, searchObsidian } from "./integrations/obsidian.mjs";
+import { installAgentInstructions, removeAgentInstructions } from "./agent-install.mjs";
 import {
   ensureProjectProfile,
   readProject,
@@ -787,4 +788,29 @@ export async function showResources(capability = null, cwd = process.cwd()) {
   const resources = capability ? providersFor(capability, cwd) : listProviders(cwd);
   console.log(JSON.stringify(resources, null, 2));
   return resources;
+}
+
+
+export async function installAgentPointers(target = "all", cwd = process.cwd()) {
+  try {
+    const result = installAgentInstructions(target, cwd);
+    console.log(JSON.stringify(result, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function removeAgentPointers(target = "all", cwd = process.cwd()) {
+  try {
+    const result = removeAgentInstructions(target, cwd);
+    console.log(JSON.stringify(result, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
 }
