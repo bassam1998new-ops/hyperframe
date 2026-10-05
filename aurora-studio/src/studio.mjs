@@ -237,9 +237,21 @@ export async function recommendRoute(taskText = "", cwd = process.cwd()) {
   if (finishing && available.after_effects) route.push("after_effects");
 
   if (motion2d || route.length === 0) {
-    if (available.hyperframe) route.push("hyperframe");
+    if (available.hyperframe) {
+      route.push("hyperframe");
+    } else if (motion2d) {
+      console.log("No safe automatic route: this task appears to need HyperFrames, but HyperFrames is unavailable.");
+      process.exitCode = 2;
+      return;
+    }
   } else if (available.hyperframe && !finishing) {
     route.push("hyperframe");
+  }
+
+  if (route.length === 0) {
+    console.log("No confident automatic route yet. Use Director mode for this task.");
+    process.exitCode = 2;
+    return;
   }
 
   console.log(JSON.stringify({
