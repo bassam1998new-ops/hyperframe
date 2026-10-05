@@ -14,6 +14,6 @@
     "route": "node ./bin/aurora-studio.mjs route"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   }
 }
