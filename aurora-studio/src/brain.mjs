@@ -55,6 +55,8 @@ export function ensureProjectProfile(seed = {}, cwd = process.cwd()) {
       avoid_moods: [],
       recurring_constraints: []
     },
+    claims_to_protect: [],
+    sources: [],
     notes: [],
     created_at: now,
     updated_at: now
