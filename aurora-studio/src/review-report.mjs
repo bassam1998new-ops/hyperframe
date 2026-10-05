@@ -3,6 +3,7 @@ import path from "node:path";
 import { loadRun } from "./governance.mjs";
 import { probeRender } from "./quality.mjs";
 import { sha256File } from "./final-artifact.mjs";
+import { extractReviewFrames } from "./review-frames.mjs";
 
 const DECISIONS = new Set(["PENDING", "PASS", "FIX", "REBUILD"]);
 
@@ -15,6 +16,12 @@ export function createReviewReport(runId, video, cwd = process.cwd()) {
   const run = loadRun(cwd, runId);
   const file = path.join(run.dir, "review.json");
   const resolvedVideo = video ? path.resolve(cwd, video) : null;
+  const videoExists =
+    Boolean(resolvedVideo) &&
+    fs.existsSync(resolvedVideo) &&
+    fs.statSync(resolvedVideo).isFile();
+  const videoSha256 = videoExists ? sha256File(resolvedVideo) : null;
+
   const technical = resolvedVideo
     ? probeRender(resolvedVideo)
     : {
@@ -24,44 +31,75 @@ export function createReviewReport(runId, video, cwd = process.cwd()) {
         metadata: null
       };
 
-  const now = new Date().toISOString();
   const existing = fs.existsSync(file)
     ? JSON.parse(fs.readFileSync(file, "utf8"))
     : null;
+  const sameVideo =
+    Boolean(videoSha256) &&
+    existing?.video_sha256 === videoSha256;
+
+  let visualEvidence = {
+    schema_version: 1,
+    video: resolvedVideo ? path.relative(cwd, resolvedVideo) : null,
+    video_sha256: videoSha256,
+    generated_at: new Date().toISOString(),
+    count: 0,
+    frames: [],
+    error: null
+  };
+
+  if (technical.ok && videoExists) {
+    try {
+      const duration = Number(technical.metadata?.format?.duration || 0);
+      visualEvidence = {
+        ...extractReviewFrames(resolvedVideo, {
+          cwd,
+          outputDir: path.join(run.dir, "review-frames"),
+          durationSeconds: duration,
+          count: 5
+        }),
+        error: null
+      };
+    } catch (error) {
+      visualEvidence.error = error instanceof Error ? error.message : String(error);
+    }
+  }
+
+  const now = new Date().toISOString();
+  const defaultCreative = {
+    reference_fit: null,
+    project_fit: null,
+    story_clarity: null,
+    motion_intentional: null,
+    typography: null,
+    captions: null,
+    arabic: null,
+    camera_crop_safe_zones: null,
+    audio: null,
+    three_d_vfx_quality: null,
+    ai_slop_free: null,
+    notes: []
+  };
+  const defaultAssets = {
+    licenses_ok: null,
+    watermark_free: null,
+    issues: []
+  };
 
   const report = {
     schema_version: 1,
     run_id: runId,
     video: resolvedVideo ? path.relative(cwd, resolvedVideo) : null,
-    video_sha256:
-      resolvedVideo && fs.existsSync(resolvedVideo) && fs.statSync(resolvedVideo).isFile()
-        ? sha256File(resolvedVideo)
-        : null,
-    status: existing?.status || "pending",
+    video_sha256: videoSha256,
+    visual_evidence: visualEvidence,
+    status: sameVideo ? existing?.status || "pending" : "pending",
     technical,
-    creative: existing?.creative || {
-      reference_fit: null,
-      project_fit: null,
-      story_clarity: null,
-      motion_intentional: null,
-      typography: null,
-      captions: null,
-      arabic: null,
-      camera_crop_safe_zones: null,
-      audio: null,
-      three_d_vfx_quality: null,
-      ai_slop_free: null,
-      notes: []
-    },
-    assets: existing?.assets || {
-      licenses_ok: null,
-      watermark_free: null,
-      issues: []
-    },
-    issues: existing?.issues || [],
-    decision: existing?.decision || "PENDING",
-    summary: existing?.summary || "",
-    created_at: existing?.created_at || now,
+    creative: sameVideo ? existing?.creative || defaultCreative : defaultCreative,
+    assets: sameVideo ? existing?.assets || defaultAssets : defaultAssets,
+    issues: sameVideo ? existing?.issues || [] : [],
+    decision: sameVideo ? existing?.decision || "PENDING" : "PENDING",
+    summary: sameVideo ? existing?.summary || "" : "",
+    created_at: sameVideo ? existing?.created_at || now : now,
     updated_at: now
   };
 
