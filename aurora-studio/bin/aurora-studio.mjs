@@ -44,6 +44,9 @@ import {
   createMoodRecord,
   showMoodRecord,
   validateMoodRecord,
+  createAssetPlanRecord,
+  showAssetPlanRecord,
+  validateAssetPlanRecord,
   createLearningReviewRecord,
   showLearningReview,
   validateLearningReviewRecord,
@@ -160,6 +163,13 @@ switch (command) {
     else if (args[0] === "show") await showMoodRecord(args[1]);
     else if (args[0] === "validate") await validateMoodRecord(args[1]);
     else console.error("mood commands: create RUN_ID | show RUN_ID | validate RUN_ID");
+    break;
+
+  case "asset-plan":
+    if (args[0] === "create") await createAssetPlanRecord(args[1]);
+    else if (args[0] === "show") await showAssetPlanRecord(args[1]);
+    else if (args[0] === "validate") await validateAssetPlanRecord(args[1]);
+    else console.error("asset-plan commands: create RUN_ID | show RUN_ID | validate RUN_ID");
     break;
 
   case "learn":
@@ -307,6 +317,9 @@ Brain:
   aurora-studio mood create RUN_ID
   aurora-studio mood show RUN_ID
   aurora-studio mood validate RUN_ID
+  aurora-studio asset-plan create RUN_ID
+  aurora-studio asset-plan show RUN_ID
+  aurora-studio asset-plan validate RUN_ID
   aurora-studio learn create RUN_ID
   aurora-studio learn show RUN_ID
   aurora-studio learn validate RUN_ID
