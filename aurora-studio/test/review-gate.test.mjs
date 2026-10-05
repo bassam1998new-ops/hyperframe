@@ -39,6 +39,7 @@ function writeReport(run, decision) {
     schema_version: 1,
     run_id: run.id,
     video: "renders/final.mp4",
+    video_sha256: "b".repeat(64),
     status: "completed",
     technical: { ok: true, errors: [], warnings: [], metadata: {} },
     creative: {
