@@ -18,8 +18,25 @@
     "obsidian": { "required": false, "role": "knowledge_ui" }
   },
   "hooks": {
-    "preflight": { "enabled": true, "implemented": true },
-    "post_approval": { "enabled": true, "implemented": true, "command": "aurora-studio finalize" },
-    "post_update": { "enabled": true, "implemented": false, "blocked_by": "updater" }
+    "session_context": {
+      "enabled": true,
+      "implemented": true,
+      "agents": ["claude", "codex"],
+      "event": "SessionStart"
+    },
+    "preflight": {
+      "enabled": true,
+      "implemented": true
+    },
+    "post_approval": {
+      "enabled": true,
+      "implemented": true,
+      "command": "aurora-studio finalize"
+    },
+    "post_update": {
+      "enabled": true,
+      "implemented": false,
+      "blocked_by": "updater"
+    }
   }
 }
