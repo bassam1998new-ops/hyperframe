@@ -19,6 +19,8 @@ For each real production job:
 - in Director mode: concept → owner pick → mood → asset-plan → routing
 - in Direct mode: simple jobs may explicitly skip concept/mood, but a completed asset-plan still happens before routing
 - run `aurora-studio routing RUN_ID` only after the early stages are ready
+- fill/validate the generated build-plan.json and assign each shot/build unit to the right routed engine
+- complete the build_plan checkpoint before execution
 - check the budget before paid generation
 - run pre-render and post-render review
 - finalize only after I approve
