@@ -1,15 +1,13 @@
 # AurorA Studio
 
-AurorA Studio is an agent-first creative workspace built around knowledge, reusable assets and tool routing.
-
-It does **not** require every creative tool.
+AurorA Studio is an agent-first creative workspace built around knowledge, reusable assets and smart tool routing.
 
 Core idea:
 - understand the reference
 - understand the current product/project
 - search what we already have
 - decide reuse / modify / build
-- choose the best available tool path
+- choose the best available production path
 - build and review
 - save only useful learning after approval
 
@@ -22,17 +20,16 @@ Fast. The agent chooses the production path and works with minimum checkpoints.
 Controlled. The agent deconstructs the reference, proposes concepts, gets a direction selected, then builds through clear stages.
 
 ## Production tools
-
 - **HyperFrames** — primary programmable 2D/motion engine
 - **Blender** — optional 3D engine
-- **After Effects** — optional proprietary finishing/VFX engine
-- **OpenMontage** — optional external adapter / architecture reference; not copied into the permissive core
+- **After Effects** — optional finishing/VFX engine
 
-Missing optional tools are not errors. The setup process records what is available and routing ignores unavailable tools.
+## Knowledge UI
+- **Obsidian** — optional UI over the same Markdown/JSON brain. AurorA works without it.
+
+Missing optional tools are not errors. Setup records what exists and routing ignores unavailable tools.
 
 ## Current foundation commands
-
-From this folder:
 
 ```bash
 node ./bin/aurora-studio.mjs setup
@@ -44,7 +41,7 @@ node ./bin/aurora-studio.mjs workspace
 node ./bin/aurora-studio.mjs route "3d avatar with cinematic lighting"
 ```
 
-The package is intentionally private during foundation work. Before the public release we will choose the final npm scope/name and enable the one-line install.
+The package remains private during foundation work. Before public release we will choose the final npm name/scope and enable the one-line install.
 
 ## Workspace
 
@@ -62,24 +59,29 @@ The package is intentionally private during foundation work. Before the public r
 
 Do not store passwords, cookies or API secrets there.
 
-## Community install target
+## Hooks
+AurorA starts with only three:
+- preflight
+- post-approval
+- post-update
 
-The release goal is a simple flow like:
+More hooks are added only when they prove useful.
+
+## Community install target
 
 ```bash
 npx <final-package>@latest setup
 ```
 
-Then the user can paste the agent bootstrap prompt into Claude Code, Codex or another coding agent.
+Then paste the bundled agent bootstrap prompt into Claude Code, Codex or another compatible coding agent.
 
 ## UI
+UI/UX comes later. The file contracts and agent behavior must be stable first.
 
-UI/UX is intentionally later. The file contracts and agent behavior must be stable first.
-
-The planned updater should be simple like Hermes:
+The planned updater should stay simple:
 - current version
 - update available
 - short New / Fixed list
 - Update now
 - Maybe later
-- safe migration / rollback information when needed
+- safe migration/rollback information when needed
