@@ -47,6 +47,9 @@ import {
   createAssetPlanRecord,
   showAssetPlanRecord,
   validateAssetPlanRecord,
+  createBuildPlanRecord,
+  showBuildPlanRecord,
+  validateBuildPlanRecord,
   createLearningReviewRecord,
   showLearningReview,
   validateLearningReviewRecord,
@@ -170,6 +173,13 @@ switch (command) {
     else if (args[0] === "show") await showAssetPlanRecord(args[1]);
     else if (args[0] === "validate") await validateAssetPlanRecord(args[1]);
     else console.error("asset-plan commands: create RUN_ID | show RUN_ID | validate RUN_ID");
+    break;
+
+  case "build-plan":
+    if (args[0] === "create") await createBuildPlanRecord(args[1]);
+    else if (args[0] === "show") await showBuildPlanRecord(args[1]);
+    else if (args[0] === "validate") await validateBuildPlanRecord(args[1]);
+    else console.error("build-plan commands: create RUN_ID | show RUN_ID | validate RUN_ID");
     break;
 
   case "learn":
@@ -320,6 +330,9 @@ Brain:
   aurora-studio asset-plan create RUN_ID
   aurora-studio asset-plan show RUN_ID
   aurora-studio asset-plan validate RUN_ID
+  aurora-studio build-plan create RUN_ID
+  aurora-studio build-plan show RUN_ID
+  aurora-studio build-plan validate RUN_ID
   aurora-studio learn create RUN_ID
   aurora-studio learn show RUN_ID
   aurora-studio learn validate RUN_ID
