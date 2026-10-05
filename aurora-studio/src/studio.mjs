@@ -23,6 +23,7 @@ import {
 } from "./adapters/after-effects.mjs";
 import { retrieveContext } from "./retrieval.mjs";
 import { listAssetSources, recommendAssetSources, sourceImportDefaults, licenseGate } from "./asset-sources.mjs";
+import { searchPolyHaven, getPolyHavenFiles } from "./open-assets/poly-haven.mjs";
 import { listProviders, providersFor } from "./providers.mjs";
 import { validateKnowledge } from "./validate.mjs";
 import { obsidianInfo, searchObsidian } from "./integrations/obsidian.mjs";
@@ -1038,6 +1039,36 @@ export async function validateMoodRecord(runId, cwd = process.cwd()) {
     const result = validateMoodFile(runId, cwd);
     console.log(JSON.stringify(result, null, 2));
     if (!result.ok) process.exitCode = 2;
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+
+export async function searchOpenAssets(query, options = {}, cwd = process.cwd()) {
+  try {
+    const result = await searchPolyHaven(query, {
+      type: options.type || "all",
+      limit: options.limit || 10,
+      forceRefresh: Boolean(options.forceRefresh),
+      cwd
+    });
+    console.log(JSON.stringify(result, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function showOpenAssetFiles(assetId) {
+  try {
+    const result = await getPolyHavenFiles(assetId);
+    console.log(JSON.stringify(result, null, 2));
     return result;
   } catch (error) {
     console.error(error.message);
