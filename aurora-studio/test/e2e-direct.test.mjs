@@ -187,6 +187,27 @@ test("fresh configured Direct workspace reaches routed build plan", async () => 
     assert.ok(fs.existsSync(path.join(run.dir, "final.json")));
     assert.equal(fs.existsSync(path.join(run.dir, "temp")), false);
 
+    const decisionsFile = path.join(cwd, ".aurora", "decisions.jsonl");
+    const decisionsBeforeRetry = fs.readFileSync(decisionsFile, "utf8")
+      .trim()
+      .split("\n")
+      .filter(Boolean).length;
+
+    const retry = await finalizeProduction(
+      run.id,
+      approvedVideo,
+      null,
+      cwd
+    );
+
+    assert.equal(retry.already_finalized, true);
+
+    const decisionsAfterRetry = fs.readFileSync(decisionsFile, "utf8")
+      .trim()
+      .split("\n")
+      .filter(Boolean).length;
+    assert.equal(decisionsAfterRetry, decisionsBeforeRetry);
+
     const saved = loadRun(cwd, run.id);
     assert.equal(saved.state.status, "completed");
     assert.equal(saved.state.checkpoints.build.status, "completed");
