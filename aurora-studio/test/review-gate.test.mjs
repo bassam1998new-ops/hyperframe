@@ -9,6 +9,7 @@ import {
   setRunRoute
 } from "../src/governance.mjs";
 import { writeRunCheckpoint } from "../src/studio.mjs";
+import { sha256File } from "../src/final-artifact.mjs";
 
 function temp() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "aurora-review-gate-"));
@@ -34,12 +35,34 @@ function advanceToPostReview(cwd) {
   return run;
 }
 
-function writeReport(run, decision) {
+function writeReport(cwd, run, decision) {
+  const frameDir = path.join(run.dir, "review-frames");
+  fs.mkdirSync(frameDir, { recursive: true });
+  const frames = [1, 2, 3].map(index => {
+    const file = path.join(frameDir, `frame-0${index}.jpg`);
+    fs.writeFileSync(file, `frame-${index}`);
+    return {
+      index,
+      time_seconds: index,
+      path: path.relative(cwd, file),
+      sha256: sha256File(file)
+    };
+  });
+
+  const videoSha = "b".repeat(64);
   const report = {
     schema_version: 1,
     run_id: run.id,
     video: "renders/final.mp4",
-    video_sha256: "b".repeat(64),
+    video_sha256: videoSha,
+    visual_evidence: {
+      video: "renders/final.mp4",
+      video_sha256: videoSha,
+      generated_at: new Date().toISOString(),
+      count: frames.length,
+      frames,
+      error: null
+    },
     status: "completed",
     technical: { ok: true, errors: [], warnings: [], metadata: {} },
     creative: {
@@ -92,7 +115,7 @@ test("post-render review cannot complete without review.json", async () => {
 test("FIX review cannot complete post-render checkpoint", async () => {
   const cwd = temp();
   const run = advanceToPostReview(cwd);
-  writeReport(run, "FIX");
+  writeReport(cwd, run, "FIX");
 
   const state = await writeRunCheckpoint(
     run.id,
@@ -110,7 +133,7 @@ test("FIX review cannot complete post-render checkpoint", async () => {
 test("PASS review completes post-render checkpoint and saves artifact path", async () => {
   const cwd = temp();
   const run = advanceToPostReview(cwd);
-  writeReport(run, "PASS");
+  writeReport(cwd, run, "PASS");
 
   const state = await writeRunCheckpoint(
     run.id,
