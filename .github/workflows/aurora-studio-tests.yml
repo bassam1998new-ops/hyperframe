@@ -50,6 +50,12 @@ jobs:
       - name: HyperFrames install plan smoke
         run: node ./bin/aurora-studio.mjs hyperframe install --dry-run
 
+      - name: HyperFrames exact core compatibility smoke
+        run: |
+          node ./bin/aurora-studio.mjs hyperframe install
+          node ./bin/aurora-studio.mjs hyperframe doctor
+          node ./bin/aurora-studio.mjs hyperframe run --help
+
       - name: Run tests
         run: npm test
 
