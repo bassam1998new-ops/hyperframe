@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AurorA Studio Setup Config",
+  "type": "object",
+  "properties": {
+    "product": { "type": "string" },
+    "purpose": { "type": "string" },
+    "website": { "type": "string" },
+    "mode": { "enum": ["direct", "director"] },
+    "resources": {
+      "type": "object",
+      "properties": {
+        "chatgpt_browser": { "type": "boolean" },
+        "google_flow": { "type": "boolean" },
+        "meta_ai": { "type": "boolean" },
+        "elevenlabs": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "agents": { "enum": ["none", "all", "claude", "codex"] },
+    "install_hyperframes": { "type": "boolean" }
+  },
+  "additionalProperties": false
+}
