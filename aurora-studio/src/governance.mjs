@@ -211,17 +211,49 @@ export function evaluateSpend(policy, { estimated_usd = 0, spent_usd = 0 } = {})
 }
 
 
-export function finalizeRun({ cwd = process.cwd(), runId }) {
+export function finalizationReadiness({ cwd = process.cwd(), runId }) {
   const run = loadRun(cwd, runId);
+  const errors = [];
   const approval = run.state.checkpoints?.approval;
   const postReview = run.state.checkpoints?.post_render_review;
 
   if (!approval || approval.status !== "completed" || approval.human_approved !== true) {
-    throw new Error("Cannot finalize: owner approval is not recorded.");
+    errors.push("owner approval is not recorded");
   }
 
   if (!postReview || postReview.status !== "completed") {
-    throw new Error("Cannot finalize: post-render review is not completed.");
+    errors.push("post-render review is not completed");
+  }
+
+  const finalizeIndex = run.plan.stages.findIndex(stage => stage.id === "finalize");
+  const prior = finalizeIndex >= 0
+    ? run.plan.stages.slice(0, finalizeIndex)
+    : run.plan.stages;
+
+  const incomplete = prior.filter(stage => {
+    const status = run.state.checkpoints?.[stage.id]?.status;
+    return status !== "completed" && status !== "skipped";
+  });
+
+  if (incomplete.length) {
+    errors.push(
+      "earlier stages not complete: " + incomplete.map(stage => stage.id).join(", ")
+    );
+  }
+
+  return {
+    ok: errors.length === 0,
+    errors,
+    run
+  };
+}
+
+export function finalizeRun({ cwd = process.cwd(), runId }) {
+  const readiness = finalizationReadiness({ cwd, runId });
+  const run = readiness.run;
+
+  if (!readiness.ok) {
+    throw new Error("Cannot finalize: " + readiness.errors.join("; "));
   }
 
   const tempDir = path.join(run.dir, "temp");
