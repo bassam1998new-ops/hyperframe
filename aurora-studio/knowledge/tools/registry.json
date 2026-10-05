@@ -52,7 +52,8 @@
         "basic social typography"
       ],
       "license_note": "GPL application; generated project outputs can be used normally.",
-      "env_path": "AURORA_BLENDER_PATH"
+      "env_path": "AURORA_BLENDER_PATH",
+      "playbook": "knowledge/tools/blender.md"
     },
     {
       "id": "after_effects",
@@ -76,7 +77,8 @@
         "making the studio depend on Adobe",
         "jobs that HyperFrames or Blender can finish cleanly without it"
       ],
-      "license_note": "Proprietary optional tool. Never required for AurorA Studio to work."
+      "license_note": "Proprietary optional tool. Never required for AurorA Studio to work.",
+      "playbook": "knowledge/tools/after-effects.md"
     }
   ],
   "integrations": [
