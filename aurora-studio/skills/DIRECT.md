@@ -21,7 +21,11 @@ aurora-studio checkpoint RUN_ID concept skipped
 aurora-studio checkpoint RUN_ID mood skipped
 ```
 
-Complete the assets stage, then:
+Fill/validate `asset-plan.json`, then complete the assets checkpoint.
+
+For a pure procedural/typography job, the asset plan may contain no needs; write a short completed summary instead of inventing assets.
+
+Then:
 `aurora-studio routing RUN_ID`
 
 ## Premium / reference-heavy / multi-tool job
