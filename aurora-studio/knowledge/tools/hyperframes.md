@@ -17,14 +17,32 @@ HyperFrames owns its native video/media operations.
 ## Before rebuilding something
 Check HyperFrames first.
 
+## Command path
+
+Prefer the AurorA wrapper when available:
+
+```bash
+aurora-studio hyperframe run doctor
+```
+
+In a one-time npx workspace without a global AurorA command:
+
+```bash
+node .aurora/system/bin/aurora-studio.mjs hyperframe run doctor
+```
+
+AurorA may install HyperFrames privately under `.aurora/tools/`. It never needs to modify the user's project package.json.
+
+Direct `hyperframes ...` remains valid when the user already manages HyperFrames themselves.
+
 ### Project / render loop
-- `npx hyperframes doctor`
-- `npx hyperframes lint <project>`
-- `npx hyperframes check <project>`
-- `npx hyperframes snapshot <project>`
-- `npx hyperframes compare ...`
-- `npx hyperframes preview ...`
-- `npx hyperframes render ...`
+- `hyperframes doctor`
+- `hyperframes lint <project>`
+- `hyperframes check <project>`
+- `hyperframes snapshot <project>`
+- `hyperframes compare ...`
+- `hyperframes preview ...`
+- `hyperframes render ...`
 
 ### Media OS
 Use the HyperFrames `media-use` workflow for:
@@ -83,6 +101,11 @@ npx hyperframes upgrade --check --json
 ```
 
 AurorA should not silently upgrade HyperFrames mid-project.
+
+Use:
+`aurora-studio hyperframe upgrade-check`
+
+If an upgrade is available, treat it as a separate maintenance action, not part of an active production run.
 
 ## Important
 Do not create AurorA duplicates of a stable HyperFrames capability unless:
