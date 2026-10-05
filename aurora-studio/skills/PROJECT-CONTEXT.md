@@ -12,10 +12,11 @@ Use this order:
 
 1. Read `.aurora/project.json`.
 2. Read `.aurora/discovery.json`.
-3. Inspect only the local files likely to contain product/brand context.
-4. If a website is stored and browser access is available, inspect the important public pages.
-5. Fill stable project facts.
-6. Ask the owner only for high-impact information still missing.
+3. Inspect the workspace plus only the extra local folders explicitly listed in `.aurora/workspace.json -> resources.local_paths`.
+4. Inspect only the files likely to contain product/brand context.
+5. If a website is stored and browser access is available, inspect the important public pages.
+6. Fill stable project facts.
+7. Ask the owner only for high-impact information still missing.
 
 ## What to learn
 Keep the profile useful, not huge.
@@ -94,3 +95,11 @@ Record important context sources in the project profile when practical:
 - owner statement
 
 Never store passwords, cookies, private keys, auth tokens or browser session data.
+
+
+## Local folder boundary
+Extra local folders are opt-in.
+
+Never broaden the local-folder allowlist yourself.
+Never scan parent folders, home directories, drives, cloud mounts or adjacent folders just because they are accessible.
+If another folder is needed, ask the owner to add it.
