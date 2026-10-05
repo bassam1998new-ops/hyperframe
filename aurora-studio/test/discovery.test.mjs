@@ -18,7 +18,7 @@ test("discovery categorizes useful creative files", () => {
   fs.writeFileSync(path.join(cwd, "hero.png"), "");
 
   const result = scanWorkspace(cwd);
-  assert.equal(result.counts.model3d, 1);
+  assert.equal(result.counts.three_d, 1);
   assert.equal(result.counts.audio, 1);
   assert.equal(result.counts.image, 1);
   assert.ok(result.directories.some(x => x.directory.includes("assets")));
