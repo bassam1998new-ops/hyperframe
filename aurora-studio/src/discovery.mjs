@@ -121,8 +121,9 @@ export function discoverWorkspace(cwd = process.cwd(), options = {}) {
     .sort((a, b) => b.total - a.total)
     .slice(0, 30);
 
+  const countKeys = [...Object.keys(EXTENSIONS), "brand", "context"];
   const counts = Object.fromEntries(
-    Object.entries(byKind).map(([kind, matched]) => [kind, matched.length])
+    countKeys.map(kind => [kind, Array.isArray(byKind[kind]) ? byKind[kind].length : 0])
   );
 
   return {
