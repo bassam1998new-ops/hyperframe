@@ -29,6 +29,74 @@ function projectHyperframesBin(cwd = process.cwd()) {
   return path.join(cwd, "node_modules", ".bin", name);
 }
 
+
+function hyperframesPackageRoot(cwd, source) {
+  if (source === "aurora_workspace") {
+    return path.join(toolsPrefix(cwd), "node_modules", "hyperframes");
+  }
+  if (source === "project_node_modules") {
+    return path.join(cwd, "node_modules", "hyperframes");
+  }
+  return null;
+}
+
+function packageBinTarget(packageRoot) {
+  if (!packageRoot) return null;
+  const packageFile = path.join(packageRoot, "package.json");
+  if (!fs.existsSync(packageFile)) return null;
+
+  try {
+    const pkg = JSON.parse(fs.readFileSync(packageFile, "utf8"));
+    const bin = typeof pkg.bin === "string"
+      ? pkg.bin
+      : pkg.bin?.hyperframes || Object.values(pkg.bin || {})[0];
+
+    if (!bin) return null;
+    const target = path.resolve(packageRoot, String(bin));
+    return fs.existsSync(target) ? target : null;
+  } catch {
+    return null;
+  }
+}
+
+export function resolveHyperframesCommand(cwd = process.cwd()) {
+  const resolved = resolveHyperframesBinary(cwd);
+  if (!resolved.available) {
+    return {
+      available: false,
+      executable: null,
+      prefix_args: [],
+      source: null,
+      shim: null,
+      node_cli: null
+    };
+  }
+
+  const nodeCli = packageBinTarget(
+    hyperframesPackageRoot(cwd, resolved.source)
+  );
+
+  if (nodeCli) {
+    return {
+      available: true,
+      executable: process.execPath,
+      prefix_args: [nodeCli],
+      source: resolved.source,
+      shim: resolved.binary,
+      node_cli: nodeCli
+    };
+  }
+
+  return {
+    available: true,
+    executable: resolved.binary,
+    prefix_args: [],
+    source: resolved.source,
+    shim: resolved.binary,
+    node_cli: null
+  };
+}
+
 export function resolveHyperframesBinary(cwd = process.cwd()) {
   const isolated = hyperframesBin(cwd);
   if (fs.existsSync(isolated)) {
@@ -151,18 +219,21 @@ export function runWorkspaceHyperframes(args = [], {
   dryRun = false,
   spawnImpl = spawnSync
 } = {}) {
-  const resolved = resolveHyperframesBinary(cwd);
+  const command = resolveHyperframesCommand(cwd);
 
-  if (!resolved.available) {
+  if (!command.available) {
     throw new Error("HyperFrames core is not available. Run: aurora-studio hyperframe install");
   }
+
+  const finalArgs = [...command.prefix_args, ...args];
 
   if (dryRun) {
     return {
       dry_run: true,
-      executable: resolved.binary,
-      source: resolved.source,
-      args
+      executable: command.executable,
+      source: command.source,
+      node_cli: command.node_cli,
+      args: finalArgs
     };
   }
 
@@ -175,9 +246,14 @@ export function runWorkspaceHyperframes(args = [], {
     ].filter(Boolean).join(path.delimiter);
   }
 
-  const result = spawnImpl(resolved.binary, args, {
+  const needsWindowsShell =
+    process.platform === "win32" &&
+    /\.(cmd|bat)$/i.test(command.executable);
+
+  const result = spawnImpl(command.executable, finalArgs, {
     cwd,
     env,
+    shell: needsWindowsShell,
     encoding: "utf8",
     maxBuffer: 64 * 1024 * 1024
   });
@@ -185,8 +261,9 @@ export function runWorkspaceHyperframes(args = [], {
   return {
     ok: result.status === 0,
     exit_code: result.status,
-    executable: resolved.binary,
-    source: resolved.source,
+    executable: command.executable,
+    source: command.source,
+    node_cli: command.node_cli,
     stdout: result.stdout || "",
     stderr: result.stderr || ""
   };
