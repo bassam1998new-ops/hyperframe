@@ -7,11 +7,16 @@ const PACKAGE_ROOT = path.resolve(HERE, "..");
 
 const SYSTEM_ITEMS = [
   "README.md",
+  "package.json",
   "release.json",
   "studio.manifest.json",
+  "bin",
+  "src",
   "skills",
   "knowledge",
   "schemas",
+  path.join("hooks", "runtime"),
+  "prompts",
   path.join("blender", "helpers")
 ];
 
@@ -54,6 +59,17 @@ export function syncSystemKnowledge(cwd = process.cwd()) {
   fs.mkdirSync(root, { recursive: true });
 
   const target = systemDir(cwd);
+
+  if (path.resolve(PACKAGE_ROOT) === path.resolve(target)) {
+    const status = systemStatus(cwd);
+    return {
+      system_dir: target,
+      studio_version: status.installed_version || packageVersion(),
+      items: SYSTEM_ITEMS,
+      no_op: true,
+      source_is_workspace_snapshot: true
+    };
+  }
   const next = path.join(root, "system.__next__");
   const previous = path.join(root, "system.__previous__");
 
