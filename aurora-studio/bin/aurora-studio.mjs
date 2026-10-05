@@ -58,7 +58,11 @@ import {
   planStudioUpdate,
   backupStudioWorkspace,
   syncStudioSystem,
-  showStudioSystemStatus
+  showStudioSystemStatus,
+  installHyperframesWorkspace,
+  showHyperframesCoreInfo,
+  executeHyperframesCore,
+  checkHyperframesUpgrade
 } from "../src/studio.mjs";
 
 const [command = "help", ...args] = process.argv.slice(2);
@@ -238,6 +242,15 @@ switch (command) {
     else console.error("obsidian commands: doctor | search QUERY [--vault NAME]");
     break;
 
+  case "hyperframe":
+  case "hyperframes":
+    if (args[0] === "doctor") await showHyperframesCoreInfo();
+    else if (args[0] === "install") await installHyperframesWorkspace(flagBool("--dry-run"));
+    else if (args[0] === "upgrade-check") await checkHyperframesUpgrade();
+    else if (args[0] === "run") await executeHyperframesCore(args.slice(1), { dryRun: flagBool("--dry-run") });
+    else console.error("hyperframe commands: doctor | install [--dry-run] | upgrade-check | run ARGS...");
+    break;
+
   case "blender":
     if (args[0] === "doctor") await showBlenderInfo();
     else if (args[0] === "create") await createBlenderJobRecord(args[1]);
@@ -351,6 +364,12 @@ Brain:
 Obsidian (optional):
   aurora-studio obsidian doctor
   aurora-studio obsidian search "QUERY" [--vault NAME]
+
+HyperFrames:
+  aurora-studio hyperframe doctor
+  aurora-studio hyperframe install [--dry-run]
+  aurora-studio hyperframe upgrade-check
+  aurora-studio hyperframe run ARGS...
 
 Blender:
   aurora-studio blender doctor
