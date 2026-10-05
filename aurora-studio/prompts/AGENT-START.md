@@ -9,6 +9,13 @@ First:
 4. If `.aurora/workspace.json` is missing, run setup and ask me once for the product/service, the main video purpose, default mode and which optional resources I already have.
 5. Never ask me for passwords, browser cookies or secrets to store in the workspace.
 
+For each real production job:
+- create an AurorA production run with `aurora-studio plan`
+- checkpoint meaningful stages so the work can resume after interruption
+- check the budget before paid generation
+- run pre-render and post-render review
+- finalize only after I approve
+
 When I give you a reference:
 - analyze its visual and production grammar
 - read my saved project/product context
