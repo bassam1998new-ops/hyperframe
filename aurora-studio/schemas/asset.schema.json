@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AurorA Studio Library Item",
+  "type": "object",
+  "required": ["schema_version", "id", "kind", "name", "type", "license", "tags", "approved"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "id": { "type": "string", "minLength": 1 },
+    "kind": { "enum": ["asset", "style", "template", "material", "hdri", "model", "rig", "animation", "audio", "font"] },
+    "name": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
+    "type": { "type": "string" },
+    "path": { "type": ["string", "null"] },
+    "source_url": { "type": ["string", "null"] },
+    "source_name": { "type": ["string", "null"] },
+    "license": {
+      "type": "object",
+      "required": ["id", "commercial_allowed", "redistribution_allowed", "attribution_required"],
+      "properties": {
+        "id": { "type": "string" },
+        "commercial_allowed": { "type": ["boolean", "null"] },
+        "redistribution_allowed": { "type": ["boolean", "null"] },
+        "attribution_required": { "type": ["boolean", "null"] }
+      }
+    },
+    "tags": { "type": "array", "items": { "type": "string" } },
+    "tools": { "type": "array", "items": { "type": "string" } },
+    "approved": { "type": "boolean" },
+    "quality_tier": { "type": "string" }
+  },
+  "additionalProperties": true
+}
