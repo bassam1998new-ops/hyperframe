@@ -29,6 +29,8 @@ test("installer preserves existing agent instructions and is idempotent", () => 
   assert.ok(fs.existsSync(path.join(cwd, ".aurora", "AGENT.md")));
   assert.ok(fs.existsSync(path.join(cwd, ".claude", "skills", "aurora-direct", "SKILL.md")));
   assert.ok(fs.existsSync(path.join(cwd, ".claude", "skills", "aurora-director", "SKILL.md")));
+  assert.ok(fs.existsSync(path.join(cwd, ".agents", "skills", "aurora-direct", "SKILL.md")));
+  assert.ok(fs.existsSync(path.join(cwd, ".agents", "skills", "aurora-director", "SKILL.md")));
 });
 
 test("remove only removes AurorA owned block", () => {
@@ -55,6 +57,24 @@ test("Claude removal deletes only AurorA-owned native skills", () => {
   assert.ok(result.native_skills_removed.length >= 1);
   assert.equal(
     fs.existsSync(path.join(cwd, ".claude", "skills", "aurora-direct", "SKILL.md")),
+    false
+  );
+  assert.equal(fs.existsSync(path.join(userSkill, "SKILL.md")), true);
+});
+
+
+test("Codex removal deletes only AurorA-owned native skills", () => {
+  const cwd = temp();
+  const userSkill = path.join(cwd, ".agents", "skills", "user-skill");
+  fs.mkdirSync(userSkill, { recursive: true });
+  fs.writeFileSync(path.join(userSkill, "SKILL.md"), "# keep");
+
+  installAgentInstructions("codex", cwd);
+  const result = removeAgentInstructions("codex", cwd);
+
+  assert.ok(result.native_skills_removed.length >= 1);
+  assert.equal(
+    fs.existsSync(path.join(cwd, ".agents", "skills", "aurora-direct", "SKILL.md")),
     false
   );
   assert.equal(fs.existsSync(path.join(userSkill, "SKILL.md")), true);
