@@ -103,6 +103,12 @@ function yes(value) {
   return /^(y|yes|true|1)$/i.test(String(value).trim());
 }
 
+function yesOrExisting(value, existing = false) {
+  const normalized = String(value ?? "").trim();
+  if (!normalized) return Boolean(existing);
+  return yes(normalized);
+}
+
 function workspaceDir(cwd = process.cwd()) {
   return path.join(cwd, ".aurora");
 }
@@ -141,10 +147,10 @@ export async function runSetup(cwd = process.cwd()) {
   const modeAnswer = await rl.question(`Default mode direct/director [${existing?.default_mode || "direct"}]: `);
 
   console.log("\nOptional browser/account resources. Answer y/n. Availability only.");
-  const chatgpt = await rl.question("ChatGPT in browser available? [y/N]: ");
-  const flow = await rl.question("Google Flow available? [y/N]: ");
-  const meta = await rl.question("Meta AI available? [y/N]: ");
-  const eleven = await rl.question("ElevenLabs available? [y/N]: ");
+  const chatgpt = await rl.question(`ChatGPT in browser available? [${existing?.resources?.chatgpt_browser ? "Y/n" : "y/N"}]: `);
+  const flow = await rl.question(`Google Flow available? [${existing?.resources?.google_flow ? "Y/n" : "y/N"}]: `);
+  const meta = await rl.question(`Meta AI available? [${existing?.resources?.meta_ai ? "Y/n" : "y/N"}]: `);
+  const eleven = await rl.question(`ElevenLabs available? [${existing?.resources?.elevenlabs ? "Y/n" : "y/N"}]: `);
   const installPointers = await rl.question("Install small Claude/Codex AurorA pointers? [Y/n]: ");
 
   rl.close();
@@ -170,10 +176,10 @@ export async function runSetup(cwd = process.cwd()) {
     tools,
     integrations,
     resources: {
-      chatgpt_browser: yes(chatgpt),
-      google_flow: yes(flow),
-      meta_ai: yes(meta),
-      elevenlabs: yes(eleven)
+      chatgpt_browser: yesOrExisting(chatgpt, existing?.resources?.chatgpt_browser),
+      google_flow: yesOrExisting(flow, existing?.resources?.google_flow),
+      meta_ai: yesOrExisting(meta, existing?.resources?.meta_ai),
+      elevenlabs: yesOrExisting(eleven, existing?.resources?.elevenlabs)
     },
     learning: {
       decision_log: ".aurora/decisions.jsonl",
@@ -193,7 +199,7 @@ export async function runSetup(cwd = process.cwd()) {
   projectProfile.website = workspace.project.website;
   writeProject(projectProfile, cwd);
   readLibrary(cwd);
-  saveDiscovery(cwd);
+  const discovery = saveDiscovery(cwd);
   fs.mkdirSync(path.join(dir, "references"), { recursive: true });
 
   try {
