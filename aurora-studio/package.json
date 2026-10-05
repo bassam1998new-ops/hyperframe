@@ -46,7 +46,8 @@
     "blender",
     "README.md",
     "release.json",
-    "studio.manifest.json"
+    "studio.manifest.json",
+    "LICENSE"
   ],
   "publishConfig": {
     "access": "public"
