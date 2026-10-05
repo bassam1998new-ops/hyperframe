@@ -1,0 +1,92 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import {
+  addLibraryItem,
+  readLibrary,
+  searchLibrary,
+  summarizeLibrary
+} from "../src/library.mjs";
+
+function temp() {
+  return fs.mkdtempSync(path.join(os.tmpdir(), "aurora-library-"));
+}
+
+test("library stores license and approval metadata", () => {
+  const cwd = temp();
+  const item = addLibraryItem({
+    name: "Studio Robot",
+    kind: "model",
+    type: "glb",
+    path: "./assets/robot.glb",
+    license_id: "CC0",
+    commercial_allowed: true,
+    redistribution_allowed: true,
+    attribution_required: false,
+    tags: ["robot", "3d", "avatar"],
+    tools: ["blender"],
+    approved: true,
+    quality_tier: "hero"
+  }, cwd);
+
+  assert.equal(item.license.id, "CC0");
+  assert.equal(item.approved, true);
+  assert.equal(readLibrary(cwd).length, 1);
+});
+
+test("approved-only search ignores unapproved matches", () => {
+  const cwd = temp();
+  addLibraryItem({
+    name: "Approved Glass Material",
+    kind: "material",
+    path: "./glass-approved.blend",
+    tags: ["glass", "material"],
+    approved: true
+  }, cwd);
+  addLibraryItem({
+    name: "Unapproved Glass Material",
+    kind: "material",
+    path: "./glass-test.blend",
+    tags: ["glass", "material"],
+    approved: false
+  }, cwd);
+
+  const results = searchLibrary("glass material", { approved_only: true }, cwd);
+  assert.equal(results.length, 1);
+  assert.equal(results[0].name, "Approved Glass Material");
+});
+
+test("name and tags rank relevant asset above unrelated asset", () => {
+  const cwd = temp();
+  addLibraryItem({
+    name: "Rigged Business Avatar",
+    kind: "model",
+    path: "./avatar.glb",
+    tags: ["avatar", "rigged", "business"],
+    approved: true
+  }, cwd);
+  addLibraryItem({
+    name: "Wood Floor",
+    kind: "material",
+    path: "./wood.blend",
+    tags: ["wood", "floor"],
+    approved: true
+  }, cwd);
+
+  const results = searchLibrary("business avatar rigged", { approved_only: true }, cwd);
+  assert.equal(results[0].name, "Rigged Business Avatar");
+  assert.ok(results[0].search_score > 0);
+});
+
+test("library summary counts kinds", () => {
+  const cwd = temp();
+  addLibraryItem({ name: "A", kind: "model", path: "./a", approved: true }, cwd);
+  addLibraryItem({ name: "B", kind: "material", path: "./b", approved: false }, cwd);
+  const summary = summarizeLibrary(cwd);
+  assert.equal(summary.total, 2);
+  assert.equal(summary.approved, 1);
+  assert.equal(summary.by_kind.model, 1);
+  assert.equal(summary.by_kind.material, 1);
+});
