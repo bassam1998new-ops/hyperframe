@@ -32,6 +32,12 @@ import { installAgentHooks, removeAgentHooks } from "./hook-install.mjs";
 import { saveDiscovery } from "./discovery.mjs";
 import { createMood, readMood, validateMoodFile } from "./mood.mjs";
 import {
+  createLearningReview,
+  readLearningReview,
+  validateLearningReviewFile,
+  completedLearningPayload
+} from "./learning.mjs";
+import {
   ensureProjectProfile,
   readProject,
   writeProject,
@@ -416,6 +422,7 @@ export async function planProduction(taskText = "", options = {}, cwd = process.
   if (ws.default_mode === "director") {
     moodRecord = createMood(run.id, cwd);
   }
+  const learningRecord = createLearningReview(run.id, cwd);
 
   const contextPacket = retrieveContext({
     query: taskText,
@@ -453,6 +460,7 @@ export async function planProduction(taskText = "", options = {}, cwd = process.
     plan: path.join(run.dir, "plan.json"),
     context: path.join(run.dir, "context.json"),
     mood: moodRecord?.file || null,
+    learning_review: learningRecord.file,
     reference: referenceRecord?.reference?.id || null,
     library_matches: libraryMatches.slice(0, 3).map(x => ({
       id: x.id,
@@ -614,9 +622,11 @@ export async function reviewRender(file, cwd = process.cwd()) {
 
 export async function finalizeProduction(runId, lesson = null, cwd = process.cwd()) {
   try {
+    const learning = completedLearningPayload(runId, cwd);
     const result = finalizeRun({ cwd, runId });
     const globalDecisionLog = path.join(cwd, ".aurora", "decisions.jsonl");
     const globalLessonLog = path.join(cwd, ".aurora", "lessons.jsonl");
+    const proposalLog = path.join(cwd, ".aurora", "learning-proposals.jsonl");
 
     fs.appendFileSync(globalDecisionLog, JSON.stringify({
       timestamp: new Date().toISOString(),
@@ -627,13 +637,43 @@ export async function finalizeProduction(runId, lesson = null, cwd = process.cwd
       mode: result.run.plan.mode
     }) + "\n");
 
+    let lessonsSaved = 0;
     if (lesson && lesson.trim()) {
       fs.appendFileSync(globalLessonLog, JSON.stringify({
         timestamp: new Date().toISOString(),
         run_id: runId,
         lesson: lesson.trim(),
+        source: "manual_finalize",
         approved: true
       }) + "\n");
+      lessonsSaved++;
+    }
+
+    let proposalsSaved = 0;
+    if (learning) {
+      for (const item of learning.review.lessons || []) {
+        fs.appendFileSync(globalLessonLog, JSON.stringify({
+          timestamp: new Date().toISOString(),
+          run_id: runId,
+          ...item,
+          source: "session_review",
+          approved: true
+        }) + "\n");
+        lessonsSaved++;
+      }
+
+      for (const [kind, proposals] of Object.entries(learning.review.proposals || {})) {
+        for (const proposal of proposals || []) {
+          fs.appendFileSync(proposalLog, JSON.stringify({
+            timestamp: new Date().toISOString(),
+            run_id: runId,
+            kind,
+            proposal,
+            status: "pending_review"
+          }) + "\n");
+          proposalsSaved++;
+        }
+      }
     }
 
     console.log(JSON.stringify({
@@ -641,7 +681,10 @@ export async function finalizeProduction(runId, lesson = null, cwd = process.cwd
       status: "completed",
       removed_run_temp: result.removed_run_temp,
       decision_saved: true,
-      lesson_saved: Boolean(lesson && lesson.trim())
+      lessons_saved: lessonsSaved,
+      learning_review: learning ? "completed" : "pending_or_missing",
+      proposals_saved: proposalsSaved,
+      proposals_auto_applied: false
     }, null, 2));
     return result;
   } catch (error) {
@@ -650,7 +693,6 @@ export async function finalizeProduction(runId, lesson = null, cwd = process.cwd
     return null;
   }
 }
-
 
 function parseValue(value) {
   if (value === undefined) return "";
@@ -1069,6 +1111,45 @@ export async function showOpenAssetFiles(assetId) {
   try {
     const result = await getPolyHavenFiles(assetId);
     console.log(JSON.stringify(result, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+
+export async function createLearningReviewRecord(runId, cwd = process.cwd()) {
+  try {
+    const result = createLearningReview(runId, cwd);
+    console.log(JSON.stringify({ file: result.file, created: result.created, review: result.review }, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function showLearningReview(runId, cwd = process.cwd()) {
+  try {
+    const result = readLearningReview(runId, cwd);
+    if (!result) throw new Error("Learning review file not found.");
+    console.log(JSON.stringify(result.review, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function validateLearningReviewRecord(runId, cwd = process.cwd()) {
+  try {
+    const result = validateLearningReviewFile(runId, cwd);
+    console.log(JSON.stringify(result, null, 2));
+    if (!result.ok) process.exitCode = 2;
     return result;
   } catch (error) {
     console.error(error.message);
