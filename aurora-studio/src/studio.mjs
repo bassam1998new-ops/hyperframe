@@ -6,8 +6,17 @@ import { stdin as input, stdout as output } from "node:process";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 import { chooseRoute, applyExperiencePrior } from "./selector.mjs";
-import { createRun, loadRun, checkpoint, evaluateSpend, finalizeRun, setRunRoute } from "./governance.mjs";
+import {
+  createRun,
+  loadRun,
+  checkpoint,
+  evaluateSpend,
+  finalizeRun,
+  finalizationReadiness,
+  setRunRoute
+} from "./governance.mjs";
 import { probeRender } from "./quality.mjs";
+import { preserveFinalArtifact } from "./final-artifact.mjs";
 import { addLibraryItem, readLibrary, searchLibrary, summarizeLibrary } from "./library.mjs";
 import { importHyperframeLibrary } from "./importers/hyperframe.mjs";
 import {
@@ -797,12 +806,26 @@ export async function reviewRender(file, cwd = process.cwd()) {
 }
 
 
-export async function finalizeProduction(runId, lesson = null, cwd = process.cwd()) {
+export async function finalizeProduction(runId, video, lesson = null, cwd = process.cwd()) {
   try {
+    const readiness = finalizationReadiness({ cwd, runId });
+    if (!readiness.ok) {
+      throw new Error("Cannot finalize: " + readiness.errors.join("; "));
+    }
+
     const learning = completedLearningPayload(runId, cwd);
     if (!learning) {
-      throw new Error("Cannot finalize: learning review is still pending. Complete it, even if the result is 'nothing new'.");
+      throw new Error(
+        "Cannot finalize: learning review is still pending. Complete it, even if the result is 'nothing new'."
+      );
     }
+
+    const finalArtifact = preserveFinalArtifact({
+      runId,
+      source: video,
+      cwd
+    });
+
     const result = finalizeRun({ cwd, runId });
     const globalDecisionLog = path.join(cwd, ".aurora", "decisions.jsonl");
     const globalLessonLog = path.join(cwd, ".aurora", "lessons.jsonl");
@@ -821,7 +844,10 @@ export async function finalizeProduction(runId, lesson = null, cwd = process.cwd
       revisions: learning?.review?.outcome?.revisions ?? null,
       reviewer_result: learning?.review?.outcome?.reviewer_result ?? null,
       actual_usd: usage.actual_usd,
-      provider_units: usage.actual_units
+      provider_units: usage.actual_units,
+      final_path: finalArtifact.receipt.final_path,
+      final_sha256: finalArtifact.receipt.sha256,
+      final_bytes: finalArtifact.receipt.bytes
     }) + "\n");
 
     let lessonsSaved = 0;
@@ -837,44 +863,46 @@ export async function finalizeProduction(runId, lesson = null, cwd = process.cwd
     }
 
     let proposalsSaved = 0;
-    if (learning) {
-      for (const item of learning.review.lessons || []) {
-        fs.appendFileSync(globalLessonLog, JSON.stringify({
+    for (const item of learning.review.lessons || []) {
+      fs.appendFileSync(globalLessonLog, JSON.stringify({
+        timestamp: new Date().toISOString(),
+        run_id: runId,
+        ...item,
+        source: "session_review",
+        approved: true
+      }) + "\n");
+      lessonsSaved++;
+    }
+
+    for (const [kind, proposals] of Object.entries(learning.review.proposals || {})) {
+      for (const proposal of proposals || []) {
+        fs.appendFileSync(proposalLog, JSON.stringify({
           timestamp: new Date().toISOString(),
           run_id: runId,
-          ...item,
-          source: "session_review",
-          approved: true
+          kind,
+          proposal,
+          status: "pending_review"
         }) + "\n");
-        lessonsSaved++;
-      }
-
-      for (const [kind, proposals] of Object.entries(learning.review.proposals || {})) {
-        for (const proposal of proposals || []) {
-          fs.appendFileSync(proposalLog, JSON.stringify({
-            timestamp: new Date().toISOString(),
-            run_id: runId,
-            kind,
-            proposal,
-            status: "pending_review"
-          }) + "\n");
-          proposalsSaved++;
-        }
+        proposalsSaved++;
       }
     }
 
-    console.log(JSON.stringify({
+    const response = {
       run_id: runId,
       status: "completed",
+      final: finalArtifact.receipt,
+      final_receipt: finalArtifact.receipt_file,
       removed_run_temp: result.removed_run_temp,
       decision_saved: true,
       lessons_saved: lessonsSaved,
-      learning_review: learning ? "completed" : "pending_or_missing",
+      learning_review: "completed",
       proposals_saved: proposalsSaved,
       proposals_auto_applied: false,
       usage
-    }, null, 2));
-    return result;
+    };
+
+    console.log(JSON.stringify(response, null, 2));
+    return { ...result, finalArtifact, response };
   } catch (error) {
     console.error(error.message);
     process.exitCode = 2;
