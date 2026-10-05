@@ -10,6 +10,7 @@ import {
   setRunRoute
 } from "../src/governance.mjs";
 import { createLearningReview } from "../src/learning.mjs";
+import { sha256File } from "../src/final-artifact.mjs";
 import { finalizeProduction } from "../src/studio.mjs";
 
 function temp() {
@@ -61,11 +62,12 @@ function advanceToApproval(cwd) {
   return { run, video };
 }
 
-function writePassingReview(run) {
+function writePassingReview(run, video) {
   const report = {
     schema_version: 1,
     run_id: run.id,
     video: "approved.mp4",
+    video_sha256: sha256File(video),
     status: "completed",
     technical: { ok: true, errors: [], warnings: [], metadata: {} },
     creative: {
@@ -117,7 +119,7 @@ test("finalization rejects a spoofed/stale post-review checkpoint without PASS r
 test("finalization succeeds once the independent PASS review exists", async () => {
   const cwd = temp();
   const { run, video } = advanceToApproval(cwd);
-  writePassingReview(run);
+  writePassingReview(run, video);
 
   const result = await finalizeProduction(run.id, video, null, cwd);
 
@@ -125,4 +127,25 @@ test("finalization succeeds once the independent PASS review exists", async () =
   assert.equal(result.response.status, "completed");
   assert.equal(result.response.review.decision, "PASS");
   assert.ok(fs.existsSync(result.finalArtifact.final_file));
+});
+
+
+test("finalization rejects a different file than the one that passed review", async () => {
+  const cwd = temp();
+  const { run, video } = advanceToApproval(cwd);
+  writePassingReview(run, video);
+
+  const differentVideo = path.join(cwd, "different.mp4");
+  fs.writeFileSync(differentVideo, "different-video");
+
+  const result = await finalizeProduction(run.id, differentVideo, null, cwd);
+
+  assert.equal(result, null);
+  assert.equal(process.exitCode, 2);
+  assert.equal(
+    fs.existsSync(path.join(cwd, "renders", "final", "different.mp4")),
+    false
+  );
+
+  process.exitCode = 0;
 });
