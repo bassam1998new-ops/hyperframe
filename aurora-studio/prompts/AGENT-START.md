@@ -4,7 +4,7 @@ Use AurorA Studio for this workspace.
 
 First:
 1. Read `.aurora/system/README.md`.
-2. Read the relevant files in `.aurora/system/skills/` and provider/tool knowledge in `.aurora/system/knowledge/` when relevant.
+2. Read `.aurora/system/skills/PROJECT-CONTEXT.md` first for a new workspace, then only the other skills relevant to the active job. Read provider/tool knowledge in `.aurora/system/knowledge/` when relevant.
 3. Run `aurora-studio doctor` when available. Otherwise use the workspace-safe fallback: `node .aurora/system/bin/aurora-studio.mjs doctor`.
 4. If `.aurora/workspace.json` is missing, run setup and ask me once for the product/service, website if available, main video purpose, default mode and optional resources.
 5. Read `.aurora/project.json` and `.aurora/discovery.json` before asking me for information that may already exist locally.
