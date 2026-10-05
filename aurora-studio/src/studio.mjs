@@ -32,6 +32,12 @@ import { installAgentHooks, removeAgentHooks } from "./hook-install.mjs";
 import { saveDiscovery } from "./discovery.mjs";
 import { createMood, readMood, validateMoodFile } from "./mood.mjs";
 import {
+  createAssetPlan,
+  readAssetPlan,
+  validateAssetPlanFile,
+  assetRoutingEvidence
+} from "./asset-plan.mjs";
+import {
   createLearningReview,
   readLearningReview,
   validateLearningReviewFile,
@@ -452,6 +458,7 @@ export async function planProduction(taskText = "", options = {}, cwd = process.
   if (ws.default_mode === "director") {
     moodRecord = createMood(run.id, cwd);
   }
+  const assetPlanRecord = createAssetPlan(run.id, cwd);
   const learningRecord = createLearningReview(run.id, cwd);
 
   const contextPacket = retrieveContext({
@@ -490,6 +497,7 @@ export async function planProduction(taskText = "", options = {}, cwd = process.
     plan: path.join(run.dir, "plan.json"),
     context: path.join(run.dir, "context.json"),
     mood: moodRecord?.file || null,
+    asset_plan: assetPlanRecord.file,
     learning_review: learningRecord.file,
     reference: referenceRecord?.reference?.id || null,
     library_matches: libraryMatches.slice(0, 3).map(x => ({
@@ -533,6 +541,24 @@ export async function routeProductionRun(runId, cwd = process.cwd()) {
       }
     }
 
+    const assetPlanRecord = readAssetPlan(runId, cwd);
+    const assetValidation = validateAssetPlanFile(runId, cwd);
+    if (!assetPlanRecord || assetPlanRecord.plan.status !== "completed" || !assetValidation.ok) {
+      console.error(
+        "Asset plan must be completed and valid before routing. " +
+        (assetValidation.errors || []).join("; ")
+      );
+      process.exitCode = 2;
+      return null;
+    }
+
+    const assetEvidence = assetRoutingEvidence(assetPlanRecord.plan);
+    const selectedIds = new Set(
+      (assetPlanRecord.plan.needs || [])
+        .flatMap(need => need.selected_library_ids || [])
+    );
+    const selectedAssets = readLibrary(cwd).filter(item => selectedIds.has(item.id));
+
     const routeEvidence = [
       run.plan.task,
       context.reference?.analysis?.medium,
@@ -542,11 +568,23 @@ export async function routeProductionRun(runId, cwd = process.cwd()) {
       ...(moodRecord?.mood?.visual?.camera_behavior || []),
       ...(moodRecord?.mood?.visual?.materials_texture || []),
       ...(moodRecord?.mood?.motion?.subject_motion || []),
-      ...(moodRecord?.mood?.motion?.camera_motion || [])
+      ...(moodRecord?.mood?.motion?.camera_motion || []),
+      assetEvidence.text,
+      ...selectedAssets.flatMap(item => [
+        item.name,
+        item.type,
+        ...(item.tools || []),
+        ...(item.tags || [])
+      ])
     ].filter(Boolean).join(" ");
 
+    const mergedRequirements = {
+      ...requirementOverrides,
+      ...assetEvidence.requirement_overrides
+    };
+
     const availability = Object.fromEntries(preflight.tools.map(tool => [tool.id, tool.available]));
-    const decision = chooseRoute(routeEvidence || run.plan.task, availability, requirementOverrides);
+    const decision = chooseRoute(routeEvidence || run.plan.task, availability, mergedRequirements);
 
     if (!decision.selected) {
       console.error("No safe production route after context/mood/assets. Change the approach or add the missing capability.");
@@ -570,7 +608,14 @@ export async function routeProductionRun(runId, cwd = process.cwd()) {
       route: routed.plan.route,
       score: routed.plan.route_score,
       confidence: routed.plan.route_confidence,
-      alternatives: routed.plan.alternatives
+      alternatives: routed.plan.alternatives,
+      asset_plan: assetPlanRecord.file,
+      selected_assets: selectedAssets.map(item => ({
+        id: item.id,
+        name: item.name,
+        tools: item.tools,
+        type: item.type
+      }))
     }, null, 2));
 
     return routed;
@@ -1251,6 +1296,45 @@ export async function showStudioSystemStatus(cwd = process.cwd()) {
   try {
     const result = systemStatus(cwd);
     console.log(JSON.stringify(result, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+
+export async function createAssetPlanRecord(runId, cwd = process.cwd()) {
+  try {
+    const result = createAssetPlan(runId, cwd);
+    console.log(JSON.stringify({ file: result.file, created: result.created, plan: result.plan }, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function showAssetPlanRecord(runId, cwd = process.cwd()) {
+  try {
+    const result = readAssetPlan(runId, cwd);
+    if (!result) throw new Error("Asset plan file not found.");
+    console.log(JSON.stringify(result.plan, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function validateAssetPlanRecord(runId, cwd = process.cwd()) {
+  try {
+    const result = validateAssetPlanFile(runId, cwd);
+    console.log(JSON.stringify(result, null, 2));
+    if (!result.ok) process.exitCode = 2;
     return result;
   } catch (error) {
     console.error(error.message);
