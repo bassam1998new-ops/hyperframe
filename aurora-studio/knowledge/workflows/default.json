@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "default-video-production",
+  "stages": [
+    "understand",
+    "concept",
+    "assets",
+    "build",
+    "pre_render_review",
+    "render",
+    "post_render_review",
+    "approval",
+    "finalize"
+  ],
+  "mode_rules": {
+    "direct": {
+      "human_gates": ["approval"],
+      "behavior": "minimum checkpoints; only ask when quality, cost or missing information materially changes the result"
+    },
+    "director": {
+      "human_gates": ["concept", "approval"],
+      "behavior": "present a small number of distinct concepts before expensive production"
+    }
+  },
+  "principles": [
+    "search before generate",
+    "choose tools by requirements and availability",
+    "estimate paid actions before spending",
+    "checkpoint after meaningful stages",
+    "review before and after final render",
+    "learn only from approved work"
+  ]
+}
