@@ -1,0 +1,17 @@
+{
+  "name": "aurora-studio",
+  "version": "0.1.0-alpha.1",
+  "description": "Agent-first creative studio that routes work across HyperFrames, Blender, After Effects and optional providers.",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "aurora": "./bin/aurora.mjs",
+    "aurora-studio": "./bin/aurora.mjs"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "check": "node --check bin/aurora.mjs && node --check lib/workspace.mjs"
+  },
+  "engines": { "node": ">=22" },
+  "license": "MIT"
+}
