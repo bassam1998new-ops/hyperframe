@@ -15,6 +15,34 @@ Use browser generation only when:
 4. Open the provider and inspect its current model, supported features, resolution and current credit/cost information.
 5. Do not assume old prices or credit costs are still correct.
 
+## Usage ledger
+Before a paid/credit-based action, record/check the live provider cost:
+
+```bash
+aurora-studio usage check RUN_ID \
+  --provider google_flow \
+  --operation video_generation \
+  --quantity 6 \
+  --unit credits
+```
+
+If the live provider also shows a real USD estimate, include `--usd`. If not, do not invent one.
+
+After the action, record actual usage:
+
+```bash
+aurora-studio usage record RUN_ID \
+  --phase actual \
+  --provider google_flow \
+  --operation video_generation \
+  --quantity 6 \
+  --unit credits \
+  --model "<live model>" \
+  --resolution 360p
+```
+
+Provider credits are tracked separately. Never convert Flow credits to ElevenLabs credits or USD without a real provider price.
+
 ## Cheap-first workflow
 - use the cheapest useful preview/draft quality first
 - generate a small number of meaningful variants
