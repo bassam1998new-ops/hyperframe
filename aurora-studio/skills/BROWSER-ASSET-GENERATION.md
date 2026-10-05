@@ -11,7 +11,7 @@ Use browser generation only when:
 ## Before generating
 1. Read the reference analysis and project context.
 2. Search local and shared assets first.
-3. Check which browser resources are configured in `.aurora/workspace.json`.
+3. Run `aurora-studio resources` (or `aurora-studio resources "video generation"`) and use only resources marked available.
 4. Open the provider and inspect its current model, supported features, resolution and current credit/cost information.
 5. Do not assume old prices or credit costs are still correct.
 
