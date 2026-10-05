@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "studio_version": "0.1.0-dev",
+  "channel": "dev",
+  "name": "AurorA Studio",
+  "modes": ["direct", "director"],
+  "core": {
+    "knowledge_first": true,
+    "ui_last": true,
+    "learn_only_after_approval": true
+  },
+  "tools": {
+    "hyperframe": { "required": true },
+    "blender": { "required": false },
+    "after_effects": { "required": false },
+    "open_montage": { "required": false, "integration": "external" }
+  }
+}
