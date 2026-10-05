@@ -44,8 +44,9 @@ export function probeRender(file) {
   const ffprobe = findFfprobe();
   if (!ffprobe) {
     return {
-      ok: true,
-      warnings: ["ffprobe_unavailable"],
+      ok: false,
+      errors: ["ffprobe_unavailable"],
+      warnings: [],
       metadata: { file_exists: true }
     };
   }
