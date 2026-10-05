@@ -33,6 +33,7 @@ Missing optional tools are not errors. Setup records what exists and routing ign
 
 ```bash
 node ./bin/aurora-studio.mjs setup
+node ./bin/aurora-studio.mjs setup --config aurora-setup.json
 node ./bin/aurora-studio.mjs doctor
 node ./bin/aurora-studio.mjs tools
 node ./bin/aurora-studio.mjs mode direct
@@ -70,12 +71,13 @@ The package remains private during foundation work. Before public release we wil
 Do not store passwords, cookies or API secrets there.
 
 ## Hooks
-AurorA starts with only three:
-- preflight
-- post-approval
-- post-update
+AurorA keeps hooks deliberately small:
+- SessionStart context refresh for Claude/Codex
+- preflight validation
+- post-approval finalize/learning
+- post-update validation when the updater is enabled
 
-More hooks are added only when they prove useful.
+No hook runs on every tool call.
 
 ## Community install target
 
@@ -83,7 +85,7 @@ More hooks are added only when they prove useful.
 npx <final-package>@latest setup
 ```
 
-Then paste the bundled agent bootstrap prompt into Claude Code, Codex or another compatible coding agent.
+Setup can install the small Claude/Codex pointers and SessionStart hook automatically. The bundled bootstrap prompt is still available for other compatible agents.
 
 ## UI
 UI/UX comes later. The file contracts and agent behavior must be stable first.
