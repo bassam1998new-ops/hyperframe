@@ -623,6 +623,9 @@ export async function reviewRender(file, cwd = process.cwd()) {
 export async function finalizeProduction(runId, lesson = null, cwd = process.cwd()) {
   try {
     const learning = completedLearningPayload(runId, cwd);
+    if (!learning) {
+      throw new Error("Cannot finalize: learning review is still pending. Complete it, even if the result is 'nothing new'.");
+    }
     const result = finalizeRun({ cwd, runId });
     const globalDecisionLog = path.join(cwd, ".aurora", "decisions.jsonl");
     const globalLessonLog = path.join(cwd, ".aurora", "lessons.jsonl");
