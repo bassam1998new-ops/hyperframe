@@ -55,8 +55,16 @@ try {
   }
 
   const help = run(process.execPath, [cli, "help"], { cwd: workspace });
-  if (!/AurorA Studio/.test(help.stdout)) {
-    throw new Error("Installed CLI help did not identify AurorA Studio.");
+  if (!/AurorA Studio/.test(help.stdout) || !/Quick start:/.test(help.stdout)) {
+    throw new Error("Installed CLI default help is missing the simple AurorA quick start.");
+  }
+  if (/asset-plan|build-plan|usage record/.test(help.stdout)) {
+    throw new Error("Installed CLI default help exposes advanced internal commands.");
+  }
+
+  const advancedHelp = run(process.execPath, [cli, "help", "--all"], { cwd: workspace });
+  if (!/advanced commands/.test(advancedHelp.stdout) || !/Production:/.test(advancedHelp.stdout)) {
+    throw new Error("Installed CLI advanced help is incomplete.");
   }
 
   const configFile = path.join(workspace, "aurora-setup.json");
