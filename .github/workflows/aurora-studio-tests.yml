@@ -45,3 +45,6 @@ jobs:
 
       - name: Run tests
         run: npm test
+
+      - name: Package dry run
+        run: npm pack --dry-run
