@@ -14,6 +14,9 @@ Demo blocks:
 - `compositions/hatch-cosmos-16x9.html` — 1920x1080, 6 s: two mascots walk → dive into the hero's eye → deep galaxy.
 - `compositions/portrait/hatch-cosmos-9x16.html` — 1080x1920, 6 s, same story laid out for the reel safe zone.
 Both take the variables `theme` (`cosmos` | `midnight`) and `look` (`space` | `paper`).
+- `compositions/portrait/aurora-host-9x16.html` — 1080x1920, 10 s: the Story-of-AI series host **Aurora** (`aurora.js`)
+  with the ep 1 buddy **Bombe** (`bombe.js`). Aurora = kit mascot + mouth, voice bars, antenna, free arms and more faces;
+  moves via `AURORA.pose(move, t)`; mouth synced to a voice with `voice-envelope.mjs`. Variables: `bg` (`none` | `space`), `buddy` (`none` | `bombe`).
 The demos use Claude (hero) + Codex (buddy, our design with the OpenAI knot) as an **example config only**;
 the kit has generic names and no logos.
 
