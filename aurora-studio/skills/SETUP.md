@@ -31,3 +31,20 @@ Browser resources such as ChatGPT, Google Flow and Meta AI, and services such as
 ## Obsidian
 If Obsidian is installed, detect it and use it as an optional UI over AurorA's Markdown/JSON knowledge.
 Do not make the Studio depend on Obsidian or its plugins.
+
+
+## HyperFrames core
+
+HyperFrames is required for AurorA's core programmable video path.
+
+If no compatible HyperFrames binary is already available, setup may install it privately into:
+
+`.aurora/tools/`
+
+This isolated install:
+- does not require a global npm install
+- does not modify the user's project package.json
+- stays available to the persistent workspace CLI
+- can be checked with `aurora-studio hyperframe doctor`
+
+Do not silently upgrade HyperFrames during an active production run.
