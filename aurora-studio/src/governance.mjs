@@ -45,6 +45,8 @@ export function buildPlan({ task, mode, routeDecision, budget }) {
     human_approval_required:
       name === "approval" ||
       (mode === "director" && name === "concept"),
+    skippable:
+      mode === "direct" && (name === "concept" || name === "mood"),
     success_criteria: criteriaFor(name)
   }));
 
@@ -143,6 +145,10 @@ export function checkpoint({ cwd = process.cwd(), runId, stage, status, artifact
   const run = loadRun(cwd, runId);
   const stagePlan = run.plan.stages.find(s => s.id === stage);
 
+  if (status === "skipped" && !stagePlan?.skippable) {
+    throw new Error(`Stage cannot be skipped in ${run.plan.mode} mode: ${stage}`);
+  }
+
   if (status === "completed") {
     const stageIndex = run.plan.stages.findIndex(s => s.id === stage);
     const prior = run.plan.stages.slice(0, stageIndex);
@@ -175,7 +181,11 @@ export function checkpoint({ cwd = process.cwd(), runId, stage, status, artifact
   if (stage === "finalize" && status === "completed") run.state.status = "completed";
   run.state.updated_at = new Date().toISOString();
 
+  const planStage = run.plan.stages.find(item => item.id === stage);
+  if (planStage) planStage.status = status;
+
   fs.writeFileSync(path.join(run.dir, "state.json"), JSON.stringify(run.state, null, 2) + "\n");
+  fs.writeFileSync(path.join(run.dir, "plan.json"), JSON.stringify(run.plan, null, 2) + "\n");
   return run.state;
 }
 
@@ -249,6 +259,8 @@ export function setRunRoute({ cwd = process.cwd(), runId, routeDecision }) {
     note: `Selected route: ${routeDecision.selected.route.join(" -> ")}`
   });
 
+  const refreshed = loadRun(cwd, runId);
+  run.plan = refreshed.plan;
   run.plan.route = routeDecision.selected.route;
   run.plan.route_score = routeDecision.selected.score ?? null;
   run.plan.route_confidence = routeDecision.confidence ?? 0;
