@@ -1,0 +1,10 @@
+{
+  "id": "elevenlabs",
+  "kind": "voice-provider",
+  "enabled_by_default": false,
+  "experimental": false,
+  "auth": "user-configured",
+  "store_credentials": false,
+  "strengths": ["voiceover", "multilingual-tts", "voice-quality"],
+  "routing_note": "Quota and pricing are provider data, not hardcoded Studio rules. Refresh provider metadata instead of assuming a fixed monthly allowance."
+}
