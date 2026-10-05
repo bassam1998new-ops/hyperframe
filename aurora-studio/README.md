@@ -106,3 +106,24 @@ AurorA keeps the user experience simple, but internally each production can have
 - approved-only final learning
 
 These are internal guardrails, not extra modes the user has to learn.
+
+
+## Updates
+
+AurorA separates **checking** from **applying** updates.
+
+Current safe commands:
+
+```bash
+aurora-studio update check
+aurora-studio update plan
+aurora-studio update backup
+```
+
+- `check` reads release metadata only.
+- `plan` checks whether the local workspace schema needs migration.
+- `backup` copies AurorA source-of-truth state before any future migration.
+- AurorA does **not** download or execute remote update code.
+- `update apply` will be added only after the public npm package name and migration path are locked.
+
+This keeps the future updater simple without making it a supply-chain risk.
