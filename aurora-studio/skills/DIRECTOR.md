@@ -77,12 +77,21 @@ Search:
 5. configured browser generation
 6. build new
 
-Return:
+Fill the run's `asset-plan.json`.
+
+Return per need:
 - REUSE
 - MODIFY
 - BUILD_NEW
+- NOT_NEEDED
 
-Then complete the assets stage.
+For REUSE/MODIFY, select actual AurorA library IDs.
+For BUILD_NEW, state required capabilities.
+
+Validate:
+`aurora-studio asset-plan validate RUN_ID`
+
+Then complete the assets checkpoint with the asset-plan artifact.
 
 ## Routing
 Only now run:
