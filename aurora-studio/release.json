@@ -18,9 +18,10 @@
     ],
     "fixed": [
       "routing now happens after context, mood and asset search",
-      "setup reruns preserve existing resource choices"
+      "setup reruns preserve existing resource choices",
+      "HyperFrames core is pinned to an exact tested version before public release"
     ]
   },
   "migrations": [],
-  "hyperframes_version": null
+  "hyperframes_version": "0.8.134"
 }
