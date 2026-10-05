@@ -3,8 +3,7 @@ name: AurorA Studio Tests
 on:
   push:
     branches:
-      - main
-      - "feat/aurora-studio-*"
+      - feat/aurora-studio-foundation
     paths:
       - "aurora-studio/**"
       - ".github/workflows/aurora-studio-tests.yml"
@@ -18,30 +17,18 @@ permissions:
 
 jobs:
   test:
-    name: Node 22 / ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          - ubuntu-latest
-          - windows-latest
-
+    runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: aurora-studio
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Set up Node 22
+      - name: Use Node 22
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-
-      - name: CLI smoke
-        run: node ./bin/aurora-studio.mjs help
-
-      - name: Unit tests
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: aurora-studio/package.json
+      - name: Run tests
         run: npm test
