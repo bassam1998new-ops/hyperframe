@@ -8,7 +8,8 @@ import { hyperframesBin } from "../src/tool-install.mjs";
 import {
   planProduction,
   writeRunCheckpoint,
-  routeProductionRun
+  routeProductionRun,
+  finalizeProduction
 } from "../src/studio.mjs";
 import {
   readAssetPlan,
@@ -19,6 +20,10 @@ import {
   validateBuildPlanFile
 } from "../src/build-plan.mjs";
 import { loadRun } from "../src/governance.mjs";
+import {
+  readLearningReview,
+  validateLearningReviewFile
+} from "../src/learning.mjs";
 
 function temp() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "aurora-e2e-"));
@@ -121,9 +126,71 @@ test("fresh configured Direct workspace reaches routed build plan", async () => 
       cwd
     );
     await writeRunCheckpoint(run.id, "build", "completed", {}, cwd);
+    await writeRunCheckpoint(run.id, "pre_render_review", "completed", {}, cwd);
+
+    const drafts = path.join(cwd, "renders", "drafts");
+    fs.mkdirSync(drafts, { recursive: true });
+    const approvedVideo = path.join(drafts, "approved.mp4");
+    fs.writeFileSync(approvedVideo, "approved-video-bytes");
+
+    await writeRunCheckpoint(
+      run.id,
+      "render",
+      "completed",
+      { artifact: approvedVideo },
+      cwd
+    );
+    await writeRunCheckpoint(
+      run.id,
+      "post_render_review",
+      "completed",
+      { artifact: approvedVideo, note: "Reviewer PASS" },
+      cwd
+    );
+    await writeRunCheckpoint(
+      run.id,
+      "approval",
+      "completed",
+      { artifact: approvedVideo, humanApproved: true },
+      cwd
+    );
+
+    const learning = readLearningReview(run.id, cwd);
+    learning.review.status = "completed";
+    learning.review.summary = "Approved clean typography workflow; nothing new to promote.";
+    learning.review.outcome.owner_approved = true;
+    learning.review.outcome.reviewer_result = "PASS";
+    learning.review.outcome.revisions = 1;
+    learning.review.outcome.quality_score = 9;
+    learning.review.updated_at = new Date().toISOString();
+    fs.writeFileSync(
+      learning.file,
+      JSON.stringify(learning.review, null, 2) + "\n"
+    );
+
+    assert.equal(validateLearningReviewFile(run.id, cwd).ok, true);
+
+    fs.writeFileSync(path.join(run.dir, "temp", "throwaway.txt"), "delete me");
+
+    const finalized = await finalizeProduction(
+      run.id,
+      approvedVideo,
+      null,
+      cwd
+    );
+
+    assert.ok(finalized);
+    assert.ok(fs.existsSync(finalized.finalArtifact.final_file));
+    assert.ok(
+      finalized.finalArtifact.final_file.includes(path.join("renders", "final"))
+    );
+    assert.ok(fs.existsSync(path.join(run.dir, "final.json")));
+    assert.equal(fs.existsSync(path.join(run.dir, "temp")), false);
 
     const saved = loadRun(cwd, run.id);
+    assert.equal(saved.state.status, "completed");
     assert.equal(saved.state.checkpoints.build.status, "completed");
+    assert.equal(saved.state.checkpoints.finalize.status, "completed");
     assert.deepEqual(saved.plan.route, ["hyperframe"]);
   } finally {
     if (oldFfmpeg === undefined) delete process.env.AURORA_FFMPEG_PATH;
