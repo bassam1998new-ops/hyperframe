@@ -21,6 +21,7 @@ import {
   runAfterEffectsJob
 } from "./adapters/after-effects.mjs";
 import { retrieveContext } from "./retrieval.mjs";
+import { listProviders, providersFor } from "./providers.mjs";
 import { validateKnowledge } from "./validate.mjs";
 import { obsidianInfo, searchObsidian } from "./integrations/obsidian.mjs";
 import {
@@ -779,4 +780,11 @@ export async function searchObsidianKnowledge(query, vault = null) {
     process.exitCode = 2;
     return null;
   }
+}
+
+
+export async function showResources(capability = null, cwd = process.cwd()) {
+  const resources = capability ? providersFor(capability, cwd) : listProviders(cwd);
+  console.log(JSON.stringify(resources, null, 2));
+  return resources;
 }
