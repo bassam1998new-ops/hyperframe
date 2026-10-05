@@ -7,6 +7,7 @@ const STAGES = [
   "mood",
   "assets",
   "routing",
+  "build_plan",
   "build",
   "pre_render_review",
   "render",
@@ -79,6 +80,8 @@ function criteriaFor(stage) {
       return ["library searched before generation", "licenses/source recorded for imported assets"];
     case "routing":
       return ["production route selected after context/mood/asset evidence", "unavailable tools excluded"];
+    case "build_plan":
+      return ["each build unit has an owning engine", "cross-engine handoffs are explicit", "outputs are planned"];
     case "build":
       return ["selected route used", "reproducible source kept"];
     case "pre_render_review":
