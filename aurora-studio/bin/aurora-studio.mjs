@@ -9,6 +9,7 @@ import {
   writeRunCheckpoint,
   checkBudget,
   reviewRender,
+  finalizeProduction,
   setMode,
   showWorkspace
 } from "../src/studio.mjs";
@@ -55,6 +56,9 @@ switch (command) {
   case "review":
     await reviewRender(args[0]);
     break;
+  case "finalize":
+    await finalizeProduction(args[0], flag("--lesson"));
+    break;
   case "mode":
     await setMode(args[0]);
     break;
@@ -80,6 +84,7 @@ Production:
   aurora-studio checkpoint RUN_ID STAGE STATUS [--artifact PATH] [--note TEXT] [--approved]
   aurora-studio budget ESTIMATED_USD [SPENT_USD]
   aurora-studio review VIDEO_PATH
+  aurora-studio finalize RUN_ID [--lesson TEXT]
 
 Modes:
   direct    Minimum checkpoints.
