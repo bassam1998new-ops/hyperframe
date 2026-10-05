@@ -22,7 +22,7 @@ The command performs the technical probe first. Then the agent fills the creativ
 - audio/video metadata available when ffprobe is installed
 
 ## Creative
-Set explicit pass/fail booleans where relevant:
+For a PASS, these required checks must all be `true`:
 
 - project_fit
 - story_clarity
@@ -38,7 +38,11 @@ Optional when relevant:
 - arabic
 - three_d_vfx_quality
 
+Optional checks may stay `null` when genuinely not applicable, but if one is set to `false`, the review cannot PASS.
+
 Add concise notes/issues.
+
+A PASS report must have **zero unresolved issues**. Put non-blocking commentary in `creative.notes`.
 
 ## Assets
 Before PASS:
