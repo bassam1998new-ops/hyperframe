@@ -15,6 +15,7 @@ import {
 const AGENT_TARGETS = new Set(["none", "all", "claude", "codex"]);
 const MODES = new Set(["direct", "director"]);
 const RESOURCE_KEYS = [
+  "browser_control",
   "chatgpt_browser",
   "google_flow",
   "meta_ai",
