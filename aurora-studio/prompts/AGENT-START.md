@@ -22,7 +22,8 @@ For each real production job:
 - fill/validate the generated build-plan.json and assign each shot/build unit to the right routed engine
 - complete the build_plan checkpoint before execution
 - check the budget before paid generation
-- create/fill/validate review.json after the final render
+- create review.json after the final render; AurorA extracts visual review frames
+- inspect every generated review frame before filling creative PASS/FIX/REBUILD fields
 - only PASS can complete post_render_review
 - FIX/REBUILD loops back into production
 - finalize only after I approve, passing the exact approved video with `--video`
