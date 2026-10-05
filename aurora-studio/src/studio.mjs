@@ -766,6 +766,19 @@ export async function writeRunCheckpoint(runId, stage, status, options = {}, cwd
       }
     }
 
+    if (stage === "render" && status === "completed") {
+      if (!artifact) {
+        throw new Error("Render completion requires --artifact VIDEO_PATH.");
+      }
+
+      const renderFile = path.resolve(cwd, artifact);
+      if (!fs.existsSync(renderFile) || !fs.statSync(renderFile).isFile()) {
+        throw new Error("Render artifact not found: " + artifact);
+      }
+
+      createReviewReport(runId, artifact, cwd);
+    }
+
     if (stage === "post_render_review" && status === "completed") {
       const validation = validateReviewReportFile(runId, cwd);
       if (!validation.can_complete_post_review) {
