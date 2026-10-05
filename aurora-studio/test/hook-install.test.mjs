@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 import { installAgentHooks, removeAgentHooks } from "../src/hook-install.mjs";
 
 function temp() {
@@ -59,4 +60,77 @@ test("remove hooks removes only AurorA handlers", () => {
   const codex = JSON.parse(fs.readFileSync(path.join(cwd, ".codex", "hooks.json"), "utf8"));
   assert.ok(!claude.hooks?.SessionStart);
   assert.ok(!codex.hooks?.SessionStart);
+});
+
+
+test("Codex hook command is quote-free on Windows", () => {
+  const cwd = temp();
+  installAgentHooks("codex", cwd);
+
+  const config = JSON.parse(
+    fs.readFileSync(path.join(cwd, ".codex", "hooks.json"), "utf8")
+  );
+  const handler = config.hooks.SessionStart[0].hooks[0];
+
+  assert.equal(handler.command, "node .aurora/hooks/session-start.mjs");
+  assert.equal(handler.commandWindows, "node .aurora\\hooks\\session-start.mjs");
+  assert.doesNotMatch(handler.commandWindows, /["']/);
+  assert.doesNotMatch(handler.commandWindows, /git rev-parse/);
+});
+
+test("Codex hook command runs from workspace cwd and returns context", () => {
+  const cwd = temp();
+  installAgentHooks("codex", cwd);
+
+  fs.mkdirSync(path.join(cwd, ".aurora"), { recursive: true });
+  fs.writeFileSync(
+    path.join(cwd, ".aurora", "workspace.json"),
+    JSON.stringify({
+      studio: "AurorA Studio",
+      default_mode: "direct",
+      project: {
+        product: "Hook Product",
+        purpose: "video"
+      },
+      tools: [],
+      resources: {}
+    })
+  );
+  fs.writeFileSync(
+    path.join(cwd, ".aurora", "project.json"),
+    JSON.stringify({
+      product: "Hook Product",
+      purpose: "video"
+    })
+  );
+
+  const config = JSON.parse(
+    fs.readFileSync(path.join(cwd, ".codex", "hooks.json"), "utf8")
+  );
+  const handler = config.hooks.SessionStart[0].hooks[0];
+  const command = process.platform === "win32"
+    ? handler.commandWindows
+    : handler.command;
+
+  const input = JSON.stringify({
+    cwd,
+    hook_event_name: "SessionStart",
+    model: "test",
+    permission_mode: "default",
+    session_id: "test",
+    source: "startup",
+    transcript_path: null
+  });
+
+  const result = spawnSync(command, {
+    cwd,
+    input,
+    encoding: "utf8",
+    shell: true
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  const output = JSON.parse(result.stdout);
+  assert.equal(output.hookSpecificOutput.hookEventName, "SessionStart");
+  assert.match(output.hookSpecificOutput.additionalContext, /Hook Product/);
 });
