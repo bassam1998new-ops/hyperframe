@@ -11,6 +11,7 @@ import {
   hyperframesBin,
   resolveHyperframesBinary,
   resolveHyperframesCommand,
+  unsafeWindowsGlobalShim,
   runWorkspaceHyperframes
 } from "../src/tool-install.mjs";
 
@@ -156,4 +157,31 @@ test("local npm HyperFrames package executes its JS bin through Node", () => {
   assert.equal(result.ok, true);
   assert.match(result.stdout, /FAKE-HYPERFRAMES doctor --json/);
   assert.equal(result.node_cli, cli);
+});
+
+
+test("Windows global npm shims are rejected for shell safety", () => {
+  assert.equal(
+    unsafeWindowsGlobalShim(
+      { source: "path", binary: "C:\\Users\\demo\\AppData\\Roaming\\npm\\hyperframes.cmd" },
+      "win32"
+    ),
+    true
+  );
+
+  assert.equal(
+    unsafeWindowsGlobalShim(
+      { source: "aurora_workspace", binary: "C:\\project\\.aurora\\tools\\node_modules\\.bin\\hyperframes.cmd" },
+      "win32"
+    ),
+    false
+  );
+
+  assert.equal(
+    unsafeWindowsGlobalShim(
+      { source: "path", binary: "/usr/local/bin/hyperframes" },
+      "linux"
+    ),
+    false
+  );
 });
