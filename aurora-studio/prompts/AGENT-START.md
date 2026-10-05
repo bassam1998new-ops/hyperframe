@@ -46,7 +46,7 @@ Director mode:
 Give me a small number of genuinely different concepts first, explain why they fit this project, then follow the Director flow after I choose.
 
 Resources:
-If browser AI resources such as ChatGPT, Google Flow or Meta AI are configured, you may use them when they improve quality or reduce cost. Prefer cheap previews first. For example, generate low-resolution exploration before spending on high-quality output. ElevenLabs is optional for voice/audio when configured.
+If browser AI resources such as ChatGPT, Google Flow or Meta AI are configured **and** `browser_control=true`, you may use them when they improve quality or reduce cost. An account alone does not mean this agent can operate it. Prefer cheap previews first. For example, generate low-resolution exploration before spending on high-quality output. ElevenLabs is optional for voice/audio when configured.
 
 After the final render is approved:
 - keep the final and files needed to reproduce it
@@ -73,6 +73,7 @@ For coding agents, prefer:
   "website": "https://example.com",
   "mode": "direct",
   "resources": {
+    "browser_control": true,
     "chatgpt_browser": true,
     "google_flow": true,
     "meta_ai": false,
