@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 
-export const HYPERFRAMES_RANGE = ">=0.8.0 <0.9.0";
+export const HYPERFRAMES_RANGE = "^0.8.0";
 
 function findOnPath(command) {
   const finder = process.platform === "win32" ? "where" : "which";
@@ -22,6 +22,32 @@ export function hyperframesBin(cwd = process.cwd()) {
 
 export function isolatedHyperframesInstalled(cwd = process.cwd()) {
   return fs.existsSync(hyperframesBin(cwd));
+}
+
+function projectHyperframesBin(cwd = process.cwd()) {
+  const name = process.platform === "win32" ? "hyperframes.cmd" : "hyperframes";
+  return path.join(cwd, "node_modules", ".bin", name);
+}
+
+export function resolveHyperframesBinary(cwd = process.cwd()) {
+  const isolated = hyperframesBin(cwd);
+  if (fs.existsSync(isolated)) {
+    return { available: true, binary: isolated, source: "aurora_workspace" };
+  }
+
+  const project = projectHyperframesBin(cwd);
+  if (fs.existsSync(project)) {
+    return { available: true, binary: project, source: "project_node_modules" };
+  }
+
+  const global = findOnPath(process.platform === "win32" ? "hyperframes.cmd" : "hyperframes")
+    || findOnPath("hyperframes");
+
+  if (global) {
+    return { available: true, binary: global, source: "path" };
+  }
+
+  return { available: false, binary: null, source: null };
 }
 
 export function ensureToolsPackage(cwd = process.cwd()) {
@@ -104,21 +130,22 @@ export function runWorkspaceHyperframes(args = [], {
   dryRun = false,
   spawnImpl = spawnSync
 } = {}) {
-  const binary = hyperframesBin(cwd);
+  const resolved = resolveHyperframesBinary(cwd);
 
-  if (!fs.existsSync(binary)) {
-    throw new Error("Workspace HyperFrames core is not installed. Run: aurora-studio hyperframe install");
+  if (!resolved.available) {
+    throw new Error("HyperFrames core is not available. Run: aurora-studio hyperframe install");
   }
 
   if (dryRun) {
     return {
       dry_run: true,
-      executable: binary,
+      executable: resolved.binary,
+      source: resolved.source,
       args
     };
   }
 
-  const result = spawnImpl(binary, args, {
+  const result = spawnImpl(resolved.binary, args, {
     cwd,
     encoding: "utf8",
     maxBuffer: 64 * 1024 * 1024
@@ -127,6 +154,8 @@ export function runWorkspaceHyperframes(args = [], {
   return {
     ok: result.status === 0,
     exit_code: result.status,
+    executable: resolved.binary,
+    source: resolved.source,
     stdout: result.stdout || "",
     stderr: result.stderr || ""
   };
