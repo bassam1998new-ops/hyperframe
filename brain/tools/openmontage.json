@@ -1,0 +1,8 @@
+{
+  "id": "openmontage",
+  "role": "optional-external-agentic-video-system",
+  "license": "AGPL-3.0",
+  "enabled_by_default": false,
+  "strengths": ["pipeline-manifests", "tool-registry", "stage-skills", "checkpoints", "agent-orchestration"],
+  "routing_note": "Study/use as external integration. Do not vendor its AGPL implementation into the permissive AurorA core."
+}
