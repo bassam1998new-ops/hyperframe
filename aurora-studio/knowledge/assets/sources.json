@@ -1,0 +1,116 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-10-05",
+  "sources": [
+    {
+      "id": "poly-haven",
+      "name": "Poly Haven",
+      "url": "https://polyhaven.com",
+      "categories": ["3d-model", "hdri", "texture", "material"],
+      "license_policy": "library-wide",
+      "default_license": "CC0-1.0",
+      "commercial_allowed": true,
+      "raw_redistribution_allowed": true,
+      "attribution_required_for_asset": false,
+      "api": {
+        "available": true,
+        "commercial_allowed": true,
+        "attribution_required_for_live_api": true,
+        "unique_user_agent_required": true,
+        "base_url": "https://api.polyhaven.com"
+      },
+      "automation": "preferred",
+      "notes": [
+        "Best first choice for high-quality CC0 HDRIs, materials/textures and 3D models.",
+        "When AurorA uses the live API, surface Poly Haven as the asset source and send a unique AurorA Studio User-Agent."
+      ]
+    },
+    {
+      "id": "ambientcg",
+      "name": "ambientCG",
+      "url": "https://ambientcg.com",
+      "categories": ["material", "texture", "3d-model", "hdri"],
+      "license_policy": "library-wide",
+      "default_license": "CC0-1.0",
+      "commercial_allowed": true,
+      "raw_redistribution_allowed": true,
+      "attribution_required_for_asset": false,
+      "api": {
+        "available": true,
+        "commercial_allowed": true,
+        "attribution_required_for_live_api": false,
+        "unique_user_agent_required": false,
+        "docs_url": "https://docs.ambientcg.com/api/"
+      },
+      "automation": "best-effort",
+      "notes": [
+        "All downloadable assets are CC0.",
+        "The provider explicitly warns that the API is operated by one person and should not be treated as enterprise-stable.",
+        "Cache imported assets locally instead of making production depend on API uptime."
+      ]
+    },
+    {
+      "id": "kenney",
+      "name": "Kenney",
+      "url": "https://kenney.nl/assets",
+      "categories": ["3d-model", "2d", "ui", "icon", "game-asset"],
+      "license_policy": "asset-page",
+      "default_license": "CC0-1.0",
+      "commercial_allowed": true,
+      "raw_redistribution_allowed": true,
+      "attribution_required_for_asset": false,
+      "api": {
+        "available": false
+      },
+      "automation": "browser-discovery",
+      "notes": [
+        "Kenney states game assets on its asset pages are CC0 and may be used commercially without attribution.",
+        "Prefer source-page download and store the source URL with the imported asset."
+      ]
+    },
+    {
+      "id": "quaternius",
+      "name": "Quaternius",
+      "url": "https://quaternius.com",
+      "categories": ["3d-model", "character", "rig", "animation", "environment", "prop"],
+      "license_policy": "verify-each-asset",
+      "default_license": null,
+      "commercial_allowed": true,
+      "raw_redistribution_allowed": null,
+      "attribution_required_for_asset": null,
+      "api": {
+        "available": false
+      },
+      "automation": "browser-discovery",
+      "notes": [
+        "Strong source for stylized 3D, rigged characters and animation libraries.",
+        "Newer assets may use Quaternius Asset License (QAL) v1.0: commercial finished products are allowed and attribution is not required, but raw assets may not be redistributed.",
+        "Some older pack pages remain CC0. Record the exact license shown for the asset at download time.",
+        "Never bundle a QAL raw asset into the AurorA Studio community package."
+      ]
+    },
+    {
+      "id": "openverse",
+      "name": "Openverse",
+      "url": "https://openverse.org",
+      "categories": ["image", "audio"],
+      "license_policy": "verify-original-source",
+      "default_license": null,
+      "commercial_allowed": null,
+      "raw_redistribution_allowed": null,
+      "attribution_required_for_asset": null,
+      "api": {
+        "available": true,
+        "commercial_allowed": true,
+        "attribution_required_for_live_api": false,
+        "unique_user_agent_required": false
+      },
+      "automation": "discovery-only",
+      "notes": [
+        "Use Openverse to discover openly licensed images/audio.",
+        "Openverse explicitly does not guarantee license metadata accuracy.",
+        "Before importing, verify the license on the original source and store attribution requirements."
+      ]
+    }
+  ]
+}
