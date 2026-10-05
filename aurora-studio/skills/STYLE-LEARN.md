@@ -22,3 +22,17 @@ Run after an approved result when the session created a genuinely reusable visua
 - representative approved frames when allowed
 
 Do not create a new style for every video. Prefer updating an existing style when the difference is minor.
+
+
+## Session review integration
+Do not immediately create a style because a run looked good.
+
+First add a style proposal to the run's `learning-review.json`.
+
+Only create/update the actual style when:
+- the look is reusable,
+- it is materially different from an existing style,
+- the result was approved,
+- the evidence is strong enough to justify another maintained style.
+
+Prefer updating an existing style over creating a near-duplicate.
