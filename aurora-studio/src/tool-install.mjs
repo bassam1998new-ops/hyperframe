@@ -59,6 +59,14 @@ function packageBinTarget(packageRoot) {
   }
 }
 
+export function unsafeWindowsGlobalShim(resolved, platform = process.platform) {
+  return Boolean(
+    platform === "win32" &&
+    resolved?.source === "path" &&
+    /\.(cmd|bat)$/i.test(String(resolved?.binary || ""))
+  );
+}
+
 export function resolveHyperframesCommand(cwd = process.cwd()) {
   const resolved = resolveHyperframesBinary(cwd);
   if (!resolved.available) {
@@ -87,11 +95,7 @@ export function resolveHyperframesCommand(cwd = process.cwd()) {
     };
   }
 
-  if (
-    process.platform === "win32" &&
-    resolved.source === "path" &&
-    /\.(cmd|bat)$/i.test(resolved.binary)
-  ) {
+  if (unsafeWindowsGlobalShim(resolved)) {
     return {
       available: false,
       executable: null,
