@@ -56,7 +56,10 @@ The package remains private during foundation work. Before public release we wil
 
 ```text
 .aurora/
+  system/          # managed AurorA skills/knowledge; safe to refresh
   workspace.json
+  project.json
+  discovery.json
   decisions.jsonl
   lessons.jsonl
   styles/
@@ -127,3 +130,26 @@ aurora-studio update backup
 - `update apply` will be added only after the public npm package name and migration path are locked.
 
 This keeps the future updater simple without making it a supply-chain risk.
+
+
+### System vs user memory
+
+`.aurora/system/` is generated from the installed AurorA Studio package and can be refreshed safely.
+
+Do **not** store project-specific memory there.
+
+Project/user-owned state lives outside it:
+- `.aurora/project.json`
+- `.aurora/library/`
+- `.aurora/references/`
+- `.aurora/runs/`
+- lessons/decisions
+
+Useful commands:
+
+```bash
+aurora-studio system status
+aurora-studio system sync
+```
+
+Preflight automatically refreshes the managed system snapshot when the installed AurorA version changes.
