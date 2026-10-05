@@ -42,3 +42,15 @@ Save:
 - current cost/credits if known
 - chosen output
 - reason it was selected
+
+
+## Provider playbook
+Before using a configured provider, read its current AurorA playbook:
+
+- ChatGPT → `knowledge/providers/chatgpt-images.md`
+- Google Flow → `knowledge/providers/google-flow.md`
+- Meta AI → `knowledge/providers/meta-ai.md`
+- ElevenLabs → `knowledge/providers/elevenlabs.md`
+
+Treat these files as routing/quality guidance, not permanent pricing truth.
+If the provider UI disagrees with the playbook on price, model, resolution, availability, or rights, trust the live provider and record the mismatch for the next AurorA update.
