@@ -37,7 +37,9 @@ import {
   removeAgentPointers,
   discoverLocalWorkspace,
   showAssetSources,
-  checkAssetLicense
+  checkAssetLicense,
+  createMoodRecord,
+  showMoodRecord
 } from "../src/studio.mjs";
 
 const [command = "help", ...args] = process.argv.slice(2);
@@ -105,6 +107,12 @@ switch (command) {
     await showRetrievedContext(filtered.join(" "), ref);
     break;
   }
+
+  case "mood":
+    if (args[0] === "create") await createMoodRecord(args[1]);
+    else if (args[0] === "show") await showMoodRecord(args[1]);
+    else console.error("mood commands: create RUN_ID | show RUN_ID");
+    break;
 
   case "reference":
     if (args[0] === "create") await createReferenceRecord(args[1], flag("--source"));
@@ -225,6 +233,8 @@ Setup:
 
 Brain:
   aurora-studio context "TASK" [--reference ID]
+  aurora-studio mood create RUN_ID
+  aurora-studio mood show RUN_ID
   aurora-studio project
   aurora-studio project set FIELD VALUE
   aurora-studio reference create NAME [--source VALUE]
