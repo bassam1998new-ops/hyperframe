@@ -7,6 +7,7 @@
       "required": true,
       "availability": "detected_at_setup",
       "detect_commands": ["hyperframes"],
+      "npm_package": "hyperframes",
       "best_for": [
         "2d motion graphics",
         "html and gsap animation",
