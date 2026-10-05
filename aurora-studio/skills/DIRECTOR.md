@@ -19,13 +19,17 @@ Director mode gives the owner control over the idea before expensive production 
 14. APPROVAL + LEARN
 
 ## Start
-- run `aurora-studio context "<task>" [--reference ID]`
+- run `aurora-studio plan "<task>" [--reference ID]`
+- read the saved run context
 - read project.json and discovery.json
 - if a reference exists, complete its structured analysis
 - do not ask the owner for facts already available in the workspace/site
 
+**Do not select Blender / HyperFrames / After Effects at plan time.**
+
 ## Concepts
 Give 2–3 genuinely different ideas, not color/layout variants.
+
 For each:
 - core idea
 - why it fits this product
@@ -34,25 +38,56 @@ For each:
 - likely complexity/cost
 - biggest risk
 
-Do not lock the software yet unless a hard requirement makes a tool mandatory.
+Do not lock the software unless a hard requirement makes a capability mandatory.
 
-## After owner picks
-Create/fill the run mood.json using the Mood V2 skill.
-The mood must be specific enough that another good editor could reproduce the same direction.
+When the owner picks:
+```bash
+aurora-studio checkpoint RUN_ID concept completed --approved
+```
+
+## Mood
+Create/fill the run's `mood.json`.
+
+Mood stays tool-agnostic.
+
+It must define:
+- intent
+- emotional/energy arc
+- composition/depth
+- camera/lens feeling
+- lighting
+- palette/type/material language
+- motion/edit grammar
+- voice/music/SFX/silence
+- continuity anchors
+- must-not-happen rules
+
+Validate it:
+```bash
+aurora-studio mood validate RUN_ID
+aurora-studio checkpoint RUN_ID mood completed --artifact .aurora/runs/<run>/mood.json
+```
 
 ## Assets
-Search in this order:
-1. project
+Search:
+1. current project
 2. approved AurorA library/styles
-3. curated open-asset sources
+3. curated open asset sources
 4. procedural build
 5. configured browser generation
-6. build new from scratch
+6. build new
 
-Return REUSE / MODIFY / BUILD_NEW.
+Return:
+- REUSE
+- MODIFY
+- BUILD_NEW
+
+Then complete the assets stage.
 
 ## Routing
-Route only after mood + requirements + asset search.
+Only now run:
+`aurora-studio routing RUN_ID`
+
 Unavailable optional tools get zero weight.
 Prefer the simplest path that can honestly hit the requested quality.
 
