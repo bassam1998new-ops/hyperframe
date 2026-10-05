@@ -35,7 +35,9 @@ import {
   showResources,
   installAgentPointers,
   removeAgentPointers,
-  discoverLocalWorkspace
+  discoverLocalWorkspace,
+  showAssetSources,
+  checkAssetLicense
 } from "../src/studio.mjs";
 
 const [command = "help", ...args] = process.argv.slice(2);
@@ -75,6 +77,9 @@ switch (command) {
     break;
   case "resources":
     await showResources(args.join(" ") || null);
+    break;
+  case "asset-sources":
+    await showAssetSources(args.join(" ") || null);
     break;
   case "discover":
     await discoverLocalWorkspace();
@@ -118,6 +123,7 @@ switch (command) {
         path: flag("--path"),
         source_url: flag("--source"),
         source_name: flag("--source-name"),
+        source_id: flag("--source-id"),
         license_id: flag("--license") || "unknown",
         commercial_allowed: flagBool("--commercial") ? true : null,
         redistribution_allowed: flagBool("--redistributable") ? true : null,
@@ -127,6 +133,8 @@ switch (command) {
         approved: flagBool("--approved"),
         quality_tier: flag("--quality") || "unknown"
       });
+    } else if (args[0] === "license-check") {
+      await checkAssetLicense(args[1], flagBool("--bundle"));
     } else if (args[0] === "search") {
       const query = args.slice(1).filter(x => !x.startsWith("--") && x !== flag("--kind") && x !== flag("--limit")).join(" ");
       await searchLibraryRecords(query, {
@@ -138,7 +146,7 @@ switch (command) {
       await importHyperframeRecords(flag("--root"));
     } else if (args[0] === "list") await listLibraryRecords();
     else if (args[0] === "stats") await libraryStats();
-    else console.error("library commands: add | search | import-hyperframe | list | stats");
+    else console.error("library commands: add | search | license-check | import-hyperframe | list | stats");
     break;
 
   case "obsidian":
@@ -210,6 +218,7 @@ Setup:
   aurora-studio mode direct|director
   aurora-studio workspace
   aurora-studio resources ["CAPABILITY"]
+  aurora-studio asset-sources ["ASSET NEED"]
   aurora-studio discover
   aurora-studio agent install [all|claude|codex]
   aurora-studio agent remove [all|claude|codex]
@@ -221,7 +230,8 @@ Brain:
   aurora-studio reference create NAME [--source VALUE]
   aurora-studio reference show ID
   aurora-studio reference list
-  aurora-studio library add NAME --path PATH [--kind asset] [--type model] [--license CC0] [--tags a,b] [--tools blender] [--approved]
+  aurora-studio library add NAME --path PATH [--source-id poly-haven] [--kind asset] [--type model] [--license CC0-1.0] [--tags a,b] [--tools blender] [--approved]
+  aurora-studio library license-check ID [--bundle]
   aurora-studio library search QUERY [--kind KIND] [--approved-only] [--limit N]
   aurora-studio library import-hyperframe [--root PATH]
   aurora-studio library list
