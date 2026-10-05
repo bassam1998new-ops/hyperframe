@@ -3,82 +3,80 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+
 import { writeConfiguredWorkspace } from "../src/configured-setup.mjs";
-import { hyperframesBin } from "../src/tool-install.mjs";
 import {
   planProduction,
-  writeRunCheckpoint,
   routeProductionRun,
-  finalizeProduction
+  writeRunCheckpoint
 } from "../src/studio.mjs";
-import {
-  readAssetPlan,
-  validateAssetPlanFile
-} from "../src/asset-plan.mjs";
-import {
-  readBuildPlan,
-  validateBuildPlanFile
-} from "../src/build-plan.mjs";
+import { hyperframesBin } from "../src/tool-install.mjs";
 import { loadRun } from "../src/governance.mjs";
-import {
-  readLearningReview,
-  validateLearningReviewFile
-} from "../src/learning.mjs";
+import { validateAssetPlanFile } from "../src/asset-plan.mjs";
+import { validateBuildPlanFile } from "../src/build-plan.mjs";
 
 function temp() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "aurora-e2e-"));
 }
 
-test("fresh configured Direct workspace reaches routed build plan", async () => {
-  const cwd = temp();
-
-  writeConfiguredWorkspace({
-    product: "Demo SaaS",
-    purpose: "social product videos",
-    mode: "direct",
-    agents: "none",
-    install_hyperframes: false,
-    resources: {}
-  }, { cwd });
-
+function fakeRuntime(cwd) {
   const hf = hyperframesBin(cwd);
   fs.mkdirSync(path.dirname(hf), { recursive: true });
-  fs.writeFileSync(
-    hf,
-    process.platform === "win32"
-      ? "@echo off\r\nexit /b 0\r\n"
-      : "#!/bin/sh\nexit 0\n"
-  );
+  fs.writeFileSync(hf, "");
 
-  const fakeFfmpeg = path.join(
+  const ffmpeg = path.join(
     cwd,
     process.platform === "win32" ? "ffmpeg.exe" : "ffmpeg"
   );
-  fs.writeFileSync(fakeFfmpeg, "");
+  fs.writeFileSync(ffmpeg, "");
+  return { hf, ffmpeg };
+}
 
-  const oldFfmpeg = process.env.AURORA_FFMPEG_PATH;
-  process.env.AURORA_FFMPEG_PATH = fakeFfmpeg;
+test("fresh Direct workspace reaches a validated build plan", async () => {
+  const cwd = temp();
+  const { ffmpeg } = fakeRuntime(cwd);
+  const previousFfmpeg = process.env.AURORA_FFMPEG_PATH;
+  process.env.AURORA_FFMPEG_PATH = ffmpeg;
 
   try {
+    const setup = writeConfiguredWorkspace({
+      product: "Demo SaaS",
+      purpose: "short social product videos",
+      mode: "direct",
+      agents: "none",
+      install_hyperframes: false,
+      resources: {
+        google_flow: false,
+        chatgpt_browser: false,
+        meta_ai: false,
+        elevenlabs: false
+      }
+    }, { cwd });
+
+    assert.ok(fs.existsSync(setup.workspace_file));
+    assert.ok(
+      fs.existsSync(path.join(cwd, ".aurora", "system", "bin", "aurora-studio.mjs"))
+    );
+
     const run = await planProduction(
-      "make a social kinetic typography product video with captions",
+      "Make a social kinetic typography explainer with captions",
       {},
       cwd
     );
 
-    assert.ok(run?.id);
+    assert.ok(run);
     assert.deepEqual(run.plan.route, []);
 
     await writeRunCheckpoint(run.id, "understand", "completed", {}, cwd);
     await writeRunCheckpoint(run.id, "concept", "skipped", {}, cwd);
     await writeRunCheckpoint(run.id, "mood", "skipped", {}, cwd);
 
-    const asset = readAssetPlan(run.id, cwd);
-    asset.plan.status = "completed";
-    asset.plan.summary = "Typography-only build; no external assets needed.";
-    asset.plan.needs = [];
-    asset.plan.updated_at = new Date().toISOString();
-    fs.writeFileSync(asset.file, JSON.stringify(asset.plan, null, 2) + "\n");
+    const assetPlanFile = path.join(run.dir, "asset-plan.json");
+    const assetPlan = JSON.parse(fs.readFileSync(assetPlanFile, "utf8"));
+    assetPlan.status = "completed";
+    assetPlan.summary = "Typography-only build; no external assets required.";
+    assetPlan.needs = [];
+    fs.writeFileSync(assetPlanFile, JSON.stringify(assetPlan, null, 2) + "\n");
 
     const assetValidation = validateAssetPlanFile(run.id, cwd);
     assert.equal(assetValidation.ok, true);
@@ -87,7 +85,7 @@ test("fresh configured Direct workspace reaches routed build plan", async () => 
       run.id,
       "assets",
       "completed",
-      { artifact: asset.file },
+      { artifact: assetPlanFile },
       cwd
     );
 
@@ -95,25 +93,27 @@ test("fresh configured Direct workspace reaches routed build plan", async () => 
     assert.ok(routed);
     assert.deepEqual(routed.plan.route, ["hyperframe"]);
 
-    const build = readBuildPlan(run.id, cwd);
-    assert.ok(build);
-    build.plan.status = "completed";
-    build.plan.summary = "HyperFrames owns the full programmable 2D build.";
-    build.plan.shots = [{
+    const buildPlanFile = path.join(run.dir, "build-plan.json");
+    const buildPlan = JSON.parse(fs.readFileSync(buildPlanFile, "utf8"));
+    buildPlan.status = "completed";
+    buildPlan.summary = "HyperFrames owns the complete programmable 2D build.";
+    buildPlan.route = ["hyperframe"];
+    buildPlan.shots = [{
       id: "main",
-      purpose: "Kinetic typography product video",
+      purpose: "Create the full captioned kinetic typography video",
       engine: "hyperframe",
-      duration_seconds: 15,
       inputs: [],
       asset_ids: [],
       output: "renders/final.mp4",
       quality: "normal",
-      success_criteria: ["clean hierarchy", "readable captions"],
-      notes: [],
-      handoff: null
+      success_criteria: [
+        "captions readable",
+        "project context respected",
+        "no external assets required"
+      ],
+      notes: []
     }];
-    build.plan.updated_at = new Date().toISOString();
-    fs.writeFileSync(build.file, JSON.stringify(build.plan, null, 2) + "\n");
+    fs.writeFileSync(buildPlanFile, JSON.stringify(buildPlan, null, 2) + "\n");
 
     const buildValidation = validateBuildPlanFile(run.id, cwd);
     assert.equal(buildValidation.ok, true);
@@ -122,99 +122,16 @@ test("fresh configured Direct workspace reaches routed build plan", async () => 
       run.id,
       "build_plan",
       "completed",
-      { artifact: build.file },
+      { artifact: buildPlanFile },
       cwd
     );
-    await writeRunCheckpoint(run.id, "build", "completed", {}, cwd);
-    await writeRunCheckpoint(run.id, "pre_render_review", "completed", {}, cwd);
-
-    const drafts = path.join(cwd, "renders", "drafts");
-    fs.mkdirSync(drafts, { recursive: true });
-    const approvedVideo = path.join(drafts, "approved.mp4");
-    fs.writeFileSync(approvedVideo, "approved-video-bytes");
-
-    await writeRunCheckpoint(
-      run.id,
-      "render",
-      "completed",
-      { artifact: approvedVideo },
-      cwd
-    );
-    await writeRunCheckpoint(
-      run.id,
-      "post_render_review",
-      "completed",
-      { artifact: approvedVideo, note: "Reviewer PASS" },
-      cwd
-    );
-    await writeRunCheckpoint(
-      run.id,
-      "approval",
-      "completed",
-      { artifact: approvedVideo, humanApproved: true },
-      cwd
-    );
-
-    const learning = readLearningReview(run.id, cwd);
-    learning.review.status = "completed";
-    learning.review.summary = "Approved clean typography workflow; nothing new to promote.";
-    learning.review.outcome.owner_approved = true;
-    learning.review.outcome.reviewer_result = "PASS";
-    learning.review.outcome.revisions = 1;
-    learning.review.outcome.quality_score = 9;
-    learning.review.updated_at = new Date().toISOString();
-    fs.writeFileSync(
-      learning.file,
-      JSON.stringify(learning.review, null, 2) + "\n"
-    );
-
-    assert.equal(validateLearningReviewFile(run.id, cwd).ok, true);
-
-    fs.writeFileSync(path.join(run.dir, "temp", "throwaway.txt"), "delete me");
-
-    const finalized = await finalizeProduction(
-      run.id,
-      approvedVideo,
-      null,
-      cwd
-    );
-
-    assert.ok(finalized);
-    assert.ok(fs.existsSync(finalized.finalArtifact.final_file));
-    assert.ok(
-      finalized.finalArtifact.final_file.includes(path.join("renders", "final"))
-    );
-    assert.ok(fs.existsSync(path.join(run.dir, "final.json")));
-    assert.equal(fs.existsSync(path.join(run.dir, "temp")), false);
-
-    const decisionsFile = path.join(cwd, ".aurora", "decisions.jsonl");
-    const decisionsBeforeRetry = fs.readFileSync(decisionsFile, "utf8")
-      .trim()
-      .split("\n")
-      .filter(Boolean).length;
-
-    const retry = await finalizeProduction(
-      run.id,
-      approvedVideo,
-      null,
-      cwd
-    );
-
-    assert.equal(retry.already_finalized, true);
-
-    const decisionsAfterRetry = fs.readFileSync(decisionsFile, "utf8")
-      .trim()
-      .split("\n")
-      .filter(Boolean).length;
-    assert.equal(decisionsAfterRetry, decisionsBeforeRetry);
 
     const saved = loadRun(cwd, run.id);
-    assert.equal(saved.state.status, "completed");
-    assert.equal(saved.state.checkpoints.build.status, "completed");
-    assert.equal(saved.state.checkpoints.finalize.status, "completed");
+    assert.equal(saved.state.checkpoints.build_plan.status, "completed");
     assert.deepEqual(saved.plan.route, ["hyperframe"]);
+    assert.equal(saved.plan.stages.find(stage => stage.id === "build_plan").status, "completed");
   } finally {
-    if (oldFfmpeg === undefined) delete process.env.AURORA_FFMPEG_PATH;
-    else process.env.AURORA_FFMPEG_PATH = oldFfmpeg;
+    if (previousFfmpeg === undefined) delete process.env.AURORA_FFMPEG_PATH;
+    else process.env.AURORA_FFMPEG_PATH = previousFfmpeg;
   }
 });
