@@ -110,6 +110,26 @@
     },
     "provider_units": {
       "type": "object"
+    },
+    "final_path": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "final_sha256": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "final_bytes": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
     }
   },
   "additionalProperties": true
