@@ -64,8 +64,17 @@ When mood is ready:
 aurora-studio checkpoint RUN_ID mood completed --artifact .aurora/runs/<run>/mood.json
 ```
 
+## Asset decision
+Before completing the assets stage:
+```bash
+aurora-studio asset-plan show RUN_ID
+aurora-studio asset-plan validate RUN_ID
+```
+
+The completed asset plan is the evidence for REUSE / MODIFY / BUILD_NEW.
+
 ## Routing
-Only after context/mood/assets:
+Only after context/mood/assets and a valid completed asset plan:
 ```bash
 aurora-studio routing RUN_ID
 ```
