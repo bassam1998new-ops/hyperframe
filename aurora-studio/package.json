@@ -14,7 +14,8 @@
     "route": "node ./bin/aurora-studio.mjs route",
     "test": "node --test",
     "discover": "node ./bin/aurora-studio.mjs discover",
-    "validate": "node ./bin/aurora-studio.mjs validate"
+    "validate": "node ./bin/aurora-studio.mjs validate",
+    "release:status": "node ./bin/aurora-studio.mjs release status"
   },
   "engines": {
     "node": ">=22"
