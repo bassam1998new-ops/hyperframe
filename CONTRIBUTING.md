@@ -84,6 +84,12 @@ npm run release:status
 
 The GitHub workflow also tests Windows and Ubuntu.
 
+For user-visible behavior or release-note changes, keep:
+- `aurora-studio/release.json`
+- `aurora-studio/CHANGELOG.md`
+
+in sync. Keep release notes short and useful; do not dump internal commit history into the changelog.
+
 Do not weaken a failing test just to make CI green; fix the underlying behavior.
 
 ## Pull requests
