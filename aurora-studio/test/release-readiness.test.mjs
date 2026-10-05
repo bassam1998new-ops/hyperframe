@@ -41,6 +41,7 @@ test("synthetic public package passes readiness gate", () => {
       latest_version: "1.0.0",
       package_name: "@matrix/aurora-studio",
       public_install_ready: true,
+      hyperframes_version: "0.8.123",
       channel: "stable"
     }
   });
@@ -71,10 +72,61 @@ test("repository URL mismatch blocks trusted publishing readiness", () => {
       latest_version: "1.0.0",
       package_name: "aurora-studio-example",
       public_install_ready: true,
+      hyperframes_version: "0.8.123",
       channel: "stable"
     }
   });
 
   assert.equal(result.ready, false);
   assert.ok(result.blockers.includes("repository_url_mismatch"));
+});
+
+
+test("public release requires an exact HyperFrames version", () => {
+  const root = temp();
+  fs.writeFileSync(path.join(root, "LICENSE"), "MIT");
+  fs.writeFileSync(path.join(root, "README.md"), "# AurorA");
+  fs.mkdirSync(path.join(root, "bin"), { recursive: true });
+  fs.writeFileSync(path.join(root, "bin", "aurora.mjs"), "");
+
+  const basePackage = {
+    name: "aurora-studio-example",
+    version: "1.0.0",
+    private: false,
+    bin: { "aurora-studio": "./bin/aurora.mjs" },
+    repository: {
+      url: "https://github.com/bassam1998new-ops/hyperframe.git"
+    },
+    publishConfig: { access: "public" }
+  };
+
+  const missing = evaluateReleaseReadiness({
+    root,
+    packageJson: basePackage,
+    release: {
+      latest_version: "1.0.0",
+      package_name: "aurora-studio-example",
+      public_install_ready: true,
+      hyperframes_version: null,
+      channel: "stable"
+    }
+  });
+
+  assert.equal(missing.ready, false);
+  assert.ok(missing.blockers.includes("hyperframes_version_missing"));
+
+  const ranged = evaluateReleaseReadiness({
+    root,
+    packageJson: basePackage,
+    release: {
+      latest_version: "1.0.0",
+      package_name: "aurora-studio-example",
+      public_install_ready: true,
+      hyperframes_version: "^0.8.134",
+      channel: "stable"
+    }
+  });
+
+  assert.equal(ranged.ready, false);
+  assert.ok(ranged.blockers.includes("hyperframes_version_must_be_exact"));
 });
