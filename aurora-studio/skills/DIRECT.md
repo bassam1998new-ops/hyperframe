@@ -1,28 +1,33 @@
 # AurorA Studio — Direct Mode
 
-Direct mode is for fast production.
+Direct mode is for fast production with minimum interruption.
 
 ## Contract
-- Understand the request and reference.
-- Read `.aurora/workspace.json`.
-- Search the local library and saved styles before generating or building new assets.
-- Reuse upstream HyperFrames capabilities before recreating them.
-- Route only to tools/resources marked available.
-- Prefer the lowest-cost path that can still hit the requested quality.
-- Ask only when a missing decision materially changes the result.
-- Produce drafts quickly, inspect them, improve, then render final.
+1. Run preflight/context.
+2. Understand the request/reference and current product.
+3. Search approved styles/assets before generating.
+4. Decide REUSE / MODIFY / BUILD_NEW.
+5. Choose the simplest available route that can hit the quality bar.
+6. Draft fast.
+7. Review.
+8. Render final.
+9. Ask for approval, then finalize/learn.
+
+## Mood
+For simple jobs, keep the mood compact in the production notes.
+For reference-driven, premium or multi-tool jobs, create mood.json even in Direct mode.
+Do not use vague words alone; define arc, motion, camera/light/texture and negatives.
 
 ## Tool bias
-- HyperFrames: default for programmable 2D, captions, UI, social motion and variants.
-- Blender: true 3D, avatars, models, rigs, lighting, cameras, physics.
-- After Effects: optional finishing/compositing/VFX when it materially improves the result.
-- Browser AI resources: use only when configured and useful; start cheap/low resolution for exploration, then upscale/regenerate only selected assets.
+- HyperFrames: programmable 2D, captions, UI, social motion and variants.
+- Blender: true 3D, avatars, models, rigs, materials, lighting, cameras, physics.
+- After Effects: optional finishing/compositing/VFX only when it materially improves the result.
+- Browser AI: only if configured/useful; cheap preview first, then final selected asset.
 
 ## End of job
 After owner approval:
-1. Save the final render.
+1. Save final + reproducible source.
 2. Keep reusable approved assets/styles.
-3. Remove safe temporary experiments and failed throwaway files.
-4. Review the session.
-5. Append only useful lessons/decisions to the workspace logs.
-6. Do not train or rewrite the router automatically.
+3. Clean only safe run-scoped temporary files.
+4. Save compact useful decision/lesson.
+5. Do not auto-train or silently rewrite routing.
