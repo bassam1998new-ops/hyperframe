@@ -22,7 +22,7 @@
         "camera_crop_safe_zones": { "type": ["boolean", "null"] },
         "audio": { "type": ["boolean", "null"] },
         "three_d_vfx_quality": { "type": ["boolean", "null"] },
-        "ai_slop": { "type": ["boolean", "null"] },
+        "ai_slop_free": { "type": ["boolean", "null"] },
         "notes": { "type": "array", "items": { "type": "string" } }
       }
     },
