@@ -208,6 +208,10 @@ export async function runSetup(cwd = process.cwd()) {
   const flow = await rl.question(`Google Flow available? [${existing?.resources?.google_flow ? "Y/n" : "y/N"}]: `);
   const meta = await rl.question(`Meta AI available? [${existing?.resources?.meta_ai ? "Y/n" : "y/N"}]: `);
   const eleven = await rl.question(`ElevenLabs available? [${existing?.resources?.elevenlabs ? "Y/n" : "y/N"}]: `);
+  const existingLocalPaths = existing?.resources?.local_paths || [];
+  const localPathsAnswer = await rl.question(
+    `Approved extra local folders, comma separated (optional) [${existingLocalPaths.join(", ")}]: `
+  );
   const installPointers = await rl.question(
     "Install AurorA instructions + the small SessionStart context hook for Claude/Codex? [Y/n]: "
   );
@@ -256,7 +260,10 @@ export async function runSetup(cwd = process.cwd()) {
       chatgpt_browser: yesOrExisting(chatgpt, existing?.resources?.chatgpt_browser),
       google_flow: yesOrExisting(flow, existing?.resources?.google_flow),
       meta_ai: yesOrExisting(meta, existing?.resources?.meta_ai),
-      elevenlabs: yesOrExisting(eleven, existing?.resources?.elevenlabs)
+      elevenlabs: yesOrExisting(eleven, existing?.resources?.elevenlabs),
+      local_paths: localPathsAnswer.trim()
+        ? [...new Set(localPathsAnswer.split(",").map(value => value.trim()).filter(Boolean))]
+        : existingLocalPaths
     },
     learning: {
       decision_log: ".aurora/decisions.jsonl",
@@ -279,7 +286,9 @@ export async function runSetup(cwd = process.cwd()) {
   projectProfile.sources ||= [];
   writeProject(projectProfile, cwd);
   readLibrary(cwd);
-  const discovery = saveDiscovery(cwd);
+  const discovery = saveDiscovery(cwd, {
+    extraRoots: workspace.resources.local_paths
+  });
   fs.mkdirSync(path.join(dir, "references"), { recursive: true });
 
   try {
@@ -1199,7 +1208,10 @@ export async function removeAgentPointers(target = "all", cwd = process.cwd()) {
 
 
 export async function discoverLocalWorkspace(cwd = process.cwd()) {
-  const saved = saveDiscovery(cwd);
+  const workspace = readWorkspace(cwd);
+  const saved = saveDiscovery(cwd, {
+    extraRoots: workspace?.resources?.local_paths || []
+  });
   console.log(JSON.stringify({
     file: saved.file,
     scanned_files: saved.result.scanned_files,
