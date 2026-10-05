@@ -26,6 +26,7 @@ import { listProviders, providersFor } from "./providers.mjs";
 import { validateKnowledge } from "./validate.mjs";
 import { obsidianInfo, searchObsidian } from "./integrations/obsidian.mjs";
 import { installAgentInstructions, removeAgentInstructions } from "./agent-install.mjs";
+import { installAgentHooks, removeAgentHooks } from "./hook-install.mjs";
 import { saveDiscovery } from "./discovery.mjs";
 import {
   ensureProjectProfile,
@@ -213,7 +214,21 @@ export async function runSetup(cwd = process.cwd()) {
     );
   }
 
+  let agentSetup = null;
+  try {
+    agentSetup = {
+      instructions: installAgentInstructions("all", cwd),
+      hooks: installAgentHooks("all", cwd)
+    };
+  } catch (error) {
+    console.warn(`Agent integration warning: ${error.message}`);
+  }
+
   console.log(`\nWorkspace ready: ${dir}`);
+  console.log(`Discovery: ${discovery.result.matched_files} useful files across ${Object.keys(discovery.result.by_kind).length} categories.`);
+  if (agentSetup?.hooks?.trust_review_required) {
+    console.log("Claude/Codex project hooks installed. Review/trust them in your agent before they run.");
+  }
   await runDoctor(cwd);
 }
 
@@ -825,7 +840,10 @@ export async function showResources(capability = null, cwd = process.cwd()) {
 
 export async function installAgentPointers(target = "all", cwd = process.cwd()) {
   try {
-    const result = installAgentInstructions(target, cwd);
+    const result = {
+      instructions: installAgentInstructions(target, cwd),
+      hooks: installAgentHooks(target, cwd)
+    };
     console.log(JSON.stringify(result, null, 2));
     return result;
   } catch (error) {
@@ -837,7 +855,10 @@ export async function installAgentPointers(target = "all", cwd = process.cwd()) 
 
 export async function removeAgentPointers(target = "all", cwd = process.cwd()) {
   try {
-    const result = removeAgentInstructions(target, cwd);
+    const result = {
+      instructions: removeAgentInstructions(target, cwd),
+      hooks: removeAgentHooks(target, cwd)
+    };
     console.log(JSON.stringify(result, null, 2));
     return result;
   } catch (error) {
