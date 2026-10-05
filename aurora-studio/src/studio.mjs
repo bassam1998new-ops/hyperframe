@@ -38,6 +38,11 @@ import {
   completedLearningPayload
 } from "./learning.mjs";
 import {
+  checkForUpdate,
+  backupWorkspaceState,
+  planWorkspaceMigration
+} from "./update.mjs";
+import {
   ensureProjectProfile,
   readProject,
   writeProject,
@@ -1153,6 +1158,46 @@ export async function validateLearningReviewRecord(runId, cwd = process.cwd()) {
     const result = validateLearningReviewFile(runId, cwd);
     console.log(JSON.stringify(result, null, 2));
     if (!result.ok) process.exitCode = 2;
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+
+export async function checkStudioUpdate(options = {}) {
+  try {
+    const result = await checkForUpdate({
+      ...(options.url ? { url: options.url } : {})
+    });
+    console.log(JSON.stringify(result, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function planStudioUpdate(cwd = process.cwd()) {
+  try {
+    const result = planWorkspaceMigration({ cwd });
+    console.log(JSON.stringify(result, null, 2));
+    if (result.blocked) process.exitCode = 2;
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function backupStudioWorkspace(cwd = process.cwd()) {
+  try {
+    const result = backupWorkspaceState(cwd);
+    console.log(JSON.stringify(result, null, 2));
     return result;
   } catch (error) {
     console.error(error.message);
