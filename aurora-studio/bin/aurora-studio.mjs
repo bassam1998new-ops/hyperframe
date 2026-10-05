@@ -39,6 +39,8 @@ import {
   discoverLocalWorkspace,
   showAssetSources,
   checkAssetLicense,
+  searchOpenAssets,
+  showOpenAssetFiles,
   createMoodRecord,
   showMoodRecord,
   validateMoodRecord,
@@ -85,6 +87,27 @@ switch (command) {
     break;
   case "asset-sources":
     await showAssetSources(args.join(" ") || null);
+    break;
+  case "assets":
+    if (args[0] === "search") {
+      const type = flag("--type") || "all";
+      const limit = flag("--limit") || 10;
+      const filtered = args.slice(1).filter((value, index, values) => {
+        if (value === "--type" || value === "--limit") return false;
+        if (index > 0 && (values[index - 1] === "--type" || values[index - 1] === "--limit")) return false;
+        if (value === "--refresh") return false;
+        return true;
+      });
+      await searchOpenAssets(filtered.join(" "), {
+        type,
+        limit,
+        forceRefresh: flagBool("--refresh")
+      });
+    } else if (args[0] === "files") {
+      await showOpenAssetFiles(args[1]);
+    } else {
+      console.error("assets commands: search QUERY [--type all|hdris|textures|models] [--limit N] [--refresh] | files POLY_HAVEN_ID");
+    }
     break;
   case "discover":
     await discoverLocalWorkspace();
@@ -240,6 +263,8 @@ Setup:
   aurora-studio workspace
   aurora-studio resources ["CAPABILITY"]
   aurora-studio asset-sources ["ASSET NEED"]
+  aurora-studio assets search "studio hdri" [--type hdris] [--limit 10]
+  aurora-studio assets files POLY_HAVEN_ID
   aurora-studio discover
   aurora-studio agent install [all|claude|codex]
   aurora-studio agent remove [all|claude|codex]
