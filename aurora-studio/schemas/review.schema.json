@@ -7,6 +7,7 @@
     "run_id",
     "video",
     "video_sha256",
+    "visual_evidence",
     "status",
     "technical",
     "creative",
@@ -161,6 +162,76 @@
         "null"
       ],
       "pattern": "^[a-f0-9]{64}$"
+    },
+    "visual_evidence": {
+      "type": "object",
+      "required": [
+        "video",
+        "video_sha256",
+        "generated_at",
+        "count",
+        "frames"
+      ],
+      "properties": {
+        "video": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "video_sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "generated_at": {
+          "type": "string"
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "error": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "frames": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "index",
+              "time_seconds",
+              "path",
+              "sha256"
+            ],
+            "properties": {
+              "index": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "time_seconds": {
+                "type": "number",
+                "minimum": 0
+              },
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": true
     }
   },
   "additionalProperties": true
