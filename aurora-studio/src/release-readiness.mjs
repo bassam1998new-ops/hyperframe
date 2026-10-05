@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = path.resolve(HERE, "..");
+const EXPECTED_REPOSITORY = "https://github.com/bassam1998new-ops/hyperframe.git";
 
 function readJson(file) {
   return JSON.parse(fs.readFileSync(file, "utf8"));
@@ -51,8 +52,16 @@ export function evaluateReleaseReadiness({
     }
   }
 
-  if (!packageJson?.repository?.url) warnings.push("repository_url_missing");
-  if (packageJson?.publishConfig?.access !== "public") warnings.push("publish_access_not_explicitly_public");
+  const repositoryUrl = String(packageJson?.repository?.url || "").trim();
+  if (!repositoryUrl) {
+    blockers.push("repository_url_missing");
+  } else if (repositoryUrl !== EXPECTED_REPOSITORY) {
+    blockers.push("repository_url_mismatch");
+  }
+
+  if (packageJson?.publishConfig?.access !== "public") {
+    warnings.push("publish_access_not_explicitly_public");
+  }
 
   return {
     ready: blockers.length === 0,
