@@ -48,3 +48,56 @@ Never treat "found online" as permission to use. Save source + license metadata 
 Do not spend paid generation credits when an approved asset can reach the same quality with reasonable modification.
 
 Provider prices/credits change. Store them as updateable provider data; never hard-code marketing promises such as a fixed credit cost into the Director skill.
+
+
+## Run asset plan
+
+Every production run has:
+`.aurora/runs/<run>/asset-plan.json`
+
+Fill it before the assets checkpoint is completed.
+
+For each real asset need record:
+- description
+- kind
+- REUSE / MODIFY / BUILD_NEW / NOT_NEEDED
+- search queries
+- selected AurorA library IDs when reusing/modifying
+- required capabilities when building new
+- confidence / useful notes
+
+### REUSE / MODIFY
+Before selecting an external/local reusable asset, add/promote it into the AurorA library with:
+- source
+- exact license
+- approval state
+- tools
+- useful tags
+
+Then put its library ID into `selected_library_ids`.
+
+Do not point asset-plan directly at an untracked random download.
+
+### BUILD_NEW
+State the actual required capability:
+- true_3d
+- rigging
+- compositing
+- image_generation
+- video_generation
+- etc.
+
+This evidence feeds routing.
+
+### No assets needed
+An empty `needs: []` is valid for typography/procedural-only work, but the completed plan still needs a short summary explaining that.
+
+Validate:
+```bash
+aurora-studio asset-plan validate RUN_ID
+```
+
+Then:
+```bash
+aurora-studio checkpoint RUN_ID assets completed --artifact .aurora/runs/<run>/asset-plan.json
+```
