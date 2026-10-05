@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "tools": [
+    {
+      "id": "hyperframe",
+      "name": "HyperFrames",
+      "required": true,
+      "availability": "detected_at_setup",
+      "detect_commands": ["hyperframes"],
+      "best_for": [
+        "2d motion graphics",
+        "html and gsap animation",
+        "captions",
+        "ui and technical explainers",
+        "social variants",
+        "deterministic programmable video"
+      ],
+      "avoid_for": [
+        "true 3d character modeling",
+        "complex rigging",
+        "heavy physical simulation"
+      ],
+      "notes": "Reuse upstream HyperFrames features before building duplicates."
+    },
+    {
+      "id": "blender",
+      "name": "Blender",
+      "required": false,
+      "availability": "detected_at_setup",
+      "detect_commands": ["blender"],
+      "best_for": [
+        "true 3d",
+        "characters and avatars",
+        "modeling",
+        "rigging",
+        "materials",
+        "lighting",
+        "camera animation",
+        "physics",
+        "3d product shots"
+      ],
+      "avoid_for": [
+        "simple captions",
+        "basic social typography"
+      ],
+      "license_note": "GPL application; generated project outputs can be used normally."
+    },
+    {
+      "id": "after_effects",
+      "name": "Adobe After Effects",
+      "required": false,
+      "availability": "detected_at_setup",
+      "detect_commands": ["afterfx", "aerender"],
+      "env_path": "AURORA_AFTER_EFFECTS_PATH",
+      "best_for": [
+        "compositing",
+        "vfx finishing",
+        "tracking",
+        "layered motion graphics",
+        "post effects",
+        "template based finishing"
+      ],
+      "avoid_for": [
+        "making the studio depend on Adobe",
+        "jobs that HyperFrames or Blender can finish cleanly without it"
+      ],
+      "license_note": "Proprietary optional tool. Never required for AurorA Studio to work."
+    },
+    {
+      "id": "open_montage",
+      "name": "OpenMontage",
+      "required": false,
+      "availability": "configured_at_setup",
+      "detect_commands": ["openmontage"],
+      "env_path": "AURORA_OPENMONTAGE_PATH",
+      "best_for": [
+        "optional external pipeline experiments",
+        "studying reviewer and orchestration patterns"
+      ],
+      "avoid_for": [
+        "copying AGPL code into a permissive AurorA core"
+      ],
+      "license_note": "Keep as an external adapter unless the final AurorA Studio license strategy explicitly accepts AGPL obligations."
+    }
+  ]
+}
