@@ -37,6 +37,7 @@ import {
   validateLearningReviewFile,
   completedLearningPayload
 } from "./learning.mjs";
+import { syncSystemKnowledge, systemStatus } from "./system-install.mjs";
 import {
   checkForUpdate,
   backupWorkspaceState,
@@ -202,6 +203,7 @@ export async function runSetup(cwd = process.cwd()) {
   };
 
   writeWorkspace(workspace, cwd);
+  const system = syncSystemKnowledge(cwd);
   const projectProfile = ensureProjectProfile({
     product: workspace.project.product,
     purpose: workspace.project.purpose,
@@ -249,6 +251,7 @@ export async function runSetup(cwd = process.cwd()) {
   }
 
   console.log(`\nWorkspace ready: ${dir}`);
+  console.log(`System knowledge: ${system.studio_version} synced to .aurora/system`);
   console.log(`Discovery: ${discovery.result.matched_files} useful files across ${Object.keys(discovery.result.by_kind).length} categories.`);
   if (agentSetup?.hooks?.trust_review_required) {
     console.log("Claude/Codex project hooks installed. Review/trust them in your agent before they run.");
@@ -996,7 +999,9 @@ export async function showResources(capability = null, cwd = process.cwd()) {
 
 export async function installAgentPointers(target = "all", cwd = process.cwd()) {
   try {
+    const system = syncSystemKnowledge(cwd);
     const result = {
+      system,
       instructions: installAgentInstructions(target, cwd),
       hooks: installAgentHooks(target, cwd)
     };
@@ -1197,6 +1202,31 @@ export async function planStudioUpdate(cwd = process.cwd()) {
 export async function backupStudioWorkspace(cwd = process.cwd()) {
   try {
     const result = backupWorkspaceState(cwd);
+    console.log(JSON.stringify(result, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+
+export async function syncStudioSystem(cwd = process.cwd()) {
+  try {
+    const result = syncSystemKnowledge(cwd);
+    console.log(JSON.stringify(result, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function showStudioSystemStatus(cwd = process.cwd()) {
+  try {
+    const result = systemStatus(cwd);
     console.log(JSON.stringify(result, null, 2));
     return result;
   } catch (error) {
