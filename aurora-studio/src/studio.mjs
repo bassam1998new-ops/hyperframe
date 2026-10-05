@@ -6,7 +6,7 @@ import { stdin as input, stdout as output } from "node:process";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 import { chooseRoute } from "./selector.mjs";
-import { createRun, loadRun, checkpoint, evaluateSpend, finalizeRun } from "./governance.mjs";
+import { createRun, loadRun, checkpoint, evaluateSpend, finalizeRun, setRunRoute } from "./governance.mjs";
 import { probeRender } from "./quality.mjs";
 import { addLibraryItem, readLibrary, searchLibrary, summarizeLibrary } from "./library.mjs";
 import { importHyperframeLibrary } from "./importers/hyperframe.mjs";
@@ -28,7 +28,7 @@ import { obsidianInfo, searchObsidian } from "./integrations/obsidian.mjs";
 import { installAgentInstructions, removeAgentInstructions } from "./agent-install.mjs";
 import { installAgentHooks, removeAgentHooks } from "./hook-install.mjs";
 import { saveDiscovery } from "./discovery.mjs";
-import { createMood, readMood } from "./mood.mjs";
+import { createMood, readMood, validateMoodFile } from "./mood.mjs";
 import {
   ensureProjectProfile,
   readProject,
@@ -183,11 +183,15 @@ export async function runSetup(cwd = process.cwd()) {
   };
 
   writeWorkspace(workspace, cwd);
-  ensureProjectProfile({
+  const projectProfile = ensureProjectProfile({
     product: workspace.project.product,
     purpose: workspace.project.purpose,
     website: workspace.project.website
   }, cwd);
+  projectProfile.product = workspace.project.product;
+  projectProfile.purpose = workspace.project.purpose;
+  projectProfile.website = workspace.project.website;
+  writeProject(projectProfile, cwd);
   readLibrary(cwd);
   saveDiscovery(cwd);
   fs.mkdirSync(path.join(dir, "references"), { recursive: true });
@@ -198,9 +202,7 @@ export async function runSetup(cwd = process.cwd()) {
     // Fine for non-HyperFrames workspaces.
   }
 
-  if (!/^(n|no|false|0)$/i.test(installPointers.trim())) {
-    installAgentInstructions("all", cwd);
-  }
+  const shouldInstallAgents = !/^(n|no|false|0)$/i.test(installPointers.trim());
 
   for (const log of ["decisions.jsonl", "lessons.jsonl"]) {
     const file = path.join(dir, log);
@@ -216,13 +218,15 @@ export async function runSetup(cwd = process.cwd()) {
   }
 
   let agentSetup = null;
-  try {
-    agentSetup = {
-      instructions: installAgentInstructions("all", cwd),
-      hooks: installAgentHooks("all", cwd)
-    };
-  } catch (error) {
-    console.warn(`Agent integration warning: ${error.message}`);
+  if (shouldInstallAgents) {
+    try {
+      agentSetup = {
+        instructions: installAgentInstructions("all", cwd),
+        hooks: installAgentHooks("all", cwd)
+      };
+    } catch (error) {
+      console.warn(`Agent integration warning: ${error.message}`);
+    }
   }
 
   console.log(`\nWorkspace ready: ${dir}`);
@@ -374,7 +378,6 @@ export async function planProduction(taskText = "", options = {}, cwd = process.
   }
 
   const ws = readWorkspace(cwd);
-  const project = readProject(cwd);
   let referenceRecord = null;
 
   if (options.referenceId) {
@@ -387,25 +390,6 @@ export async function planProduction(taskText = "", options = {}, cwd = process.
     }
   }
 
-  const referenceAnalysis = referenceRecord?.reference?.analysis || {};
-  const requirementOverrides = {
-    ...(typeof referenceAnalysis.requires_true_3d === "boolean"
-      ? { true3d: referenceAnalysis.requires_true_3d }
-      : {}),
-    ...(typeof referenceAnalysis.requires_compositing === "boolean"
-      ? { compositing: referenceAnalysis.requires_compositing }
-      : {})
-  };
-
-  const availability = Object.fromEntries(preflight.tools.map(t => [t.id, t.available]));
-  const decision = chooseRoute(taskText, availability, requirementOverrides);
-
-  if (!decision.selected) {
-    console.error("No safe automatic route. Use Director mode or add the missing capability.");
-    process.exitCode = 2;
-    return null;
-  }
-
   const budget = ws?.budget || {
     mode: "observe",
     cap_usd: null,
@@ -416,7 +400,7 @@ export async function planProduction(taskText = "", options = {}, cwd = process.
     cwd,
     task: taskText,
     mode: ws.default_mode,
-    routeDecision: decision,
+    routeDecision: null,
     budget
   });
 
@@ -432,10 +416,12 @@ export async function planProduction(taskText = "", options = {}, cwd = process.
     libraryLimit: 8,
     memoryLimit: 5
   });
+
   fs.writeFileSync(path.join(run.dir, "context.json"), JSON.stringify({
     ...contextPacket,
     captured_at: new Date().toISOString()
   }, null, 2) + "\n");
+
   const libraryMatches = [
     ...(contextPacket.reusable?.styles || []),
     ...(contextPacket.reusable?.assets || [])
@@ -444,26 +430,109 @@ export async function planProduction(taskText = "", options = {}, cwd = process.
   const decisionPath = path.join(run.dir, "decisions.jsonl");
   fs.appendFileSync(decisionPath, JSON.stringify({
     timestamp: new Date().toISOString(),
-    type: "route_selection",
-    selected: decision.selected,
-    alternatives: decision.candidates.slice(1, 4),
-    confidence: decision.confidence
+    type: "run_created",
+    routing: "deferred",
+    mode: ws.default_mode,
+    reference: referenceRecord?.reference?.id || null
   }) + "\n");
 
   console.log(JSON.stringify({
     run_id: run.id,
     mode: ws.default_mode,
-    route: decision.selected.route,
-    score: decision.selected.score,
-    confidence: decision.confidence,
+    route: null,
+    routing: "deferred_until_after_mood_and_assets",
     first_stage: "understand",
     plan: path.join(run.dir, "plan.json"),
     context: path.join(run.dir, "context.json"),
     mood: moodRecord?.file || null,
     reference: referenceRecord?.reference?.id || null,
-    library_matches: libraryMatches.slice(0, 3).map(x => ({ id: x.id, name: x.name, score: x.search_score }))
+    library_matches: libraryMatches.slice(0, 3).map(x => ({
+      id: x.id,
+      name: x.name,
+      score: x.search_score
+    }))
   }, null, 2));
+
   return run;
+}
+
+export async function routeProductionRun(runId, cwd = process.cwd()) {
+  const preflight = runPreflight(cwd);
+  if (!preflight.ok) {
+    for (const error of preflight.errors) console.error(error);
+    process.exitCode = 2;
+    return null;
+  }
+
+  try {
+    const run = loadRun(cwd, runId);
+    const contextFile = path.join(run.dir, "context.json");
+    const context = fs.existsSync(contextFile)
+      ? JSON.parse(fs.readFileSync(contextFile, "utf8"))
+      : {};
+
+    const referenceAnalysis = context.reference?.analysis || {};
+    const requirementOverrides = {
+      ...(referenceAnalysis.requires_true_3d === true ? { true3d: true } : {}),
+      ...(referenceAnalysis.requires_compositing === true ? { compositing: true } : {})
+    };
+
+    const moodRecord = readMood(runId, cwd);
+    if (moodRecord && run.state.checkpoints?.mood?.status === "completed") {
+      const moodValidation = validateMoodFile(runId, cwd);
+      if (!moodValidation.ok) {
+        console.error("Mood validation failed: " + moodValidation.errors.join("; "));
+        process.exitCode = 2;
+        return null;
+      }
+    }
+
+    const routeEvidence = [
+      run.plan.task,
+      context.reference?.analysis?.medium,
+      context.reference?.analysis?.subject,
+      ...(context.reference?.analysis?.technical_constraints || []),
+      moodRecord?.mood?.intent?.one_sentence,
+      ...(moodRecord?.mood?.visual?.camera_behavior || []),
+      ...(moodRecord?.mood?.visual?.materials_texture || []),
+      ...(moodRecord?.mood?.motion?.subject_motion || []),
+      ...(moodRecord?.mood?.motion?.camera_motion || [])
+    ].filter(Boolean).join(" ");
+
+    const availability = Object.fromEntries(preflight.tools.map(tool => [tool.id, tool.available]));
+    const decision = chooseRoute(routeEvidence || run.plan.task, availability, requirementOverrides);
+
+    if (!decision.selected) {
+      console.error("No safe production route after context/mood/assets. Change the approach or add the missing capability.");
+      process.exitCode = 2;
+      return null;
+    }
+
+    const routed = setRunRoute({ cwd, runId, routeDecision: decision });
+    const decisionPath = path.join(run.dir, "decisions.jsonl");
+    fs.appendFileSync(decisionPath, JSON.stringify({
+      timestamp: new Date().toISOString(),
+      type: "route_selection",
+      selected: decision.selected,
+      alternatives: decision.candidates.slice(1, 4),
+      confidence: decision.confidence,
+      evidence_stage: "after_mood_and_assets"
+    }) + "\n");
+
+    console.log(JSON.stringify({
+      run_id: runId,
+      route: routed.plan.route,
+      score: routed.plan.route_score,
+      confidence: routed.plan.route_confidence,
+      alternatives: routed.plan.alternatives
+    }, null, 2));
+
+    return routed;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
 }
 
 export async function showRunStatus(runId, cwd = process.cwd()) {
@@ -927,6 +996,19 @@ export async function showMoodRecord(runId, cwd = process.cwd()) {
   try {
     const result = readMood(runId, cwd);
     console.log(JSON.stringify(result.mood, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function validateMoodRecord(runId, cwd = process.cwd()) {
+  try {
+    const result = validateMoodFile(runId, cwd);
+    console.log(JSON.stringify(result, null, 2));
+    if (!result.ok) process.exitCode = 2;
     return result;
   } catch (error) {
     console.error(error.message);
