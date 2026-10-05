@@ -87,6 +87,23 @@ export function resolveHyperframesCommand(cwd = process.cwd()) {
     };
   }
 
+  if (
+    process.platform === "win32" &&
+    resolved.source === "path" &&
+    /\.(cmd|bat)$/i.test(resolved.binary)
+  ) {
+    return {
+      available: false,
+      executable: null,
+      prefix_args: [],
+      source: resolved.source,
+      shim: resolved.binary,
+      node_cli: null,
+      reason: "unsafe_windows_global_shim",
+      install_hint: "Install the isolated workspace core with: aurora-studio hyperframe install"
+    };
+  }
+
   return {
     available: true,
     executable: resolved.binary,
@@ -222,7 +239,8 @@ export function runWorkspaceHyperframes(args = [], {
   const command = resolveHyperframesCommand(cwd);
 
   if (!command.available) {
-    throw new Error("HyperFrames core is not available. Run: aurora-studio hyperframe install");
+    const detail = command.install_hint ? " " + command.install_hint : "";
+    throw new Error("HyperFrames core is not safely executable." + detail);
   }
 
   const finalArgs = [...command.prefix_args, ...args];
@@ -246,14 +264,9 @@ export function runWorkspaceHyperframes(args = [], {
     ].filter(Boolean).join(path.delimiter);
   }
 
-  const needsWindowsShell =
-    process.platform === "win32" &&
-    /\.(cmd|bat)$/i.test(command.executable);
-
   const result = spawnImpl(command.executable, finalArgs, {
     cwd,
     env,
-    shell: needsWindowsShell,
     encoding: "utf8",
     maxBuffer: 64 * 1024 * 1024
   });
