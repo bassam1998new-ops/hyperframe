@@ -26,6 +26,7 @@ test("configured setup creates a portable workspace without interaction", () => 
       meta_ai: false,
       elevenlabs: true
     },
+    local_paths: ["./approved-assets"],
     agents: "none",
     install_hyperframes: false
   }, { cwd });
@@ -38,6 +39,7 @@ test("configured setup creates a portable workspace without interaction", () => 
   assert.equal(workspace.default_mode, "director");
   assert.equal(workspace.project.product, "Demo Product");
   assert.equal(workspace.resources.google_flow, true);
+  assert.deepEqual(workspace.resources.local_paths, ["./approved-assets"]);
 });
 
 test("setup config file is normalized", () => {
