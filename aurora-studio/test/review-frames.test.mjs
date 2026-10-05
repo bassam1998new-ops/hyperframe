@@ -14,8 +14,10 @@ function temp() {
 
 test("review frame times sample inside the video, not exact endpoints", () => {
   const times = reviewFrameTimes(12, 5);
-  assert.deepEqual(times, [2, 4, 6, 8, 10]);
+  assert.deepEqual(times, [0.6, 3.3, 6, 8.7, 11.4]);
   assert.ok(times.every(time => time > 0 && time < 12));
+  assert.ok(times[0] <= 12 * 0.05 + 0.001);
+  assert.ok(times.at(-1) >= 12 * 0.95 - 0.001);
 });
 
 test("review frame count is bounded to a useful range", () => {
