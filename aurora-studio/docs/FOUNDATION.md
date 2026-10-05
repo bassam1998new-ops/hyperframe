@@ -42,9 +42,11 @@ Use:
 2. availability
 3. project/reference context
 4. asset/style search
-5. previous approved experience
-6. deterministic scoring
+5. deterministic capability scoring
+6. small capped prior from similar approved AurorA jobs
 7. large Director model fallback for unusual/low-confidence cases
+
+The experience prior may break close ties but cannot create unavailable routes or override hard capability requirements.
 
 Only after enough real decision data exists should we benchmark a learned small router.
 
