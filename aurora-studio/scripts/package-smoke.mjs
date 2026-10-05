@@ -7,6 +7,9 @@ import { fileURLToPath } from "node:url";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "..");
 const npm = process.platform === "win32" ? "npm.cmd" : "npm";
+const packageJson = JSON.parse(
+  fs.readFileSync(path.join(ROOT, "package.json"), "utf8")
+);
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
@@ -47,7 +50,18 @@ try {
     { cwd: workspace }
   );
 
-  const packageDir = path.join(workspace, "node_modules", "aurora-studio-local");
+  const packageNameParts = String(packageJson.name || "")
+    .split("/")
+    .filter(Boolean);
+  if (!packageNameParts.length) {
+    throw new Error("package.json has no package name.");
+  }
+
+  const packageDir = path.join(
+    workspace,
+    "node_modules",
+    ...packageNameParts
+  );
   const cli = path.join(packageDir, "bin", "aurora-studio.mjs");
 
   if (!fs.existsSync(cli)) {
