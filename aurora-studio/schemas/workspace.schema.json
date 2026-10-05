@@ -33,6 +33,20 @@
         }
       }
     },
+    "integrations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "required", "available"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "required": { "type": "boolean" },
+          "available": { "type": "boolean" },
+          "detected_by": { "type": ["string", "null"] }
+        }
+      }
+    },
     "resources": {
       "type": "object",
       "properties": {
