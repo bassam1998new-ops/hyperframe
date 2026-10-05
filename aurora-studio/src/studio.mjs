@@ -263,6 +263,7 @@ export async function runDoctor(cwd = process.cwd()) {
   const tools = detectTools(cwd);
   const integrations = detectIntegrations(cwd);
   const ws = readWorkspace(cwd);
+  const system = systemStatus(cwd);
 
   console.log("\nAurorA Studio doctor\n");
   for (const tool of tools) {
@@ -281,6 +282,7 @@ export async function runDoctor(cwd = process.cwd()) {
     console.log("\nWorkspace: not configured. Run: aurora-studio setup");
   } else {
     console.log(`\nWorkspace: configured | mode=${ws.default_mode}`);
+    console.log(`System knowledge: ${system.installed ? system.installed_version : "missing"}${system.needs_sync ? " (sync needed)" : ""}`);
     const r = ws.resources || {};
     console.log(`Resources: ChatGPT=${!!r.chatgpt_browser} Flow=${!!r.google_flow} MetaAI=${!!r.meta_ai} ElevenLabs=${!!r.elevenlabs}`);
   }
@@ -329,6 +331,22 @@ export function runPreflight(cwd = process.cwd()) {
     return { ok: false, errors: ["Workspace is not configured. Run: aurora-studio setup"], tools: [], integrations: [] };
   }
 
+  const systemBefore = systemStatus(cwd);
+  let systemSync = null;
+  if (systemBefore.needs_sync) {
+    try {
+      systemSync = syncSystemKnowledge(cwd);
+    } catch (error) {
+      return {
+        ok: false,
+        errors: [`AurorA system knowledge could not sync: ${error.message}`],
+        warnings: [],
+        tools: [],
+        integrations: []
+      };
+    }
+  }
+
   const tools = detectTools(cwd);
   const integrations = detectIntegrations(cwd);
   const missingRequired = tools.filter(t => t.required && !t.available);
@@ -344,9 +362,13 @@ export function runPreflight(cwd = process.cwd()) {
       ...missingRequired.map(t => `Missing required tool: ${t.name}`),
       ...knowledge.errors
     ],
-    warnings: knowledge.warnings,
+    warnings: [
+      ...knowledge.warnings,
+      ...(systemSync ? [`AurorA system knowledge refreshed to ${systemSync.studio_version}`] : [])
+    ],
     tools,
-    integrations
+    integrations,
+    system: systemStatus(cwd)
   };
 }
 
