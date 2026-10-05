@@ -174,8 +174,16 @@ export function ensureToolsPackage(cwd = process.cwd()) {
   return { prefix, package_file: file };
 }
 
-function cmdQuote(value) {
-  return '"' + String(value).replace(/"/g, '""') + '"';
+function resolveNpmCli(npmExecutable = null) {
+  const candidates = [
+    process.env.npm_execpath,
+    npmExecutable
+      ? path.join(path.dirname(npmExecutable), "node_modules", "npm", "bin", "npm-cli.js")
+      : null,
+    path.join(path.dirname(process.execPath), "node_modules", "npm", "bin", "npm-cli.js")
+  ].filter(Boolean);
+
+  return candidates.find(candidate => fs.existsSync(candidate)) || null;
 }
 
 export function hyperframesInstallPlan(cwd = process.cwd()) {
@@ -192,22 +200,26 @@ export function hyperframesInstallPlan(cwd = process.cwd()) {
 
   let executable = npm || (process.platform === "win32" ? "npm.cmd" : "npm");
   let args = npmArgs;
+  let npmCli = null;
 
   if (process.platform === "win32") {
-    const comspec = process.env.ComSpec || process.env.COMSPEC || "cmd.exe";
-    const command = [
-      cmdQuote(executable),
-      ...npmArgs.map(cmdQuote)
-    ].join(" ");
+    npmCli = resolveNpmCli(npm);
+    if (!npmCli) {
+      throw new Error(
+        "Could not locate npm-cli.js for a safe Windows install. " +
+        "Use a standard Node.js/npm installation or install HyperFrames manually."
+      );
+    }
 
-    executable = comspec;
-    args = ["/d", "/s", "/c", command];
+    executable = process.execPath;
+    args = [npmCli, ...npmArgs];
   }
 
   return {
     executable,
     args,
     npm_executable: npm || null,
+    npm_cli: npmCli,
     npm_args: npmArgs,
     prefix: tools.prefix,
     package_file: tools.package_file,
