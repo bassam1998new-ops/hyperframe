@@ -52,3 +52,20 @@ test("review frame extraction writes hashed evidence without real ffmpeg", () =>
     assert.equal(frame.sha256.length, 64);
   }
 });
+
+
+test("review frame extraction refuses unsafe output folders", () => {
+  const cwd = temp();
+  fs.writeFileSync(path.join(cwd, "final.mp4"), "fake-video");
+
+  assert.throws(
+    () => extractReviewFrames("final.mp4", {
+      cwd,
+      outputDir: ".",
+      durationSeconds: 10,
+      ffmpegPath: "/fake/ffmpeg",
+      spawnImpl: () => ({ status: 0, stdout: "", stderr: "" })
+    }),
+    /must stay inside \.aurora\/runs/
+  );
+});
