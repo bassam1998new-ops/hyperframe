@@ -52,6 +52,9 @@ jobs:
       - name: Package dry run
         run: npm pack --dry-run
 
+      - name: Package audit
+        run: node ./scripts/package-audit.mjs
+
       - name: Installed package smoke
         run: node ./scripts/package-smoke.mjs
 
