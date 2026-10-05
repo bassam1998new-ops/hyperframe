@@ -21,6 +21,7 @@ import {
   runAfterEffectsJob
 } from "./adapters/after-effects.mjs";
 import { retrieveContext } from "./retrieval.mjs";
+import { listAssetSources, recommendAssetSources, sourceImportDefaults, licenseGate } from "./asset-sources.mjs";
 import { listProviders, providersFor } from "./providers.mjs";
 import { validateKnowledge } from "./validate.mjs";
 import { obsidianInfo, searchObsidian } from "./integrations/obsidian.mjs";
@@ -646,7 +647,28 @@ export async function listReferenceRecords(cwd = process.cwd()) {
 
 export async function addLibraryRecord(input, cwd = process.cwd()) {
   try {
-    const item = addLibraryItem(input, cwd);
+    let finalInput = { ...input };
+    if (input.source_id) {
+      const verified = input.license_id && input.license_id !== "unknown" ? input.license_id : null;
+      const defaults = sourceImportDefaults(input.source_id, verified);
+      finalInput = {
+        ...finalInput,
+        source_name: finalInput.source_name || defaults.source.name,
+        license_id: verified || defaults.license_id,
+        commercial_allowed: input.commercial_allowed ?? defaults.commercial_allowed,
+        redistribution_allowed: input.redistribution_allowed ?? defaults.redistribution_allowed,
+        attribution_required: input.attribution_required ?? defaults.attribution_required
+      };
+      if (defaults.requires_verification && (
+        !finalInput.license_id ||
+        finalInput.license_id === "unknown" ||
+        finalInput.commercial_allowed === null ||
+        finalInput.commercial_allowed === undefined
+      )) {
+        throw new Error(defaults.source.name + " requires exact asset license verification before import.");
+      }
+    }
+    const item = addLibraryItem(finalInput, cwd);
     console.log(JSON.stringify(item, null, 2));
     return item;
   } catch (error) {
@@ -838,4 +860,24 @@ export async function discoverLocalWorkspace(cwd = process.cwd()) {
     )
   }, null, 2));
   return saved;
+}
+
+
+export async function showAssetSources(query = null) {
+  const result = query ? recommendAssetSources(query) : listAssetSources();
+  console.log(JSON.stringify(result, null, 2));
+  return result;
+}
+
+export async function checkAssetLicense(assetId, forBundling = false, cwd = process.cwd()) {
+  const asset = readLibrary(cwd).find(item => item.id === assetId);
+  if (!asset) {
+    console.error("Library item not found: " + assetId);
+    process.exitCode = 2;
+    return null;
+  }
+  const result = licenseGate(asset, { forBundling });
+  console.log(JSON.stringify({ asset_id: assetId, for_bundling: forBundling, ...result }, null, 2));
+  if (!result.allowed) process.exitCode = 2;
+  return result;
 }
