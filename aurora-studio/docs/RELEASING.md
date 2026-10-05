@@ -11,6 +11,7 @@ Public publishing is intentionally blocked until all of these are set:
 - final npm package/scope name
 - package `private: false`
 - `release.json.package_name`
+- one **exact published HyperFrames npm version** in `release.json.hyperframes_version`
 - `release.json.public_install_ready: true`
 
 Check:
@@ -56,8 +57,11 @@ For stronger control, npm also supports staged publishing with human approval.
 ## Normal release
 
 1. Bump package + release metadata to the same version.
-2. Update short New / Fixed notes.
-3. Verify:
+2. Resolve the exact HyperFrames npm version you intend to support (for example with `npm view hyperframes version` in a networked environment).
+3. Set that exact value in `release.json.hyperframes_version` — no `^`, `~`, wildcard, or broad `0.8` range.
+4. Run the real isolated HyperFrames install/CLI compatibility check.
+5. Update short New / Fixed notes.
+6. Verify:
 
 ```bash
 npm test
