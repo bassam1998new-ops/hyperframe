@@ -29,12 +29,37 @@ Use Blender when the result needs real 3D, not because 3D sounds impressive.
 - inspect framing, lighting, materials and motion
 - only spend final render time after the draft passes review
 - keep the final blend file when it is needed to reproduce the approved result
+- when Blender is producing an overlay for HyperFrames, render transparent RGBA PNG frames and pack them to VP9 alpha WebM
 
 ## CLI
     aurora-studio blender doctor
     aurora-studio blender create hero-avatar
-    aurora-studio blender run .aurora/blender/hero-avatar.json --dry-run
+    aurora-studio blender run .aurora/blender/hero-avatar.json
+    aurora-studio blender handoff "frames/f_%04d.png" renders/avatar.webm --quality premium --dry-run
     aurora-studio blender run .aurora/blender/hero-avatar.json
 
 ## Rule
 AurorA should use Blender's real Python API. Do not invent a second fake 3D scene language inside AurorA.
+
+
+## HyperFrames handoff
+For transparent 3D overlays:
+- Blender: film transparent ON
+- image format: PNG
+- color mode: RGBA
+- render frames
+- AurorA packs them to VP9 WebM with alpha
+
+Do not use transparent WebM when a normal opaque final render is simpler.
+
+## Arabic 3D text
+Blender does not reliably shape Arabic letters by itself.
+
+AurorA includes:
+`aurora-studio/blender/helpers/arabic_text.py`
+
+It uses optional Python packages:
+- `arabic-reshaper`
+- `python-bidi`
+
+Install those only when the job actually needs Arabic 3D text.
