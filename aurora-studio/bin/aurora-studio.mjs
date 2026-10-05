@@ -9,6 +9,9 @@ import {
   writeRunCheckpoint,
   checkBudget,
   reviewRender,
+  createRunReview,
+  showRunReview,
+  validateRunReview,
   finalizeProduction,
   setMode,
   showWorkspace,
@@ -348,7 +351,15 @@ switch (command) {
     await checkBudget(args[0], args[1] || 0);
     break;
   case "review":
-    await reviewRender(args[0]);
+    if (args[0] === "create") {
+      await createRunReview(args[1], flag("--video"));
+    } else if (args[0] === "show") {
+      await showRunReview(args[1]);
+    } else if (args[0] === "validate") {
+      await validateRunReview(args[1]);
+    } else {
+      await reviewRender(args[0]);
+    }
     break;
   case "finalize":
     await finalizeProduction(args[0], flag("--video"), flag("--lesson"));
@@ -469,6 +480,9 @@ Production:
   aurora-studio usage summary RUN_ID
   aurora-studio budget ESTIMATED_USD [SPENT_USD]
   aurora-studio review VIDEO_PATH
+  aurora-studio review create RUN_ID --video VIDEO_PATH
+  aurora-studio review show RUN_ID
+  aurora-studio review validate RUN_ID
   aurora-studio finalize RUN_ID --video APPROVED_VIDEO [--lesson TEXT]
 `);
     break;
