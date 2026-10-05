@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { readProject, readReference } from "./brain.mjs";
 import { searchLibrary } from "./library.mjs";
+import { availableProviders } from "./providers.mjs";
 
 function tokens(value) {
   return String(value || "")
@@ -84,6 +85,7 @@ export function retrieveContext({
       lessons,
       decisions
     },
+    resources: availableProviders(cwd),
     retrieval: {
       method: "structured_text_v1",
       embeddings_used: false
