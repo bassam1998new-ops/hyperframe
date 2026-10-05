@@ -8,6 +8,15 @@ import { createRequire } from "node:module";
 import { chooseRoute } from "./selector.mjs";
 import { createRun, loadRun, checkpoint, evaluateSpend, finalizeRun } from "./governance.mjs";
 import { probeRender } from "./quality.mjs";
+import { addLibraryItem, readLibrary, searchLibrary, summarizeLibrary } from "./library.mjs";
+import {
+  ensureProjectProfile,
+  readProject,
+  writeProject,
+  createReference,
+  readReference,
+  listReferences
+} from "./brain.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REGISTRY_PATH = path.resolve(HERE, "../knowledge/tools/registry.json");
@@ -151,6 +160,12 @@ export async function runSetup(cwd = process.cwd()) {
   };
 
   writeWorkspace(workspace, cwd);
+  ensureProjectProfile({
+    product: workspace.project.product,
+    purpose: workspace.project.purpose
+  }, cwd);
+  readLibrary(cwd);
+  fs.mkdirSync(path.join(dir, "references"), { recursive: true });
 
   for (const log of ["decisions.jsonl", "lessons.jsonl"]) {
     const file = path.join(dir, log);
@@ -328,6 +343,26 @@ export async function planProduction(taskText = "", cwd = process.cwd()) {
     budget
   });
 
+  const project = readProject(cwd);
+  const libraryMatches = searchLibrary(taskText, { limit: 8, approved_only: true }, cwd);
+  fs.writeFileSync(path.join(run.dir, "context.json"), JSON.stringify({
+    schema_version: 1,
+    captured_at: new Date().toISOString(),
+    project,
+    library_matches: libraryMatches.map(item => ({
+      id: item.id,
+      kind: item.kind,
+      name: item.name,
+      type: item.type,
+      path: item.path,
+      source_url: item.source_url,
+      license: item.license,
+      tools: item.tools,
+      quality_tier: item.quality_tier,
+      search_score: item.search_score
+    }))
+  }, null, 2) + "\n");
+
   const decisionPath = path.join(run.dir, "decisions.jsonl");
   fs.appendFileSync(decisionPath, JSON.stringify({
     timestamp: new Date().toISOString(),
@@ -344,7 +379,9 @@ export async function planProduction(taskText = "", cwd = process.cwd()) {
     score: decision.selected.score,
     confidence: decision.confidence,
     first_stage: "understand",
-    plan: path.join(run.dir, "plan.json")
+    plan: path.join(run.dir, "plan.json"),
+    context: path.join(run.dir, "context.json"),
+    library_matches: libraryMatches.slice(0, 3).map(x => ({ id: x.id, name: x.name, score: x.search_score }))
   }, null, 2));
   return run;
 }
@@ -455,4 +492,127 @@ export async function finalizeProduction(runId, lesson = null, cwd = process.cwd
     process.exitCode = 2;
     return null;
   }
+}
+
+
+function parseValue(value) {
+  if (value === undefined) return "";
+  const trimmed = String(value).trim();
+  if (!trimmed) return "";
+  if (
+    (trimmed.startsWith("[") && trimmed.endsWith("]")) ||
+    (trimmed.startsWith("{") && trimmed.endsWith("}")) ||
+    trimmed === "true" ||
+    trimmed === "false" ||
+    trimmed === "null" ||
+    /^-?\d+(\.\d+)?$/.test(trimmed)
+  ) {
+    try { return JSON.parse(trimmed); } catch {}
+  }
+  return value;
+}
+
+function setDeep(target, dottedKey, value) {
+  const parts = String(dottedKey || "").split(".").filter(Boolean);
+  if (!parts.length) throw new Error("Project field is required.");
+  let cursor = target;
+  for (const part of parts.slice(0, -1)) {
+    if (!cursor[part] || typeof cursor[part] !== "object" || Array.isArray(cursor[part])) cursor[part] = {};
+    cursor = cursor[part];
+  }
+  cursor[parts.at(-1)] = value;
+}
+
+export async function showProject(cwd = process.cwd()) {
+  const project = readProject(cwd);
+  if (!project) {
+    console.error("Project profile not found. Run: aurora-studio setup");
+    process.exitCode = 2;
+    return null;
+  }
+  console.log(JSON.stringify(project, null, 2));
+  return project;
+}
+
+export async function setProjectValue(key, rawValue, cwd = process.cwd()) {
+  const project = readProject(cwd);
+  if (!project) {
+    console.error("Project profile not found. Run: aurora-studio setup");
+    process.exitCode = 2;
+    return null;
+  }
+  try {
+    setDeep(project, key, parseValue(rawValue));
+    writeProject(project, cwd);
+    console.log(JSON.stringify({ updated: key, value: parseValue(rawValue) }, null, 2));
+    return project;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function createReferenceRecord(name, source = null, cwd = process.cwd()) {
+  try {
+    const result = createReference(name, source, cwd);
+    console.log(JSON.stringify({
+      id: result.reference.id,
+      file: result.file,
+      next: "Agent should fill analysis + adaptation using REFERENCE-ANALYSIS.md."
+    }, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function showReferenceRecord(idOrPath, cwd = process.cwd()) {
+  try {
+    const result = readReference(idOrPath, cwd);
+    console.log(JSON.stringify(result.reference, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function listReferenceRecords(cwd = process.cwd()) {
+  const items = listReferences(cwd);
+  console.log(JSON.stringify(items, null, 2));
+  return items;
+}
+
+export async function addLibraryRecord(input, cwd = process.cwd()) {
+  try {
+    const item = addLibraryItem(input, cwd);
+    console.log(JSON.stringify(item, null, 2));
+    return item;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function searchLibraryRecords(query, options = {}, cwd = process.cwd()) {
+  const items = searchLibrary(query, options, cwd);
+  console.log(JSON.stringify(items, null, 2));
+  return items;
+}
+
+export async function listLibraryRecords(cwd = process.cwd()) {
+  const items = readLibrary(cwd);
+  console.log(JSON.stringify(items, null, 2));
+  return items;
+}
+
+export async function libraryStats(cwd = process.cwd()) {
+  const stats = summarizeLibrary(cwd);
+  console.log(JSON.stringify(stats, null, 2));
+  return stats;
 }
