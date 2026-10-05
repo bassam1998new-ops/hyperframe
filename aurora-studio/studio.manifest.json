@@ -12,7 +12,14 @@
   "tools": {
     "hyperframe": { "required": true },
     "blender": { "required": false },
-    "after_effects": { "required": false },
-    "open_montage": { "required": false, "integration": "external" }
+    "after_effects": { "required": false }
+  },
+  "integrations": {
+    "obsidian": { "required": false, "role": "knowledge_ui" }
+  },
+  "hooks": {
+    "preflight": true,
+    "post_approval": true,
+    "post_update": true
   }
 }
