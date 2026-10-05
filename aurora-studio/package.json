@@ -47,6 +47,7 @@
     "prompts",
     "blender",
     "README.md",
+    "CHANGELOG.md",
     "release.json",
     "studio.manifest.json",
     "LICENSE"
