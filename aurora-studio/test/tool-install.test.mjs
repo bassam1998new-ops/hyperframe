@@ -34,8 +34,8 @@ test("HyperFrames install plan does not modify project package.json", () => {
 
   const plan = hyperframesInstallPlan(cwd);
 
-  assert.ok(plan.args.includes("--prefix"));
-  assert.ok(plan.args.includes(`hyperframes@${HYPERFRAMES_RANGE}`));
+  assert.ok(plan.npm_args.includes("--prefix"));
+  assert.ok(plan.npm_args.includes(`hyperframes@${HYPERFRAMES_RANGE}`));
   assert.equal(
     JSON.parse(fs.readFileSync(path.join(cwd, "package.json"), "utf8")).name,
     "user-project"
@@ -77,4 +77,36 @@ test("workspace HyperFrames wrapper can dry-run the isolated binary", () => {
   assert.equal(result.dry_run, true);
   assert.equal(result.source, "aurora_workspace");
   assert.deepEqual(result.args, ["upgrade", "--check", "--json"]);
+});
+
+
+test("configured FFmpeg directory is forwarded to HyperFrames child PATH", () => {
+  const cwd = temp();
+  const binary = hyperframesBin(cwd);
+  fs.mkdirSync(path.dirname(binary), { recursive: true });
+  fs.writeFileSync(binary, "");
+
+  const ffmpeg = path.join(cwd, process.platform === "win32" ? "ffmpeg.exe" : "ffmpeg");
+  fs.writeFileSync(ffmpeg, "");
+
+  const previous = process.env.AURORA_FFMPEG_PATH;
+  process.env.AURORA_FFMPEG_PATH = ffmpeg;
+
+  let captured = null;
+  try {
+    const result = runWorkspaceHyperframes(["doctor"], {
+      cwd,
+      spawnImpl: (_exe, _args, options) => {
+        captured = options;
+        return { status: 0, stdout: "ok", stderr: "" };
+      }
+    });
+    assert.equal(result.ok, true);
+  } finally {
+    if (previous === undefined) delete process.env.AURORA_FFMPEG_PATH;
+    else process.env.AURORA_FFMPEG_PATH = previous;
+  }
+
+  assert.ok(captured);
+  assert.ok(String(captured.env.PATH).startsWith(path.dirname(ffmpeg)));
 });
