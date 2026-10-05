@@ -65,7 +65,16 @@ test("portable copied CLI launches from the workspace snapshot", () => {
 
   assert.equal(run.status, 0, run.stderr);
   assert.match(run.stdout, /AurorA Studio/);
-  assert.match(run.stdout, /Production:/);
+  assert.match(run.stdout, /Quick start:/);
+  assert.doesNotMatch(run.stdout, /asset-plan/);
+
+  const advanced = spawnSync(process.execPath, [cli, "help", "--all"], {
+    cwd,
+    encoding: "utf8"
+  });
+  assert.equal(advanced.status, 0, advanced.stderr);
+  assert.match(advanced.stdout, /advanced commands/);
+  assert.match(advanced.stdout, /Production:/);
 });
 
 test("sync from portable runtime source would be a no-op boundary", () => {
