@@ -33,6 +33,7 @@ export function ensureProjectProfile(seed = {}, cwd = process.cwd()) {
     project_id: slug(seed.product || path.basename(cwd)),
     product: seed.product || "",
     purpose: seed.purpose || "",
+    website: seed.website || "",
     audience: [],
     offer: "",
     positioning: "",
