@@ -136,8 +136,49 @@ export function validateReviewReport(report) {
     errors.push("PASS review must have status=completed.");
   }
 
-  if (report.decision === "PASS" && (report.issues || []).length > 0) {
-    warnings.push("PASS review still contains issues; confirm they are informational only.");
+  if (report.decision === "PASS") {
+    const requiredPassChecks = [
+      "project_fit",
+      "story_clarity",
+      "motion_intentional",
+      "typography",
+      "camera_crop_safe_zones",
+      "audio",
+      "ai_slop_free"
+    ];
+
+    const failedRequired = requiredPassChecks.filter(
+      key => report.creative?.[key] !== true
+    );
+
+    if (failedRequired.length) {
+      errors.push(
+        "PASS review requires these creative checks to be true: " +
+        failedRequired.join(", ")
+      );
+    }
+
+    const optionalChecks = [
+      "reference_fit",
+      "captions",
+      "arabic",
+      "three_d_vfx_quality"
+    ];
+
+    const failedOptional = optionalChecks.filter(
+      key => report.creative?.[key] === false
+    );
+
+    if (failedOptional.length) {
+      errors.push(
+        "PASS review has failing applicable checks: " +
+        failedOptional.join(", ")
+      );
+    }
+
+    if ((report.issues || []).length > 0) {
+      errors.push("PASS review cannot contain unresolved issues; use creative.notes for informational notes.");
+    }
   }
 
   return {
