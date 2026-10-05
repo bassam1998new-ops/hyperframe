@@ -57,6 +57,33 @@ function syncClaudeSkills(cwd) {
   return installed;
 }
 
+function syncCodexSkills(cwd) {
+  const targetRoot = path.join(cwd, ".agents", "skills");
+  fs.mkdirSync(targetRoot, { recursive: true });
+  const installed = [];
+
+  for (const name of ownedSkillNames()) {
+    const source = path.join(SOURCE_AGENT_SKILLS, name);
+    const target = path.join(targetRoot, name);
+    fs.rmSync(target, { recursive: true, force: true });
+    fs.cpSync(source, target, { recursive: true });
+    installed.push(target);
+  }
+
+  return installed;
+}
+
+function removeCodexSkills(cwd) {
+  const removed = [];
+  for (const name of ownedSkillNames()) {
+    const target = path.join(cwd, ".agents", "skills", name);
+    if (!fs.existsSync(target)) continue;
+    fs.rmSync(target, { recursive: true, force: true });
+    removed.push(target);
+  }
+  return removed;
+}
+
 function removeClaudeSkills(cwd) {
   const removed = [];
   for (const name of ownedSkillNames()) {
@@ -94,6 +121,7 @@ export function installAgentInstructions(target = "all", cwd = process.cwd()) {
       "For video, motion, 3D, creative-asset, or reference-driven video work, read .aurora/AGENT.md before acting. Keep normal coding tasks unaffected.",
       END
     ].join("\n")));
+    native_skills.push(...syncCodexSkills(cwd));
   }
 
   return { guide, files, native_skills };
@@ -109,10 +137,14 @@ export function removeAgentInstructions(target = "all", cwd = process.cwd()) {
   if (target === "all" || target === "codex") files.push(path.join(cwd, "AGENTS.md"));
 
   const changed = [];
-  const native_skills_removed =
-    target === "all" || target === "claude"
+  const native_skills_removed = [
+    ...(target === "all" || target === "claude"
       ? removeClaudeSkills(cwd)
-      : [];
+      : []),
+    ...(target === "all" || target === "codex"
+      ? removeCodexSkills(cwd)
+      : [])
+  ];
 
   for (const file of files) {
     if (!fs.existsSync(file)) continue;
