@@ -32,6 +32,11 @@ import { installAgentHooks, removeAgentHooks } from "./hook-install.mjs";
 import { saveDiscovery } from "./discovery.mjs";
 import { createMood, readMood, validateMoodFile } from "./mood.mjs";
 import {
+  createBuildPlan,
+  readBuildPlan,
+  validateBuildPlanFile
+} from "./build-plan.mjs";
+import {
   createAssetPlan,
   readAssetPlan,
   validateAssetPlanFile,
@@ -597,6 +602,7 @@ export async function routeProductionRun(runId, cwd = process.cwd()) {
     }
 
     const routed = setRunRoute({ cwd, runId, routeDecision: decision });
+    const buildPlanRecord = createBuildPlan(runId, cwd);
     const decisionPath = path.join(run.dir, "decisions.jsonl");
     fs.appendFileSync(decisionPath, JSON.stringify({
       timestamp: new Date().toISOString(),
@@ -618,6 +624,7 @@ export async function routeProductionRun(runId, cwd = process.cwd()) {
       experience_used: decision.experience_used || 0,
       experience_adjusted: Boolean(decision.experience_adjusted),
       asset_plan: assetPlanRecord.file,
+      build_plan: buildPlanRecord.file,
       selected_assets: selectedAssets.map(item => ({
         id: item.id,
         name: item.name,
@@ -656,6 +663,13 @@ export async function showRunStatus(runId, cwd = process.cwd()) {
 
 export async function writeRunCheckpoint(runId, stage, status, options = {}, cwd = process.cwd()) {
   try {
+    if (stage === "build_plan" && status === "completed") {
+      const validation = validateBuildPlanFile(runId, cwd);
+      if (!validation.ok) {
+        throw new Error("Build plan is invalid: " + validation.errors.join("; "));
+      }
+    }
+
     const state = checkpoint({
       cwd,
       runId,
@@ -1345,6 +1359,45 @@ export async function showAssetPlanRecord(runId, cwd = process.cwd()) {
 export async function validateAssetPlanRecord(runId, cwd = process.cwd()) {
   try {
     const result = validateAssetPlanFile(runId, cwd);
+    console.log(JSON.stringify(result, null, 2));
+    if (!result.ok) process.exitCode = 2;
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+
+export async function createBuildPlanRecord(runId, cwd = process.cwd()) {
+  try {
+    const result = createBuildPlan(runId, cwd);
+    console.log(JSON.stringify({ file: result.file, created: result.created, plan: result.plan }, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function showBuildPlanRecord(runId, cwd = process.cwd()) {
+  try {
+    const result = readBuildPlan(runId, cwd);
+    if (!result) throw new Error("Build plan file not found.");
+    console.log(JSON.stringify(result.plan, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function validateBuildPlanRecord(runId, cwd = process.cwd()) {
+  try {
+    const result = validateBuildPlanFile(runId, cwd);
     console.log(JSON.stringify(result, null, 2));
     if (!result.ok) process.exitCode = 2;
     return result;
