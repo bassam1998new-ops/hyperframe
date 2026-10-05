@@ -85,6 +85,7 @@ for (const file of files) {
 const required = [
   "LICENSE",
   "README.md",
+  "CHANGELOG.md",
   "bin/aurora-studio.mjs",
   "release.json",
   "studio.manifest.json",
