@@ -7,15 +7,16 @@ Configure the workspace once without making paid services mandatory.
 
 ## Steps
 1. Run `aurora-studio doctor`.
-2. If `.aurora/workspace.json` does not exist, run `aurora-studio setup`.
-3. Ask the owner once about:
+2. Read `PROJECT-CONTEXT.md` and enrich the project profile from local/site evidence before asking extra onboarding questions.
+3. If `.aurora/workspace.json` does not exist, run `aurora-studio setup`.
+4. Ask the owner once about:
    - product/service
    - main video purpose
    - default mode: direct or director
    - optional browser/resources they already have access to
-4. Never ask for passwords, cookies, tokens, or account secrets inside workspace files.
-5. Re-detect local tools and integrations.
-6. Save capability status. The router must not select unavailable tools.
+5. Never ask for passwords, cookies, tokens, or account secrets inside workspace files.
+6. Re-detect local tools and integrations.
+7. Save capability status. The router must not select unavailable tools.
 
 ## Production tools
 - HyperFrames: core programmable motion/video engine.
