@@ -111,3 +111,20 @@ test("finalize requires review and owner approval", () => {
     /owner approval is not recorded/
   );
 });
+
+
+test("agent cannot complete build before build_plan stage", () => {
+  const cwd = temp();
+  const run = createRun({ cwd, task: "test", mode: "direct", routeDecision: null });
+
+  checkpoint({ cwd, runId: run.id, stage: "understand", status: "completed" });
+  checkpoint({ cwd, runId: run.id, stage: "concept", status: "skipped" });
+  checkpoint({ cwd, runId: run.id, stage: "mood", status: "skipped" });
+  checkpoint({ cwd, runId: run.id, stage: "assets", status: "completed" });
+  setRunRoute({ cwd, runId: run.id, routeDecision });
+
+  assert.throws(
+    () => checkpoint({ cwd, runId: run.id, stage: "build", status: "completed" }),
+    /earlier stages not complete/
+  );
+});
