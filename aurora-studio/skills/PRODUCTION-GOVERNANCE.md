@@ -131,9 +131,27 @@ Valid useful states:
 
 Never mark a human-gated stage complete without `--approved`.
 
-## Budget
-Before paid generation:
-`aurora-studio budget ESTIMATED_USD SPENT_USD`
+## Budget / provider usage
+Before paid or credit-based generation, inspect the live provider cost.
+
+Prefer the run-aware ledger:
+
+```bash
+aurora-studio usage check RUN_ID --provider PROVIDER --operation OP --quantity N --unit credits [--usd USD]
+```
+
+After the action:
+
+```bash
+aurora-studio usage record RUN_ID --phase actual --provider PROVIDER --operation OP --quantity N --unit credits [--usd USD]
+```
+
+Summary:
+`aurora-studio usage summary RUN_ID`
+
+Credits remain provider-specific. USD caps only use real USD values.
+
+The older `aurora-studio budget` command remains available for simple manual USD checks.
 
 Do not bypass a block or owner-approval result.
 
