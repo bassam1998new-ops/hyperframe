@@ -355,9 +355,38 @@ switch (command) {
     break;
 
   case "help":
-  default:
-    console.log(`
+  default: {
+    const advanced = args.includes("--all");
+
+    if (!advanced) {
+      if (command !== "help") {
+        console.error(`Unknown command: ${command}\n`);
+      }
+
+      console.log(`
 AurorA Studio
+
+Quick start:
+  aurora-studio setup
+  aurora-studio doctor
+  aurora-studio mode direct|director
+  aurora-studio status RUN_ID
+  aurora-studio update check
+
+Normal workflow:
+  Tell Claude, Codex, or your connected agent what video you want.
+  AurorA handles the internal production commands for you.
+
+Need every command?
+  aurora-studio help --all
+
+UI comes later. .aurora/ is the workspace source of truth.
+`);
+      break;
+    }
+
+    console.log(`
+AurorA Studio — advanced commands
 
 Setup:
   aurora-studio setup
@@ -441,7 +470,7 @@ Production:
   aurora-studio budget ESTIMATED_USD [SPENT_USD]
   aurora-studio review VIDEO_PATH
   aurora-studio finalize RUN_ID --video APPROVED_VIDEO [--lesson TEXT]
-
-UI comes later. .aurora/ is the workspace source of truth.
 `);
+    break;
+  }
 }
