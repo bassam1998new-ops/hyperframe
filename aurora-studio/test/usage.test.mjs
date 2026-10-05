@@ -95,3 +95,35 @@ test("missing USD estimate never invents a conversion", () => {
   assert.equal(check.action, "verify_live_cost_and_record");
   assert.equal(check.reason, "usd_estimate_not_provided");
 });
+
+
+test("summary keeps estimates separate from actuals", () => {
+  const cwd = temp();
+  const run = createRun({ cwd, task: "test", mode: "direct", routeDecision: null });
+
+  recordUsage({
+    run_id: run.id,
+    phase: "estimate",
+    provider: "google_flow",
+    operation: "video_generation",
+    quantity: 6,
+    unit: "credits",
+    usd: 0.25
+  }, cwd);
+
+  recordUsage({
+    run_id: run.id,
+    phase: "actual",
+    provider: "google_flow",
+    operation: "video_generation",
+    quantity: 5,
+    unit: "credits",
+    usd: 0.2
+  }, cwd);
+
+  const summary = summarizeUsage(run.id, cwd);
+  assert.equal(summary.estimated_units.google_flow.credits, 6);
+  assert.equal(summary.actual_units.google_flow.credits, 5);
+  assert.equal(summary.estimated_usd, 0.25);
+  assert.equal(summary.actual_usd, 0.2);
+});
