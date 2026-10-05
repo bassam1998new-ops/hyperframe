@@ -1,0 +1,9 @@
+{
+  "id": "after_effects",
+  "role": "optional-compositing-vfx-finishing",
+  "license": "proprietary",
+  "optional_paid": true,
+  "strengths": ["compositing", "vfx", "tracking", "layered-finishing", "motion-graphics", "plugin-ecosystem"],
+  "avoid_when": ["required-open-source-only", "simple-2d-that-hyperframes-can-do-faster", "true-3d-modeling"],
+  "routing_note": "Never require AE for the open-source default path. Use only when installed/enabled and it materially improves the result."
+}
