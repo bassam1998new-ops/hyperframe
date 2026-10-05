@@ -30,3 +30,13 @@ test("true 3D refuses weak fallback if Blender is unavailable", () => {
   });
   assert.equal(r.selected, null);
 });
+
+test("reference analysis can require true 3D even when prompt is vague", () => {
+  const r = chooseRoute(
+    "make this reference for my product",
+    { hyperframe: true, blender: true, after_effects: false },
+    { true3d: true }
+  );
+  assert.ok(r.selected);
+  assert.equal(r.selected.route[0], "blender");
+});
