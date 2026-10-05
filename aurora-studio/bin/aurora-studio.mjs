@@ -28,7 +28,10 @@ import {
   showAfterEffectsInfo,
   createAfterEffectsJobRecord,
   executeAfterEffectsJob,
-  showRetrievedContext
+  showRetrievedContext,
+  validateStudio,
+  showObsidianInfo,
+  searchObsidianKnowledge
 } from "../src/studio.mjs";
 
 const [command = "help", ...args] = process.argv.slice(2);
@@ -53,6 +56,9 @@ switch (command) {
     break;
   case "doctor":
     await runDoctor();
+    break;
+  case "validate":
+    await validateStudio();
     break;
   case "tools":
     await printTools();
@@ -120,6 +126,12 @@ switch (command) {
     else console.error("library commands: add | search | import-hyperframe | list | stats");
     break;
 
+  case "obsidian":
+    if (args[0] === "doctor") await showObsidianInfo();
+    else if (args[0] === "search") await searchObsidianKnowledge(args.slice(1).filter(x => x !== "--vault" && x !== flag("--vault")).join(" "), flag("--vault"));
+    else console.error("obsidian commands: doctor | search QUERY [--vault NAME]");
+    break;
+
   case "blender":
     if (args[0] === "doctor") await showBlenderInfo();
     else if (args[0] === "create") await createBlenderJobRecord(args[1]);
@@ -178,6 +190,7 @@ AurorA Studio
 Setup:
   aurora-studio setup
   aurora-studio doctor
+  aurora-studio validate
   aurora-studio tools
   aurora-studio mode direct|director
   aurora-studio workspace
@@ -194,6 +207,10 @@ Brain:
   aurora-studio library import-hyperframe [--root PATH]
   aurora-studio library list
   aurora-studio library stats
+
+Obsidian (optional):
+  aurora-studio obsidian doctor
+  aurora-studio obsidian search "QUERY" [--vault NAME]
 
 Blender:
   aurora-studio blender doctor
