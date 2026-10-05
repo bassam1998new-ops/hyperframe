@@ -43,3 +43,32 @@ test("writeDiscovery persists a bounded report", () => {
   assert.ok(fs.existsSync(result.file));
   assert.equal(result.discovery.counts.document, 1);
 });
+
+
+test("scans only explicitly supplied external roots", async () => {
+  const cwd = temp();
+  const approved = temp();
+  const unapproved = temp();
+
+  fs.writeFileSync(path.join(approved, "approved-logo.png"), "");
+  fs.writeFileSync(path.join(unapproved, "secret-logo.png"), "");
+
+  const { saveDiscovery } = await import("../src/discovery.mjs");
+  const saved = saveDiscovery(cwd, { extraRoots: [approved] });
+
+  assert.equal(saved.result.external_roots.length, 1);
+  assert.equal(saved.result.external_roots[0].available, true);
+  assert.ok(saved.result.external_roots[0].by_kind.image.includes("approved-logo.png"));
+  assert.equal(JSON.stringify(saved.result).includes(unapproved), false);
+});
+
+test("missing approved external root is reported, not guessed", async () => {
+  const cwd = temp();
+  const missing = path.join(cwd, "does-not-exist");
+
+  const { saveDiscovery } = await import("../src/discovery.mjs");
+  const saved = saveDiscovery(cwd, { extraRoots: [missing] });
+
+  assert.equal(saved.result.external_roots[0].available, false);
+  assert.equal(saved.result.external_roots[0].error, "not_found");
+});
