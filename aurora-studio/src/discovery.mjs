@@ -147,6 +147,57 @@ export const scanWorkspace = discoverWorkspace;
 
 export function saveDiscovery(cwd = process.cwd(), options = {}) {
   const result = discoverWorkspace(cwd, options);
+  const extraRoots = Array.isArray(options.extraRoots) ? options.extraRoots : [];
+
+  result.external_roots = extraRoots
+    .map(value => String(value || "").trim())
+    .filter(Boolean)
+    .map(value => {
+      const root = path.isAbsolute(value) ? path.normalize(value) : path.resolve(cwd, value);
+
+      if (!fs.existsSync(root)) {
+        return {
+          root,
+          available: false,
+          error: "not_found"
+        };
+      }
+
+      let stat;
+      try { stat = fs.statSync(root); } catch {
+        return {
+          root,
+          available: false,
+          error: "unreadable"
+        };
+      }
+
+      if (!stat.isDirectory()) {
+        return {
+          root,
+          available: false,
+          error: "not_a_directory"
+        };
+      }
+
+      const external = discoverWorkspace(root, {
+        maxDepth: Math.min(Number(options.maxDepth ?? 5), 4),
+        maxFiles: Math.min(Number(options.maxFiles ?? 5000), 3000),
+        samplesPerKind: options.samplesPerKind
+      });
+
+      return {
+        root,
+        available: true,
+        scanned_files: external.scanned_files,
+        matched_files: external.matched_files,
+        truncated: external.truncated,
+        counts: external.counts,
+        by_kind: external.by_kind,
+        samples: external.samples
+      };
+    });
+
   const aurora = path.join(cwd, ".aurora");
   fs.mkdirSync(aurora, { recursive: true });
   const file = path.join(aurora, "discovery.json");
