@@ -2,36 +2,71 @@
 
 Do not approve a video just because it rendered.
 
+Every final render gets a structured run review:
+
+`.aurora/runs/<run>/review.json`
+
+Create/refresh it with:
+
+```bash
+aurora-studio review create RUN_ID --video path/to/render.mp4
+```
+
+The command performs the technical probe first. Then the agent fills the creative/assets review.
+
 ## Technical
 - output exists and has a valid video stream
-- expected duration/aspect/resolution
-- no broken/black sections
-- fonts/assets resolved
-- audio exists when required
-- no obvious clipping or broken sync
+- valid duration
+- expected aspect/resolution
+- no known broken render
+- audio/video metadata available when ffprobe is installed
 
 ## Creative
-- reference grammar is understood, not blindly copied
-- result fits the current product/service
-- hook/story is clear
-- motion has purpose
-- no repeated generic AI patterns
-- typography hierarchy is clear
-- captions are timed/readable
-- Arabic shapes/reads correctly when used
-- camera/crop/safe zones are intentional
-- sound supports the edit
-- 3D/compositing quality matches the requested tier
+Set explicit pass/fail booleans where relevant:
+
+- project_fit
+- story_clarity
+- motion_intentional
+- typography
+- camera_crop_safe_zones
+- audio
+- ai_slop_free
+
+Optional when relevant:
+- reference_fit
+- captions
+- arabic
+- three_d_vfx_quality
+
+Add concise notes/issues.
 
 ## Assets
-- imported asset source/license is known
-- no watermark/unapproved branded material
-- paid/generated asset settings are logged when important
+Before PASS:
+- `licenses_ok: true`
+- `watermark_free: true`
+
+If either is uncertain, do not PASS.
 
 ## Decision
-Return:
-- PASS
-- FIX
-- REBUILD
+Use exactly one:
+
+- **PASS** — ready for owner approval
+- **FIX** — direction is right but needs correction
+- **REBUILD** — current approach cannot reach the target
+- **PENDING** — review not finished
+
+Validate:
+
+```bash
+aurora-studio review validate RUN_ID
+```
+
+Only a completed **PASS** report can complete the `post_render_review` checkpoint.
+
+For FIX/REBUILD:
+- record the problem
+- return to the relevant build stage
+- render again
+- refresh review.json
 
 Do not hide problems to reach PASS.
