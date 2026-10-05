@@ -5,7 +5,7 @@ import readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
-import { chooseRoute } from "./selector.mjs";
+import { chooseRoute, applyExperiencePrior } from "./selector.mjs";
 import { createRun, loadRun, checkpoint, evaluateSpend, finalizeRun, setRunRoute } from "./governance.mjs";
 import { probeRender } from "./quality.mjs";
 import { addLibraryItem, readLibrary, searchLibrary, summarizeLibrary } from "./library.mjs";
@@ -584,7 +584,11 @@ export async function routeProductionRun(runId, cwd = process.cwd()) {
     };
 
     const availability = Object.fromEntries(preflight.tools.map(tool => [tool.id, tool.available]));
-    const decision = chooseRoute(routeEvidence || run.plan.task, availability, mergedRequirements);
+    const baseDecision = chooseRoute(routeEvidence || run.plan.task, availability, mergedRequirements);
+    const decision = applyExperiencePrior(
+      baseDecision,
+      context.experience?.decisions || []
+    );
 
     if (!decision.selected) {
       console.error("No safe production route after context/mood/assets. Change the approach or add the missing capability.");
@@ -600,6 +604,8 @@ export async function routeProductionRun(runId, cwd = process.cwd()) {
       selected: decision.selected,
       alternatives: decision.candidates.slice(1, 4),
       confidence: decision.confidence,
+      experience_used: decision.experience_used || 0,
+      experience_adjusted: Boolean(decision.experience_adjusted),
       evidence_stage: "after_mood_and_assets"
     }) + "\n");
 
@@ -609,6 +615,8 @@ export async function routeProductionRun(runId, cwd = process.cwd()) {
       score: routed.plan.route_score,
       confidence: routed.plan.route_confidence,
       alternatives: routed.plan.alternatives,
+      experience_used: decision.experience_used || 0,
+      experience_adjusted: Boolean(decision.experience_adjusted),
       asset_plan: assetPlanRecord.file,
       selected_assets: selectedAssets.map(item => ({
         id: item.id,
@@ -710,9 +718,13 @@ export async function finalizeProduction(runId, lesson = null, cwd = process.cwd
       timestamp: new Date().toISOString(),
       run_id: runId,
       task_type: "video_production",
+      task: result.run.plan.task,
       route: result.run.plan.route,
       approved: true,
-      mode: result.run.plan.mode
+      mode: result.run.plan.mode,
+      quality_score: learning?.review?.outcome?.quality_score ?? null,
+      revisions: learning?.review?.outcome?.revisions ?? null,
+      reviewer_result: learning?.review?.outcome?.reviewer_result ?? null
     }) + "\n");
 
     let lessonsSaved = 0;
