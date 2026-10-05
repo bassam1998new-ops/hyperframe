@@ -3,66 +3,58 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+
 import { writeConfiguredWorkspace } from "../src/configured-setup.mjs";
-import { hyperframesBin } from "../src/tool-install.mjs";
 import {
   planProduction,
-  writeRunCheckpoint,
-  routeProductionRun
+  routeProductionRun,
+  writeRunCheckpoint
 } from "../src/studio.mjs";
-import { readMood, validateMoodFile } from "../src/mood.mjs";
-import {
-  readAssetPlan,
-  validateAssetPlanFile
-} from "../src/asset-plan.mjs";
-import { readBuildPlan } from "../src/build-plan.mjs";
+import { hyperframesBin } from "../src/tool-install.mjs";
+import { validateMoodFile } from "../src/mood.mjs";
+import { validateAssetPlanFile } from "../src/asset-plan.mjs";
+import { validateBuildPlanFile } from "../src/build-plan.mjs";
 import { loadRun } from "../src/governance.mjs";
 
 function temp() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "aurora-director-e2e-"));
 }
 
-test("fresh configured Director workspace enforces concept and mood before routing", async () => {
-  const cwd = temp();
-
-  writeConfiguredWorkspace({
-    product: "Demo Product",
-    purpose: "premium launch videos",
-    mode: "director",
-    agents: "none",
-    install_hyperframes: false,
-    resources: {}
-  }, { cwd });
-
+function fakeRuntime(cwd) {
   const hf = hyperframesBin(cwd);
   fs.mkdirSync(path.dirname(hf), { recursive: true });
-  fs.writeFileSync(
-    hf,
-    process.platform === "win32"
-      ? "@echo off\r\nexit /b 0\r\n"
-      : "#!/bin/sh\nexit 0\n"
-  );
+  fs.writeFileSync(hf, "");
 
-  const fakeFfmpeg = path.join(
+  const ffmpeg = path.join(
     cwd,
     process.platform === "win32" ? "ffmpeg.exe" : "ffmpeg"
   );
-  fs.writeFileSync(fakeFfmpeg, "");
+  fs.writeFileSync(ffmpeg, "");
+  return { ffmpeg };
+}
 
-  const oldFfmpeg = process.env.AURORA_FFMPEG_PATH;
-  process.env.AURORA_FFMPEG_PATH = fakeFfmpeg;
+test("fresh Director workspace enforces concept and mood before routing", async () => {
+  const cwd = temp();
+  const { ffmpeg } = fakeRuntime(cwd);
+  const previousFfmpeg = process.env.AURORA_FFMPEG_PATH;
+  process.env.AURORA_FFMPEG_PATH = ffmpeg;
 
   try {
+    writeConfiguredWorkspace({
+      product: "Demo Product",
+      purpose: "premium launch videos",
+      mode: "director",
+      agents: "none",
+      install_hyperframes: false
+    }, { cwd });
+
     const run = await planProduction(
-      "premium launch video with strong kinetic typography and product UI",
+      "Create a premium product launch film with kinetic type",
       {},
       cwd
     );
 
-    assert.ok(run?.id);
-
-    const mood = readMood(run.id, cwd);
-    assert.ok(mood, "Director mode should create mood.json at run start");
+    assert.ok(run);
 
     await writeRunCheckpoint(run.id, "understand", "completed", {}, cwd);
 
@@ -70,56 +62,54 @@ test("fresh configured Director workspace enforces concept and mood before routi
       run.id,
       "concept",
       "completed",
-      { note: "Owner selected concept A", humanApproved: true },
+      { humanApproved: true, note: "Owner picked concept A" },
       cwd
     );
 
-    mood.mood.intent.one_sentence =
-      "Begin restrained and precise, then build into a confident product reveal.";
-    mood.mood.intent.audience_should_feel = ["curious", "confident"];
-    mood.mood.intent.product_truth_to_protect = ["clear product UI"];
-    mood.mood.arc = [
+    const moodFile = path.join(run.dir, "mood.json");
+    const mood = JSON.parse(fs.readFileSync(moodFile, "utf8"));
+    mood.intent.one_sentence = "Quiet confidence builds into a precise product reveal.";
+    mood.intent.audience_should_feel = ["curious", "confident"];
+    mood.intent.product_truth_to_protect = ["clarity", "premium simplicity"];
+    mood.arc = [
       {
-        phase: "setup",
-        range: [0, 0.45],
-        feeling: "controlled curiosity",
+        phase: "open",
+        range: [0, 0.4],
+        feeling: "curious",
         energy: 3,
         tension: 2
       },
       {
         phase: "reveal",
-        range: [0.45, 1],
-        feeling: "clear confidence",
+        range: [0.4, 1],
+        feeling: "confident",
         energy: 7,
         tension: 4
       }
     ];
-    mood.mood.visual.typography = ["large clean kinetic type"];
-    mood.mood.motion.graphic_motion = ["precise type transitions"];
-    mood.mood.continuity_anchors = ["single typography family"];
-    mood.mood.must_not_happen = ["no random 3D decoration"];
-    mood.mood.updated_at = new Date().toISOString();
+    mood.continuity_anchors = [
+      "single restrained camera language",
+      "consistent type hierarchy"
+    ];
+    mood.must_not_happen = ["no random 3D", "no noisy transitions"];
+    fs.writeFileSync(moodFile, JSON.stringify(mood, null, 2) + "\n");
 
-    fs.writeFileSync(mood.file, JSON.stringify(mood.mood, null, 2) + "\n");
-
-    const moodValidation = validateMoodFile(run.id, cwd);
-    assert.equal(moodValidation.ok, true);
+    assert.equal(validateMoodFile(run.id, cwd).ok, true);
 
     await writeRunCheckpoint(
       run.id,
       "mood",
       "completed",
-      { artifact: mood.file },
+      { artifact: moodFile },
       cwd
     );
 
-    const asset = readAssetPlan(run.id, cwd);
-    asset.plan.status = "completed";
-    asset.plan.summary =
-      "Product UI and typography are procedural; no external assets are required.";
-    asset.plan.needs = [];
-    asset.plan.updated_at = new Date().toISOString();
-    fs.writeFileSync(asset.file, JSON.stringify(asset.plan, null, 2) + "\n");
+    const assetPlanFile = path.join(run.dir, "asset-plan.json");
+    const assetPlan = JSON.parse(fs.readFileSync(assetPlanFile, "utf8"));
+    assetPlan.status = "completed";
+    assetPlan.summary = "No external visual assets required for this typography-led concept.";
+    assetPlan.needs = [];
+    fs.writeFileSync(assetPlanFile, JSON.stringify(assetPlan, null, 2) + "\n");
 
     assert.equal(validateAssetPlanFile(run.id, cwd).ok, true);
 
@@ -127,7 +117,7 @@ test("fresh configured Director workspace enforces concept and mood before routi
       run.id,
       "assets",
       "completed",
-      { artifact: asset.file },
+      { artifact: assetPlanFile },
       cwd
     );
 
@@ -135,15 +125,44 @@ test("fresh configured Director workspace enforces concept and mood before routi
     assert.ok(routed);
     assert.deepEqual(routed.plan.route, ["hyperframe"]);
 
-    const build = readBuildPlan(run.id, cwd);
-    assert.ok(build, "Routing should create build-plan.json");
+    const buildPlanFile = path.join(run.dir, "build-plan.json");
+    const buildPlan = JSON.parse(fs.readFileSync(buildPlanFile, "utf8"));
+    buildPlan.status = "completed";
+    buildPlan.summary = "HyperFrames owns the typography-led launch composition.";
+    buildPlan.route = ["hyperframe"];
+    buildPlan.shots = [{
+      id: "launch",
+      purpose: "Build the approved premium launch concept",
+      engine: "hyperframe",
+      inputs: [],
+      asset_ids: [],
+      output: "renders/launch.mp4",
+      quality: "premium",
+      success_criteria: [
+        "mood contract preserved",
+        "type hierarchy clear",
+        "product truth protected"
+      ],
+      notes: []
+    }];
+    fs.writeFileSync(buildPlanFile, JSON.stringify(buildPlan, null, 2) + "\n");
+
+    assert.equal(validateBuildPlanFile(run.id, cwd).ok, true);
+
+    await writeRunCheckpoint(
+      run.id,
+      "build_plan",
+      "completed",
+      { artifact: buildPlanFile },
+      cwd
+    );
 
     const saved = loadRun(cwd, run.id);
     assert.equal(saved.state.checkpoints.concept.human_approved, true);
     assert.equal(saved.state.checkpoints.mood.status, "completed");
-    assert.equal(saved.state.checkpoints.routing.status, "completed");
+    assert.equal(saved.state.checkpoints.build_plan.status, "completed");
   } finally {
-    if (oldFfmpeg === undefined) delete process.env.AURORA_FFMPEG_PATH;
-    else process.env.AURORA_FFMPEG_PATH = oldFfmpeg;
+    if (previousFfmpeg === undefined) delete process.env.AURORA_FFMPEG_PATH;
+    else process.env.AURORA_FFMPEG_PATH = previousFfmpeg;
   }
 });
