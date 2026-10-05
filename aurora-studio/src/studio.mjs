@@ -49,6 +49,11 @@ import {
   completedLearningPayload
 } from "./learning.mjs";
 import { syncSystemKnowledge, systemStatus } from "./system-install.mjs";
+import {
+  recordUsage,
+  summarizeUsage,
+  checkPaidAction
+} from "./usage.mjs";
 import { runtimeStatus } from "./runtime.mjs";
 import {
   installHyperframesCore,
@@ -788,6 +793,7 @@ export async function finalizeProduction(runId, lesson = null, cwd = process.cwd
     const globalDecisionLog = path.join(cwd, ".aurora", "decisions.jsonl");
     const globalLessonLog = path.join(cwd, ".aurora", "lessons.jsonl");
     const proposalLog = path.join(cwd, ".aurora", "learning-proposals.jsonl");
+    const usage = summarizeUsage(runId, cwd);
 
     fs.appendFileSync(globalDecisionLog, JSON.stringify({
       timestamp: new Date().toISOString(),
@@ -799,7 +805,9 @@ export async function finalizeProduction(runId, lesson = null, cwd = process.cwd
       mode: result.run.plan.mode,
       quality_score: learning?.review?.outcome?.quality_score ?? null,
       revisions: learning?.review?.outcome?.revisions ?? null,
-      reviewer_result: learning?.review?.outcome?.reviewer_result ?? null
+      reviewer_result: learning?.review?.outcome?.reviewer_result ?? null,
+      actual_usd: usage.actual_usd,
+      provider_units: usage.actual_units
     }) + "\n");
 
     let lessonsSaved = 0;
@@ -849,7 +857,8 @@ export async function finalizeProduction(runId, lesson = null, cwd = process.cwd
       lessons_saved: lessonsSaved,
       learning_review: learning ? "completed" : "pending_or_missing",
       proposals_saved: proposalsSaved,
-      proposals_auto_applied: false
+      proposals_auto_applied: false,
+      usage
     }, null, 2));
     return result;
   } catch (error) {
@@ -1514,4 +1523,42 @@ export async function executeHyperframesCore(args = [], options = {}, cwd = proc
 
 export async function checkHyperframesUpgrade(cwd = process.cwd()) {
   return executeHyperframesCore(["upgrade", "--check", "--json"], {}, cwd);
+}
+
+
+export async function recordRunUsage(input, cwd = process.cwd()) {
+  try {
+    const result = recordUsage(input, cwd);
+    console.log(JSON.stringify(result, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function summarizeRunUsage(runId, cwd = process.cwd()) {
+  try {
+    const result = summarizeUsage(runId, cwd);
+    console.log(JSON.stringify(result, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function checkRunPaidUsage(input, cwd = process.cwd()) {
+  try {
+    const result = checkPaidAction(input, cwd);
+    console.log(JSON.stringify(result, null, 2));
+    if (result.allowed === false) process.exitCode = 2;
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
 }
