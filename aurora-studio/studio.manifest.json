@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "studio_version": "0.1.0-dev",
+  "studio_version": "0.2.0-dev",
   "channel": "dev",
   "name": "AurorA Studio",
   "modes": ["direct", "director"],
@@ -19,7 +19,7 @@
   },
   "hooks": {
     "preflight": { "enabled": true, "implemented": true },
-    "post_approval": { "enabled": true, "implemented": false, "blocked_by": "finalize_command" },
+    "post_approval": { "enabled": true, "implemented": true, "command": "aurora-studio finalize" },
     "post_update": { "enabled": true, "implemented": false, "blocked_by": "updater" }
   }
 }
