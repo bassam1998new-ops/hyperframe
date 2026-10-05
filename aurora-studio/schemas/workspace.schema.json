@@ -132,6 +132,9 @@
             "type": "string"
           },
           "uniqueItems": true
+        },
+        "browser_control": {
+          "type": "boolean"
         }
       },
       "additionalProperties": true
