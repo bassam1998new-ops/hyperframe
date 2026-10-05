@@ -92,6 +92,7 @@ export function createRun({ cwd = process.cwd(), task, mode, routeDecision, budg
   const id = makeRunId(task);
   const dir = path.join(runsDir(cwd), id);
   fs.mkdirSync(path.join(dir, "history"), { recursive: true });
+  fs.mkdirSync(path.join(dir, "temp"), { recursive: true });
 
   const plan = buildPlan({ task, mode, routeDecision, budget });
   fs.writeFileSync(path.join(dir, "plan.json"), JSON.stringify(plan, null, 2) + "\n");
@@ -176,4 +177,40 @@ export function evaluateSpend(policy, { estimated_usd = 0, spent_usd = 0 } = {})
     return { allowed: true, action: "warn", projected_usd: projected, reason: "budget_warning" };
   }
   return { allowed: true, action: "continue", projected_usd: projected, reason: null };
+}
+
+
+export function finalizeRun({ cwd = process.cwd(), runId }) {
+  const run = loadRun(cwd, runId);
+  const approval = run.state.checkpoints?.approval;
+  const postReview = run.state.checkpoints?.post_render_review;
+
+  if (!approval || approval.status !== "completed" || approval.human_approved !== true) {
+    throw new Error("Cannot finalize: owner approval is not recorded.");
+  }
+
+  if (!postReview || postReview.status !== "completed") {
+    throw new Error("Cannot finalize: post-render review is not completed.");
+  }
+
+  const tempDir = path.join(run.dir, "temp");
+  let removedTemp = false;
+  if (fs.existsSync(tempDir)) {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+    removedTemp = true;
+  }
+
+  const state = checkpoint({
+    cwd,
+    runId,
+    stage: "finalize",
+    status: "completed",
+    note: "Approved run finalized; run-scoped temp cleaned."
+  });
+
+  return {
+    run,
+    state,
+    removed_run_temp: removedTemp
+  };
 }
