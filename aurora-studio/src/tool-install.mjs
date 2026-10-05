@@ -1,8 +1,27 @@
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
-export const HYPERFRAMES_RANGE = "0.8";
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const RELEASE_FILE = path.resolve(HERE, "../release.json");
+export const HYPERFRAMES_DEV_RANGE = "0.8";
+
+export function hyperframesInstallSpec() {
+  try {
+    const release = JSON.parse(fs.readFileSync(RELEASE_FILE, "utf8"));
+    const pinned = String(release.hyperframes_version || "").trim();
+    if (/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(pinned)) {
+      return pinned;
+    }
+  } catch {
+    // Development fallback below.
+  }
+
+  return HYPERFRAMES_DEV_RANGE;
+}
+
+export const HYPERFRAMES_RANGE = hyperframesInstallSpec();
 
 function findOnPath(command) {
   const finder = process.platform === "win32" ? "where" : "which";
