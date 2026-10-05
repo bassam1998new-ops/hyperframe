@@ -34,7 +34,7 @@ test("synthetic public package passes readiness gate", () => {
       version: "1.0.0",
       private: false,
       bin: { "aurora-studio": "./bin/aurora.mjs" },
-      repository: { url: "https://github.com/example/aurora" },
+      repository: { url: "https://github.com/bassam1998new-ops/hyperframe.git" },
       publishConfig: { access: "public" }
     },
     release: {
@@ -47,4 +47,34 @@ test("synthetic public package passes readiness gate", () => {
 
   assert.equal(result.ready, true);
   assert.deepEqual(result.blockers, []);
+});
+
+
+test("repository URL mismatch blocks trusted publishing readiness", () => {
+  const root = temp();
+  fs.writeFileSync(path.join(root, "LICENSE"), "MIT");
+  fs.writeFileSync(path.join(root, "README.md"), "# AurorA");
+  fs.mkdirSync(path.join(root, "bin"), { recursive: true });
+  fs.writeFileSync(path.join(root, "bin", "aurora.mjs"), "");
+
+  const result = evaluateReleaseReadiness({
+    root,
+    packageJson: {
+      name: "aurora-studio-example",
+      version: "1.0.0",
+      private: false,
+      bin: { "aurora-studio": "./bin/aurora.mjs" },
+      repository: { url: "https://github.com/example/wrong-repo.git" },
+      publishConfig: { access: "public" }
+    },
+    release: {
+      latest_version: "1.0.0",
+      package_name: "aurora-studio-example",
+      public_install_ready: true,
+      channel: "stable"
+    }
+  });
+
+  assert.equal(result.ready, false);
+  assert.ok(result.blockers.includes("repository_url_mismatch"));
 });
