@@ -153,3 +153,21 @@ aurora-studio system sync
 ```
 
 Preflight automatically refreshes the managed system snapshot when the installed AurorA version changes.
+
+
+### HyperFrames core
+
+AurorA can use HyperFrames from:
+1. `.aurora/tools/` — preferred isolated workspace install
+2. the current project's `node_modules/.bin`
+3. PATH / an existing user-managed install
+
+If HyperFrames is missing, setup can install a compatible core privately without touching the user's app dependencies.
+
+```bash
+aurora-studio hyperframe doctor
+aurora-studio hyperframe install
+aurora-studio hyperframe upgrade-check
+```
+
+Upgrades are checked separately and are never applied silently mid-project.
