@@ -904,6 +904,15 @@ export async function finalizeProduction(runId, video, lesson = null, cwd = proc
       throw new Error("Cannot finalize: " + readiness.errors.join("; "));
     }
 
+    const reviewValidation = validateReviewReportFile(runId, cwd);
+    if (!reviewValidation.can_complete_post_review) {
+      throw new Error(
+        "Cannot finalize: structured review is not PASS. " +
+        (reviewValidation.errors || []).join("; ")
+      );
+    }
+    const review = readReviewReport(runId, cwd);
+
     const learning = completedLearningPayload(runId, cwd);
     if (!learning) {
       throw new Error(
@@ -933,7 +942,10 @@ export async function finalizeProduction(runId, video, lesson = null, cwd = proc
       mode: result.run.plan.mode,
       quality_score: learning?.review?.outcome?.quality_score ?? null,
       revisions: learning?.review?.outcome?.revisions ?? null,
-      reviewer_result: learning?.review?.outcome?.reviewer_result ?? null,
+      reviewer_result:
+        learning?.review?.outcome?.reviewer_result ??
+        review?.report?.decision ??
+        null,
       actual_usd: usage.actual_usd,
       provider_units: usage.actual_units,
       final_path: finalArtifact.receipt.final_path,
@@ -989,7 +1001,11 @@ export async function finalizeProduction(runId, video, lesson = null, cwd = proc
       learning_review: "completed",
       proposals_saved: proposalsSaved,
       proposals_auto_applied: false,
-      usage
+      usage,
+      review: {
+        decision: review?.report?.decision || null,
+        summary: review?.report?.summary || null
+      }
     };
 
     console.log(JSON.stringify(response, null, 2));
