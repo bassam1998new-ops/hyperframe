@@ -32,7 +32,9 @@ import {
   validateStudio,
   showObsidianInfo,
   searchObsidianKnowledge,
-  showResources
+  showResources,
+  installAgentPointers,
+  removeAgentPointers
 } from "../src/studio.mjs";
 
 const [command = "help", ...args] = process.argv.slice(2);
@@ -72,6 +74,11 @@ switch (command) {
     break;
   case "resources":
     await showResources(args.join(" ") || null);
+    break;
+  case "agent":
+    if (args[0] === "install") await installAgentPointers(args[1] || "all");
+    else if (args[0] === "remove") await removeAgentPointers(args[1] || "all");
+    else console.error("agent commands: install [all|claude|codex] | remove [all|claude|codex]");
     break;
 
   case "project":
@@ -199,6 +206,8 @@ Setup:
   aurora-studio mode direct|director
   aurora-studio workspace
   aurora-studio resources ["CAPABILITY"]
+  aurora-studio agent install [all|claude|codex]
+  aurora-studio agent remove [all|claude|codex]
 
 Brain:
   aurora-studio context "TASK" [--reference ID]
