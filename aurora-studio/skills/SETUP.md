@@ -61,3 +61,16 @@ Say clearly that a hook is being installed.
 The hook only loads compact AurorA project/tool/run context. It does not generate media, spend credits, delete files or access secrets.
 
 The user's normal Claude/Codex workspace trust rules still apply.
+
+
+## Agent-native skills
+
+When agent integration is enabled:
+
+- Claude receives AurorA skills under `.claude/skills/`
+- Codex receives the same AurorA skills under `.agents/skills/`
+- existing unrelated user skills are preserved
+- `CLAUDE.md` / `AGENTS.md` receive only a small AurorA-owned pointer block
+- the SessionStart hook remains small and trust-reviewed
+
+AurorA should not install global agent skills for the user. Keep them project-local.
