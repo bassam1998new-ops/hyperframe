@@ -6,10 +6,24 @@ Search before building or generating.
 1. Current project assets
 2. Workspace approved library
 3. AurorA shared library
-4. Approved open-source / open-license catalogs
-5. Procedural build with HyperFrames or Blender
-6. External generation services when configured and useful
-7. Manual/specialist build
+4. HyperFrames media-use / catalog when the asset fits its media system
+5. Approved open-source / open-license catalogs, including 3D sources
+6. Procedural build with HyperFrames or Blender
+7. External generation services when configured and useful
+8. Manual/specialist build
+
+HyperFrames already has a media OS for resolving, generating, operating on and remembering media. Use it instead of recreating equivalent image/audio/icon/BGM/SFX/voice workflows.
+
+AurorA's extra asset layer should focus on cross-engine reuse:
+- 3D models
+- rigs
+- animation clips
+- materials
+- HDRIs
+- AE templates when licensed
+- Blender scenes/nodes
+- approved styles
+- assets created in previous AurorA jobs
 
 ## Decision
 Return one of:
@@ -30,3 +44,5 @@ Never treat "found online" as permission to use. Save source + license metadata 
 
 ## Cost rule
 Do not spend paid generation credits when an approved asset can reach the same quality with reasonable modification.
+
+Provider prices/credits change. Store them as updateable provider data; never hard-code marketing promises such as a fixed credit cost into the Director skill.
