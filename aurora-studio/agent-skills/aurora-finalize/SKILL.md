@@ -17,7 +17,7 @@ Only after explicit owner approval:
 - finalize the run
 
 Use:
-`aurora-studio finalize RUN_ID`
+`aurora-studio finalize RUN_ID --video path/to/approved.mp4`
 
 Never delete original source media.
 Never auto-apply skill/style proposals.
