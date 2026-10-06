@@ -200,6 +200,17 @@
                 <strong id="board-title">No active run</strong>
               </div>
               <div class="board-head-actions">
+                <button
+                  class="aurora-icon-button assets-open"
+                  id="assets-open"
+                  type="button"
+                  aria-label="Open asset workflow"
+                  data-tooltip="Assets"
+                  data-tooltip-placement="left"
+                  hidden
+                >
+                  <svg><use href="#i-library"/></svg>
+                </button>
                 <span class="board-count" id="board-count">0</span>
                 <button
                   class="aurora-icon-button storyboard-add"
@@ -680,6 +691,193 @@
         <button class="aurora-button" data-variant="primary" type="submit" id="shot-save">Save shot</button>
       </div>
     </form>
+  </dialog>
+
+  <dialog class="aurora-dialog aurora-drawer asset-drawer" id="asset-drawer">
+    <div class="aurora-dialog-head">
+      <div>
+        <span class="eyebrow">ASSET WORKFLOW</span>
+        <strong>Reuse first. Generate only when needed.</strong>
+      </div>
+      <button
+        class="aurora-icon-button"
+        type="button"
+        data-dialog-close="close"
+        aria-label="Close asset workflow"
+      >
+        <svg><use href="#i-close"/></svg>
+      </button>
+    </div>
+
+    <div class="asset-context" id="asset-context">
+      <span class="asset-context-kind">NO NEED SELECTED</span>
+      <strong>Select an asset need</strong>
+      <small>Choose what this production needs before routing.</small>
+    </div>
+
+    <div class="asset-tabs" role="tablist" aria-label="Asset workflow">
+      <button class="active" type="button" role="tab" data-asset-tab="needs">Needs</button>
+      <button type="button" role="tab" data-asset-tab="library">Library</button>
+      <button type="button" role="tab" data-asset-tab="open">Open</button>
+      <button type="button" role="tab" data-asset-tab="generate">Generate</button>
+    </div>
+
+    <div class="aurora-dialog-body asset-drawer-body">
+      <section class="asset-tab-panel active" data-asset-panel="needs">
+        <form class="asset-need-form" id="asset-need-form">
+          <input
+            name="description"
+            placeholder="What asset does this production need?"
+            maxlength="240"
+            required
+          />
+          <select name="kind" aria-label="Asset kind">
+            <option value="image">Image</option>
+            <option value="video">Video</option>
+            <option value="model">3D model</option>
+            <option value="material">Material</option>
+            <option value="hdri">HDRI</option>
+            <option value="audio">Audio</option>
+            <option value="font">Font</option>
+            <option value="template">Template</option>
+            <option value="other">Other</option>
+          </select>
+          <button class="aurora-button" type="submit">
+            <svg><use href="#i-plus"/></svg>
+            Add need
+          </button>
+        </form>
+
+        <div class="asset-needs-list" id="asset-needs-list"></div>
+
+        <div class="asset-plan-confirm">
+          <label>
+            <span class="section-label">ASSET PLAN SUMMARY</span>
+            <textarea
+              id="asset-plan-summary"
+              rows="2"
+              maxlength="600"
+              placeholder="Reuse approved product assets; build the remaining hero motion."
+            ></textarea>
+          </label>
+          <button
+            class="aurora-button"
+            data-variant="primary"
+            id="asset-plan-complete"
+            type="button"
+          >
+            Confirm assets
+          </button>
+        </div>
+      </section>
+
+      <section class="asset-tab-panel" data-asset-panel="library">
+        <div class="asset-search-row">
+          <div class="search-field asset-search-field">
+            <svg><use href="#i-search"/></svg>
+            <input id="asset-library-query" placeholder="Search tracked library" />
+          </div>
+          <span class="asset-search-note">Approved items can be reused.</span>
+        </div>
+        <div class="asset-result-grid" id="asset-library-results"></div>
+      </section>
+
+      <section class="asset-tab-panel" data-asset-panel="open">
+        <form class="asset-open-search" id="asset-open-search">
+          <div class="search-field asset-search-field">
+            <svg><use href="#i-search"/></svg>
+            <input name="query" placeholder="Search Poly Haven" required />
+          </div>
+          <select name="type" aria-label="Open asset type">
+            <option value="all">All</option>
+            <option value="models">Models</option>
+            <option value="textures">Textures</option>
+            <option value="hdris">HDRIs</option>
+          </select>
+          <button class="aurora-button" data-variant="primary" type="submit">
+            Search
+          </button>
+        </form>
+        <div class="asset-source-note">
+          <strong>Poly Haven</strong>
+          <span>CC0 assets. Searching does not download anything.</span>
+        </div>
+        <div class="asset-result-grid" id="asset-open-results">
+          <div class="aurora-empty-state">Search open assets when the tracked Library has no good fit.</div>
+        </div>
+      </section>
+
+      <section class="asset-tab-panel" data-asset-panel="generate">
+        <div class="provider-grid" id="generation-providers"></div>
+
+        <form class="generation-form" id="generation-form">
+          <label class="asset-field span-two">
+            Prompt
+            <textarea
+              name="prompt"
+              rows="4"
+              maxlength="1600"
+              placeholder="Describe the asset AurorA should create."
+              required
+            ></textarea>
+          </label>
+
+          <label class="asset-field">
+            Resolution / mode
+            <input name="resolution" placeholder="e.g. 360p" />
+          </label>
+
+          <label class="asset-field">
+            Provider credits
+            <input name="quantity" type="number" min="0" step="0.01" placeholder="Unknown" />
+          </label>
+
+          <label class="asset-field">
+            Unit
+            <input name="unit" value="credits" />
+          </label>
+
+          <label class="asset-field">
+            Known USD estimate
+            <input name="estimated_usd" type="number" min="0" step="0.01" placeholder="Unknown" />
+          </label>
+
+          <div class="generation-note span-two">
+            Leave cost fields blank when the live provider has not shown a real value. AurorA will not invent a conversion.
+          </div>
+
+          <button
+            class="aurora-button span-two"
+            data-variant="primary"
+            id="generation-submit"
+            type="submit"
+          >
+            Create agent request
+          </button>
+        </form>
+
+        <div class="generation-request-list" id="generation-request-list"></div>
+      </section>
+    </div>
+  </dialog>
+
+  <dialog class="aurora-dialog cost-approval-dialog" id="cost-approval-dialog" data-dismissible="false">
+    <div class="aurora-dialog-head">
+      <div>
+        <span class="eyebrow">COST APPROVAL</span>
+        <strong id="cost-approval-title">Provider action needs approval</strong>
+      </div>
+    </div>
+    <div class="aurora-dialog-body">
+      <p class="cost-approval-copy" id="cost-approval-copy"></p>
+      <div class="cost-approval-metrics" id="cost-approval-metrics"></div>
+    </div>
+    <div class="aurora-dialog-foot">
+      <button class="aurora-button" id="cost-approval-cancel" type="button">Cancel</button>
+      <button class="aurora-button" data-variant="primary" id="cost-approval-confirm" type="button">
+        Approve cost
+      </button>
+    </div>
   </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
