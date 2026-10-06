@@ -44,6 +44,11 @@ import {
   checkAssetLicense,
   searchOpenAssets,
   showOpenAssetFiles,
+  createConceptSetRecord,
+  showConceptSetRecord,
+  validateConceptSetRecord,
+  selectRunConcept,
+  refineRunConcept,
   createMoodRecord,
   showMoodRecord,
   validateMoodRecord,
@@ -187,6 +192,22 @@ switch (command) {
     await showRetrievedContext(filtered.join(" "), ref);
     break;
   }
+
+  case "concepts":
+    if (args[0] === "create") await createConceptSetRecord(args[1]);
+    else if (args[0] === "show") await showConceptSetRecord(args[1]);
+    else if (args[0] === "validate") await validateConceptSetRecord(args[1]);
+    else if (args[0] === "select") await selectRunConcept(args[1], args[2]);
+    else if (args[0] === "refine") {
+      await refineRunConcept(
+        args[1],
+        flag("--concept"),
+        flag("--note")
+      );
+    } else {
+      console.error("concepts commands: create RUN_ID | show RUN_ID | validate RUN_ID | select RUN_ID CONCEPT_ID | refine RUN_ID [--concept ID] --note TEXT");
+    }
+    break;
 
   case "mood":
     if (args[0] === "create") await createMoodRecord(args[1]);
@@ -443,6 +464,11 @@ Setup:
 
 Brain:
   aurora-studio context "TASK" [--reference ID]
+  aurora-studio concepts create RUN_ID
+  aurora-studio concepts show RUN_ID
+  aurora-studio concepts validate RUN_ID
+  aurora-studio concepts select RUN_ID CONCEPT_ID
+  aurora-studio concepts refine RUN_ID [--concept ID] --note TEXT
   aurora-studio mood create RUN_ID
   aurora-studio mood show RUN_ID
   aurora-studio mood validate RUN_ID
