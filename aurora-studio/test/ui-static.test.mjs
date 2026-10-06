@@ -19,7 +19,12 @@ test("browser UI JavaScript modules have valid syntax", () => {
     "ui/app/format.js",
     "ui/app/router.js",
     "ui/app/toast.js",
-    "ui/app/dialog.js"
+    "ui/app/dialog.js",
+    "ui/app/views/create.js",
+    "ui/app/views/library.js",
+    "ui/app/views/project.js",
+    "ui/app/views/settings.js",
+    "ui/app/views/updates.js"
   ];
 
   for (const relative of files) {
@@ -62,10 +67,24 @@ test("UI styling uses canonical tokens and accessibility foundation", () => {
   const tokens = read("ui/styles/tokens.css");
   const base = read("ui/styles/base.css");
   const components = read("ui/styles/components.css");
+  const shell = read("ui/styles/shell.css");
+  const create = read("ui/styles/create.css");
+  const views = read("ui/styles/views.css");
+  const responsive = read("ui/styles/responsive.css");
 
   assert.match(css, /tokens\.css/);
   assert.match(css, /base\.css/);
-  assert.match(css, /components\.css/);
+  for (const file of [
+    "tokens.css",
+    "base.css",
+    "components.css",
+    "shell.css",
+    "create.css",
+    "views.css",
+    "responsive.css"
+  ]) {
+    assert.match(css, new RegExp(file.replace(".", "\\.")));
+  }
 
   for (const token of [
     "--aurora-violet",
@@ -84,15 +103,21 @@ test("UI styling uses canonical tokens and accessibility foundation", () => {
   assert.match(components, /\.aurora-dialog/);
   assert.match(components, /\.aurora-drawer/);
   assert.match(components, /\.aurora-skeleton/);
+  assert.match(shell, /\.studio-shell/);
+  assert.match(create, /\.preview-stage/);
+  assert.match(views, /\.project-grid/);
+  assert.match(responsive, /@media/);
+  assert.ok(css.length < 1000, "styles.css should remain an import-only aggregator");
 });
 
 test("approved Aurora visual primitives remain present", () => {
-  const css = read("ui/styles.css");
+  const shell = read("ui/styles/shell.css");
+  const create = read("ui/styles/create.css");
 
-  assert.match(css, /\.brand-orb/);
-  assert.match(css, /\.preview-stage/);
-  assert.match(css, /\.activity-panel/);
-  assert.match(css, /\.library-card/);
+  assert.match(shell, /\.brand-orb/);
+  assert.match(create, /\.preview-stage/);
+  assert.match(create, /\.activity-panel/);
+  assert.match(create, /\.library-card/);
 });
 
 test("selected Lucide icons and license notice ship locally", () => {
@@ -115,6 +140,11 @@ test("app imports shared API formatting router and toast modules", () => {
   assert.match(app, /\.\/app\/format\.js/);
   assert.match(app, /\.\/app\/router\.js/);
   assert.match(app, /\.\/app\/toast\.js/);
+  assert.match(app, /\.\/app\/views\/create\.js/);
+  assert.match(app, /\.\/app\/views\/library\.js/);
+  assert.match(app, /\.\/app\/views\/project\.js/);
+  assert.match(app, /\.\/app\/views\/settings\.js/);
+  assert.match(app, /\.\/app\/views\/updates\.js/);
 
   assert.doesNotMatch(app, /function escapeHtml\(/);
   assert.doesNotMatch(app, /async function api\(/);
