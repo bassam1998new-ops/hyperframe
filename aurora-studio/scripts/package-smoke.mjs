@@ -215,7 +215,7 @@ try {
       );
       if (response.status !== 200) {
         throw new Error(
-          `Floating UI vendor route failed: ${vendorPath} -> ${response.status}`
+          `UI vendor route failed: ${vendorPath} -> ${response.status}`
         );
       }
       const js = await response.text();
