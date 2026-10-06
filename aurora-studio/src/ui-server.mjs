@@ -6,6 +6,11 @@ import { spawn, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 import { buildStudioSnapshot, resolveWorkspaceMedia } from "./ui-data.mjs";
+import {
+  MAX_REFERENCE_BYTES,
+  createUrlReference,
+  storeReferenceUpload
+} from "./reference-files.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const UI_ROOT = path.resolve(HERE, "../ui");
@@ -265,13 +270,78 @@ export async function startStudioUiServer({
         const task = String(body.task || "").trim();
         if (!task) return json(res, 400, { error: "Tell AurorA what you want to make." });
 
-        const args = ["plan", task];
+        const quality = ["draft", "normal", "premium", "hero"].includes(body.quality)
+          ? body.quality
+          : "normal";
+        const aspect = ["project", "9:16", "16:9", "1:1"].includes(body.aspect)
+          ? body.aspect
+          : "project";
+
+        const args = ["plan", task, "--quality", quality, "--aspect", aspect];
         if (body.referenceId) args.push("--reference", String(body.referenceId));
         const result = runCli(cliPath, cwd, args);
         return json(res, result.ok ? 200 : 400, {
           ...result,
           state: buildStudioSnapshot(cwd)
         });
+      }
+
+
+      if (req.method === "POST" && url.pathname === "/api/reference-link") {
+        const body = await readBody(req);
+        try {
+          const result = createUrlReference({
+            name: String(body.name || "").trim(),
+            url: body.url,
+            referenceRole: body.role
+          }, cwd);
+
+          return json(res, 200, {
+            ok: true,
+            reference: result.reference,
+            state: buildStudioSnapshot(cwd)
+          });
+        } catch (error) {
+          return json(res, 400, { error: error.message });
+        }
+      }
+
+      if (req.method === "POST" && url.pathname === "/api/reference-upload") {
+        const encodedName = req.headers["x-aurora-filename"];
+        if (!encodedName) {
+          return json(res, 400, { error: "Reference upload is missing a file name." });
+        }
+
+        let filename;
+        let displayName;
+        try {
+          filename = decodeURIComponent(String(encodedName));
+          displayName = req.headers["x-aurora-reference-name"]
+            ? decodeURIComponent(String(req.headers["x-aurora-reference-name"]))
+            : null;
+        } catch {
+          return json(res, 400, { error: "Reference upload metadata is invalid." });
+        }
+
+        try {
+          const result = await storeReferenceUpload(req, {
+            cwd,
+            filename,
+            name: displayName,
+            referenceRole: req.headers["x-aurora-reference-role"],
+            mime: req.headers["content-type"],
+            maxBytes: MAX_REFERENCE_BYTES
+          });
+
+          return json(res, 200, {
+            ok: true,
+            reference: result.reference,
+            size_bytes: result.size_bytes,
+            state: buildStudioSnapshot(cwd)
+          });
+        } catch (error) {
+          return json(res, 400, { error: error.message });
+        }
       }
 
 
