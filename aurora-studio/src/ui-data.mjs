@@ -522,9 +522,22 @@ function renderSummary(cwd, run) {
   };
 }
 
-function finalReceipt(run) {
+function finalReceipt(cwd, run) {
   const file = path.join(run.dir, "final.json");
-  return readJson(file);
+  const receipt = readJson(file);
+  if (!receipt) return null;
+
+  return {
+    run_id: receipt.run_id,
+    approved_at: receipt.approved_at || null,
+    final_path: receipt.final_path || null,
+    sha256: receipt.sha256 || null,
+    bytes: receipt.bytes ?? null,
+    copied: Boolean(receipt.copied),
+    media: receipt.final_path
+      ? mediaDescriptor(cwd, receipt.final_path)
+      : null
+  };
 }
 
 function revisionRows(runId, cwd) {
@@ -765,7 +778,7 @@ export function buildStudioSnapshot(cwd = process.cwd()) {
         status: learning.review?.status || "pending",
         summary: learning.review?.summary || ""
       } : null,
-      final: finalReceipt(run),
+      final: finalReceipt(cwd, run),
       revisions,
       selected_reference:
         references.find(item => item.id === run.plan.reference_id) || null,
