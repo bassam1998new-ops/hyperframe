@@ -705,6 +705,8 @@ export async function routeProductionRun(runId, cwd = process.cwd()) {
 
     const routeEvidence = [
       run.plan.task,
+      run.plan.intent?.quality,
+      run.plan.intent?.aspect,
       context.reference?.analysis?.medium,
       context.reference?.analysis?.subject,
       ...(context.reference?.analysis?.technical_constraints || []),
@@ -787,6 +789,8 @@ export async function showRunStatus(runId, cwd = process.cwd()) {
       run_id: runId,
       task: run.plan.task,
       mode: run.plan.mode,
+      intent: run.plan.intent || null,
+      reference_id: run.plan.reference_id || null,
       route: run.plan.route,
       current_stage: run.state.current_stage,
       status: run.state.status,
