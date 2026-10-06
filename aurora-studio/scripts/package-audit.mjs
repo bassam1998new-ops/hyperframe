@@ -89,6 +89,7 @@ const required = [
   "bin/aurora-studio.mjs",
   "src/reference-files.mjs",
   "src/concepts.mjs",
+  "src/revisions.mjs",
   "ui/index.html",
   "ui/styles.css",
   "ui/styles/tokens.css",
@@ -98,6 +99,7 @@ const required = [
   "ui/styles/create.css",
   "ui/styles/media-player.css",
   "ui/styles/assets.css",
+  "ui/styles/review.css",
   "ui/styles/views.css",
   "ui/styles/responsive.css",
   "ui/app.js",
@@ -112,6 +114,7 @@ const required = [
   "ui/app/workflows/concepts.js",
   "ui/app/workflows/storyboard.js",
   "ui/app/workflows/assets.js",
+  "ui/app/workflows/review.js",
   "ui/app/tooltip.js",
   "ui/app/views/create.js",
   "ui/app/views/library.js",
@@ -126,6 +129,7 @@ const required = [
   "studio.manifest.json",
   "knowledge/tools/registry.json",
   "schemas/concepts.schema.json",
+  "schemas/revision.schema.json",
   "skills/DIRECTOR.md",
   "skills/DIRECT.md"
 ];
