@@ -2,7 +2,7 @@ import { bindDialog } from "../dialog.js";
 import { escapeHtml, titleCase } from "../format.js";
 
 const $ = selector => document.querySelector(selector);
-const $ = selector => [...document.querySelectorAll(selector)];
+const $$ = selector => [...document.querySelectorAll(selector)];
 const MAX_REFERENCE_BYTES = 512 * 1024 * 1024;
 
 function selectedRole(name) {
