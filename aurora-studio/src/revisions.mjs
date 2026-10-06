@@ -4,6 +4,8 @@ import crypto from "node:crypto";
 import { loadRun } from "./governance.mjs";
 import { readBuildPlan } from "./build-plan.mjs";
 import { readConceptSet } from "./concepts.mjs";
+import { createMood } from "./mood.mjs";
+import { createAssetPlan } from "./asset-plan.mjs";
 
 const KINDS = new Set(["fix", "rebuild", "change_direction"]);
 
@@ -153,6 +155,9 @@ function resetDirection(run, runId, cwd, note) {
     "concept",
     "Owner requested a new creative direction after review."
   );
+
+  createMood(runId, cwd);
+  createAssetPlan(runId, cwd);
 }
 
 function validateShot(runId, shotId, cwd) {
