@@ -5,6 +5,7 @@ import readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
+import { startStudioUiServer } from "./ui-server.mjs";
 import { chooseRoute, applyExperiencePrior } from "./selector.mjs";
 import {
   createRun,
@@ -1802,6 +1803,29 @@ export async function assertReleaseReady() {
     if (!result.ready) {
       process.exitCode = 2;
     }
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+
+export async function startStudioUi(options = {}, cwd = process.cwd()) {
+  try {
+    const cliPath = path.resolve(HERE, "../bin/aurora-studio.mjs");
+    const result = await startStudioUiServer({
+      cwd,
+      port: Number(options.port || 4317),
+      host: "127.0.0.1",
+      open: options.open !== false,
+      cliPath
+    });
+
+    console.log("\nAurorA Studio UI");
+    console.log(result.url);
+    console.log("Localhost only. Keep this terminal open while Studio is running.\n");
     return result;
   } catch (error) {
     console.error(error.message);
