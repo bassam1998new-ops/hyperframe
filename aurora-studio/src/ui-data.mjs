@@ -49,7 +49,7 @@ function mediaDescriptor(cwd, value) {
   const ext = path.extname(resolved).toLowerCase();
   const type = VIDEO_EXT.has(ext) ? "video" : IMAGE_EXT.has(ext) ? "image" : "file";
   return {
-    path: path.relative(cwd, resolved),
+    path: path.relative(cwd, resolved).split(path.sep).join("/"),
     type
   };
 }
