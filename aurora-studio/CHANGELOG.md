@@ -5,6 +5,10 @@ AurorA Studio follows a simple **New / Fixed** release summary so community user
 ## Unreleased
 
 ### New
+- Focused final Review workspace with Result / Reference / Side-by-side comparison.
+- Real sampled visual evidence, technical metadata, quality checks, issues and exact reviewed-file approval.
+- Durable Fix / Rebuild / Director Change direction revision requests with safe downstream invalidation.
+- Honest render-ready handoff: Studio never invents render progress or cancellation when the route has no universal direct executor.
 - Asset decision drawer with tracked Library reuse/modify, Poly Haven CC0 search, BUILD_NEW/NOT_NEEDED decisions, and provider-generation handoffs.
 - Provider generation requests use real budget approval/cap rules and remain `pending_agent` until an agent fulfills them.
 - Editable Storyboard/build board with drag reorder, shot inspector, add/edit/duplicate/remove, and keyboard-safe move controls.
@@ -28,6 +32,8 @@ AurorA Studio follows a simple **New / Fixed** release summary so community user
 - npm trusted-publishing workflow is prepared but remains fail-closed until public release is explicitly enabled.
 
 ### Fixed
+- Changed reviewed files now invalidate stale approval and fail SHA validation before approval/finalization.
+- Review approval cannot apply to a different file than the exact render AurorA reviewed.
 - Asset changes now invalidate stale routing, build plans, reviews, approvals and finalization state before production continues.
 - Library approval from the UI now fails closed when commercial rights are not verified.
 - PASS review is bound to the exact reviewed video before finalization.
