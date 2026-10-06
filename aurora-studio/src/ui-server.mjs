@@ -16,6 +16,8 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const UI_ROOT = path.resolve(HERE, "../ui");
 const require = createRequire(import.meta.url);
 
+const MEDIA_CHROME_VENDOR = "/vendor/media-chrome.js";
+
 const FLOATING_VENDOR = {
   "/vendor/floating-ui-utils.js": {
     package: "@floating-ui/utils",
@@ -78,6 +80,19 @@ const RESOURCE_FIELDS = new Set([
   "elevenlabs",
   "local_paths"
 ]);
+
+function resolveMediaChromeVendor() {
+  try {
+    const entry = require.resolve("media-chrome");
+    const root = path.resolve(path.dirname(entry), "..");
+    const file = path.join(root, "dist", "iife", "index.js");
+
+    if (!fs.existsSync(file) || !fs.statSync(file).isFile()) return null;
+    return file;
+  } catch {
+    return null;
+  }
+}
 
 function resolveFloatingVendor(urlPath) {
   const spec = FLOATING_VENDOR[urlPath];
@@ -229,6 +244,24 @@ export async function startStudioUiServer({
       if (url.pathname.startsWith("/api/") || url.pathname === "/media") {
         const supplied = req.headers["x-aurora-token"] || url.searchParams.get("token");
         if (supplied !== token) return unauthorized(res);
+      }
+
+      if (req.method === "GET" && url.pathname === MEDIA_CHROME_VENDOR) {
+        const file = resolveMediaChromeVendor();
+        if (!file) {
+          return json(res, 404, {
+            error: "Media Chrome is not installed."
+          });
+        }
+
+        const body = fs.readFileSync(file);
+        res.writeHead(200, {
+          "Content-Type": "text/javascript; charset=utf-8",
+          "Content-Length": body.length,
+          "Cache-Control": "public, max-age=31536000, immutable"
+        });
+        res.end(body);
+        return;
       }
 
       if (req.method === "GET" && FLOATING_VENDOR[url.pathname]) {
