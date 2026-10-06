@@ -4,325 +4,308 @@ import { escapeHtml, titleCase } from "../format.js";
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
 
-function prettySource(reference) {
-  if (reference.source_type === "file") {
-    return reference.original_name || reference.source_value || "Local file";
+function selectedRole(name) {
+  return document.querySelector(
+    'input[name="' + name + '"]:checked'
+  )?.value || "visual";
+}
+
+function previewMarkup(reference, mediaUrl) {
+  if (reference.preview?.type === "image") {
+    return `
+      <span class="reference-list-thumb">
+        <img
+          src="${escapeHtml(mediaUrl(reference.preview))}"
+          alt=""
+        />
+      </span>
+    `;
   }
-  if (reference.source_type === "url") {
-    try {
-      return new URL(reference.source_value).hostname;
-    } catch {
-      return reference.source_value || "URL";
-    }
+
+  if (reference.preview?.type === "video") {
+    return `
+      <span class="reference-list-thumb">
+        <video
+          muted
+          preload="metadata"
+          src="${escapeHtml(mediaUrl(reference.preview))}"
+        ></video>
+      </span>
+    `;
   }
-  return titleCase(reference.source_type || "reference");
+
+  const icon = reference.source_type === "url"
+    ? "i-link"
+    : reference.role === "source_material"
+      ? "i-file-text"
+      : "i-image";
+
+  return `
+    <span class="reference-list-icon">
+      <svg><use href="#${icon}"/></svg>
+    </span>
+  `;
 }
 
 export function createReferenceWorkflow({
   api,
+  rawApi,
+  mediaUrl,
   getState,
   onState,
-  mediaUrl,
-  toast
+  toast,
+  onSelectionChange
 }) {
-  const dialogElement = $("#reference-dialog");
-  const dialog = bindDialog(dialogElement);
-  const fileInput = $("#reference-file");
-  const dropzone = $("#reference-dropzone");
-  const uploadSelection = $("#reference-upload-selection");
-  const uploadName = $("#reference-upload-name");
-  const uploadSubmit = $("#reference-upload-submit");
-  const linkForm = $("#reference-link-form");
+  const dialogNode = $("#reference-dialog");
+  const dialog = bindDialog(dialogNode);
 
   let selectedReferenceId = null;
   let pendingFile = null;
   let uploading = false;
 
-  function referenceById(id, state = getState()) {
-    return (state?.references || []).find(item => item.id === id) || null;
+  function referenceById(id) {
+    return (getState()?.references || [])
+      .find(item => item.id === id) || null;
   }
 
-  function renderSelected(state = getState()) {
+  function setSelected(id) {
+    selectedReferenceId = id || null;
+    renderSelection();
+    renderRecent();
+    onSelectionChange?.(selectedReferenceId, referenceById(selectedReferenceId));
+  }
+
+  function getSelectedId() {
+    return selectedReferenceId;
+  }
+
+  function setFromRun(run) {
+    if (!run?.reference_id) return;
+    if (selectedReferenceId) return;
+    setSelected(run.reference_id);
+  }
+
+  function renderSelection() {
     const chip = $("#selected-reference");
-    if (!chip) return;
+    const reference = referenceById(selectedReferenceId);
 
-    const reference = referenceById(selectedReferenceId, state);
     chip.classList.toggle("empty", !reference);
-    chip.disabled = false;
-
-    if (!reference) {
-      chip.innerHTML = `
-        <svg><use href="#i-image"/></svg>
-        <span>No reference</span>
-        <small>Add one</small>
-      `;
-      return;
-    }
-
-    const icon = reference.source_type === "file" &&
-      reference.mime?.startsWith("image/")
-      ? "i-image"
-      : "i-file-text";
-
-    chip.innerHTML = `
-      <svg><use href="#${icon}"/></svg>
-      <span>${escapeHtml(reference.name)}</span>
-      <small>${escapeHtml(titleCase(reference.role || "visual"))}</small>
-    `;
+    chip.querySelector("span").textContent =
+      reference?.name || "No reference";
+    chip.querySelector("small").textContent = reference
+      ? reference.role === "source_material"
+        ? "Source material"
+        : "Visual reference"
+      : "Add one";
   }
 
-  function renderRecent(state = getState()) {
+  function renderRecent() {
     const list = $("#reference-list");
-    if (!list) return;
+    const references = getState()?.references || [];
 
-    const items = state?.references || [];
-    if (!items.length) {
+    if (!references.length) {
       list.innerHTML =
-        '<div class="aurora-empty-state">No references yet. Upload a file or add a link.</div>';
+        '<div class="aurora-empty-state">No references yet.</div>';
       return;
     }
 
-    list.innerHTML = items.map(item => {
-      let preview = `
-        <div class="reference-list-icon">
-          <svg><use href="#${item.source_type === "file" ? "i-file-text" : "i-link"}"/></svg>
-        </div>
-      `;
-
-      if (item.preview?.type === "image") {
-        preview = `
-          <div class="reference-list-thumb">
-            <img alt="" src="${escapeHtml(mediaUrl(item.preview))}" />
-          </div>
-        `;
-      } else if (item.preview?.type === "video") {
-        preview = `
-          <div class="reference-list-thumb">
-            <video muted preload="metadata" src="${escapeHtml(mediaUrl(item.preview))}"></video>
-          </div>
-        `;
-      }
-
-      const analysisBits = [
-        item.analysis?.medium,
-        item.analysis?.subject,
-        item.analysis?.quality_tier
-      ].filter(Boolean);
-
-      const secondary = [
-        titleCase(item.role || "visual"),
-        prettySource(item),
-        ...analysisBits
-      ].join(" · ");
+    list.innerHTML = references.map(reference => {
+      const selected = reference.id === selectedReferenceId;
+      const detail = [
+        reference.role === "source_material"
+          ? "Source material"
+          : "Visual reference",
+        reference.source_type === "url"
+          ? "Link"
+          : reference.original_name || titleCase(reference.source_type)
+      ].filter(Boolean).join(" · ");
 
       return `
         <button
-          class="reference-list-item ${item.id === selectedReferenceId ? "selected" : ""}"
+          class="reference-list-item ${selected ? "selected" : ""}"
           type="button"
-          data-reference-id="${escapeHtml(item.id)}"
+          data-reference-id="${escapeHtml(reference.id)}"
         >
-          ${preview}
+          ${previewMarkup(reference, mediaUrl)}
           <span>
-            <strong>${escapeHtml(item.name)}</strong>
-            <small>${escapeHtml(secondary)}</small>
+            <strong>${escapeHtml(reference.name)}</strong>
+            <small>${escapeHtml(detail)}</small>
           </span>
-          ${item.id === selectedReferenceId ? '<svg class="reference-check"><use href="#i-check"/></svg>' : ""}
+          ${
+            selected
+              ? '<svg class="reference-check"><use href="#i-check"/></svg>'
+              : ""
+          }
         </button>
       `;
     }).join("");
-  }
 
-  function setSelected(id, {
-    close = false,
-    state = getState()
-  } = {}) {
-    selectedReferenceId = id || null;
-    renderSelected(state);
-    renderRecent(state);
-    if (close) dialog.close("selected");
-  }
-
-  function renderUploadSelection() {
-    uploadSelection.hidden = !pendingFile;
-
-    if (!pendingFile) {
-      uploadName.textContent = "";
-      return;
-    }
-
-    const mb = (pendingFile.size / (1024 * 1024)).toFixed(
-      pendingFile.size >= 1024 * 1024 ? 1 : 2
-    );
-    uploadName.textContent = `${pendingFile.name} · ${mb} MB`;
-  }
-
-  function selectFile(file) {
-    if (!file) return;
-    pendingFile = file;
-    renderUploadSelection();
-  }
-
-  async function uploadPending() {
-    if (!pendingFile || uploading) return;
-
-    uploading = true;
-    uploadSubmit.disabled = true;
-    uploadSubmit.textContent = "Uploading…";
-
-    try {
-      const role =
-        document.querySelector(
-          'input[name="upload-reference-role"]:checked'
-        )?.value || "visual";
-
-      const result = await api("/api/reference-upload", {
-        method: "POST",
-        headers: {
-          "Content-Type":
-            pendingFile.type || "application/octet-stream",
-          "X-Aurora-Filename": encodeURIComponent(pendingFile.name),
-          "X-Aurora-Reference-Role": role
-        },
-        body: pendingFile
+    list.querySelectorAll("[data-reference-id]").forEach(button => {
+      button.addEventListener("click", () => {
+        setSelected(button.dataset.referenceId);
+        dialog.close("selected");
       });
-
-      pendingFile = null;
-      fileInput.value = "";
-      renderUploadSelection();
-      onState(result.state);
-      setSelected(result.reference.id, {
-        close: true,
-        state: result.state
-      });
-      toast("Reference added.");
-    } catch (error) {
-      toast(error.message, true);
-    } finally {
-      uploading = false;
-      uploadSubmit.disabled = false;
-      uploadSubmit.textContent = "Add reference";
-    }
+    });
   }
 
-  function switchTab(tab) {
+  function switchTab(name) {
     $$("[data-reference-tab]").forEach(button => {
-      const active = button.dataset.referenceTab === tab;
+      const active = button.dataset.referenceTab === name;
       button.classList.toggle("active", active);
-      button.setAttribute("aria-selected", String(active));
+      button.setAttribute("aria-selected", active ? "true" : "false");
     });
 
     $$("[data-reference-panel]").forEach(panel => {
       panel.classList.toggle(
         "active",
-        panel.dataset.referencePanel === tab
+        panel.dataset.referencePanel === name
       );
     });
   }
 
-  $$("[data-reference-tab]").forEach(button => {
-    button.addEventListener("click", () =>
-      switchTab(button.dataset.referenceTab)
-    );
-  });
+  function setPendingFile(file) {
+    pendingFile = file || null;
+    const selection = $("#reference-upload-selection");
+    const name = $("#reference-upload-name");
 
-  $("#reference-open")?.addEventListener("click", () => {
-    renderRecent();
-    dialog.open();
-  });
+    selection.hidden = !pendingFile;
+    name.textContent = pendingFile
+      ? `${pendingFile.name} · ${Math.max(1, Math.round(pendingFile.size / 1024))} KB`
+      : "";
+  }
 
-  $("#selected-reference")?.addEventListener("click", () => {
-    renderRecent();
-    dialog.open();
-  });
+  async function uploadPending() {
+    if (!pendingFile || uploading) return;
 
-  fileInput?.addEventListener("change", () => {
-    selectFile(fileInput.files?.[0]);
-  });
+    const button = $("#reference-upload-submit");
+    uploading = true;
+    button.disabled = true;
+    button.textContent = "Uploading…";
 
-  dropzone?.addEventListener("dragover", event => {
+    try {
+      const payload = await rawApi("/api/reference-upload", {
+        method: "POST",
+        headers: {
+          "Content-Type":
+            pendingFile.type || "application/octet-stream",
+          "Content-Length": String(pendingFile.size),
+          "X-Aurora-Filename": encodeURIComponent(pendingFile.name),
+          "X-Aurora-Reference-Role": selectedRole("upload-reference-role")
+        },
+        body: pendingFile
+      });
+
+      onState(payload.state);
+      setSelected(payload.reference.id);
+      setPendingFile(null);
+      $("#reference-file").value = "";
+      toast("Reference added.");
+      dialog.close("uploaded");
+    } catch (error) {
+      toast(error.message, true);
+    } finally {
+      uploading = false;
+      button.disabled = false;
+      button.textContent = "Add reference";
+    }
+  }
+
+  async function addLink(event) {
     event.preventDefault();
-    dropzone.classList.add("dragging");
-  });
-
-  dropzone?.addEventListener("dragleave", () => {
-    dropzone.classList.remove("dragging");
-  });
-
-  dropzone?.addEventListener("drop", event => {
-    event.preventDefault();
-    dropzone.classList.remove("dragging");
-    selectFile(event.dataTransfer?.files?.[0]);
-  });
-
-  uploadSubmit?.addEventListener("click", uploadPending);
-
-  linkForm?.addEventListener("submit", async event => {
-    event.preventDefault();
-
-    const data = new FormData(linkForm);
-    const url = String(data.get("url") || "").trim();
-    if (!url) return;
-
-    const submit = linkForm.querySelector('button[type="submit"]');
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    const submit = form.querySelector('button[type="submit"]');
     submit.disabled = true;
     submit.textContent = "Adding…";
 
     try {
-      const result = await api("/api/reference-link", {
+      const payload = await api("/api/reference-link", {
         method: "POST",
         body: JSON.stringify({
           name: String(data.get("name") || "").trim(),
-          url,
+          url: String(data.get("url") || "").trim(),
           role: String(data.get("role") || "visual")
         })
       });
 
-      linkForm.reset();
-      onState(result.state);
-      setSelected(result.reference.id, {
-        close: true,
-        state: result.state
-      });
+      onState(payload.state);
+      setSelected(payload.reference.id);
+      form.reset();
       toast("Reference link added.");
+      dialog.close("linked");
     } catch (error) {
       toast(error.message, true);
     } finally {
       submit.disabled = false;
       submit.textContent = "Add link";
     }
+  }
+
+  $("#reference-open").addEventListener("click", () => {
+    renderRecent();
+    dialog.open();
   });
 
-  $("#reference-list")?.addEventListener("click", event => {
-    const button = event.target.closest("[data-reference-id]");
-    if (!button) return;
-    setSelected(button.dataset.referenceId, { close: true });
+  $("#selected-reference").addEventListener("click", () => {
+    renderRecent();
+    dialog.open();
   });
 
-  $("#reference-clear")?.addEventListener("click", () => {
-    setSelected(null, { close: true });
+  $$("[data-reference-tab]").forEach(button => {
+    button.addEventListener("click", () => {
+      switchTab(button.dataset.referenceTab);
+    });
+  });
+
+  $("#reference-file").addEventListener("change", event => {
+    setPendingFile(event.target.files?.[0] || null);
+  });
+
+  const dropzone = $("#reference-dropzone");
+  for (const eventName of ["dragenter", "dragover"]) {
+    dropzone.addEventListener(eventName, event => {
+      event.preventDefault();
+      dropzone.classList.add("dragging");
+    });
+  }
+
+  for (const eventName of ["dragleave", "drop"]) {
+    dropzone.addEventListener(eventName, event => {
+      event.preventDefault();
+      dropzone.classList.remove("dragging");
+    });
+  }
+
+  dropzone.addEventListener("drop", event => {
+    const file = event.dataTransfer?.files?.[0] || null;
+    if (file) {
+      setPendingFile(file);
+    }
+  });
+
+  $("#reference-upload-submit").addEventListener(
+    "click",
+    uploadPending
+  );
+
+  $("#reference-link-form").addEventListener(
+    "submit",
+    addLink
+  );
+
+  $("#reference-clear").addEventListener("click", () => {
+    setSelected(null);
     toast("Reference cleared.");
   });
 
   return {
-    get selectedReferenceId() {
-      return selectedReferenceId;
-    },
-    setSelected,
-    sync(state) {
-      const run = state?.active_run;
-      if (
-        run &&
-        run.status !== "completed" &&
-        run.reference_id
-      ) {
-        selectedReferenceId = run.reference_id;
-      }
-      renderSelected(state);
-      renderRecent(state);
-    },
-    open() {
+    dialog,
+    getSelectedId,
+    render() {
+      renderSelection();
       renderRecent();
-      dialog.open();
-    }
+    },
+    setFromRun,
+    setSelected
   };
 }
