@@ -839,7 +839,6 @@ export async function writeRunCheckpoint(runId, stage, status, options = {}, cwd
         }
 
         artifact ||= conceptRecord.file;
-        options.humanApproved = true;
       }
     }
 
