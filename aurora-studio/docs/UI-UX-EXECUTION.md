@@ -10,8 +10,8 @@ Do not start a later wave before the current wave passes its package/Windows/Ubu
 | UI-11 | Create core + Media Chrome | **Complete ✅** |
 | UI-12 | Director concepts | **Complete ✅** |
 | UI-13 | Storyboard / build board | Complete ✅ |
-| UI-14 | Asset workflow | **Implemented — CI pending** |
-| UI-15 | Render + review | Planned |
+| UI-14 | Asset workflow | **Complete ✅** |
+| UI-15 | Render + review | **Implemented — CI pending** |
 | UI-16 | Library full | Planned |
 | UI-17 | Project Brain | Planned |
 | UI-18 | Settings | Planned |
@@ -164,3 +164,40 @@ Do not start a later wave before the current wave passes its package/Windows/Ubu
 - Asset workflow modules included in portable package
 - provider cost approval tests green
 - asset-change invalidation tests green
+
+
+## UI-15 delivered
+
+- honest render-ready state; no fake universal renderer
+- no fake render percentage
+- no fake Cancel action
+- existing real video outputs can be registered for review
+- render registration requires workspace-contained video + ffprobe pass
+- focused final Review workspace
+- Media Chrome result playback
+- Result / Reference / Side-by-side compare
+- sampled visual evidence strip
+- human-readable technical/creative/license/watermark review
+- strict Approve gate from real `review.json`
+- exact reviewed-file SHA is revalidated at approval/finalization
+- changed reviewed files invalidate stale approval
+- owner approval is explicit
+- auto-finalize only when learning review is already complete
+- otherwise honest Claude/Codex learning/finalization handoff
+- durable revision requests
+- Fix reopens Build
+- Rebuild reopens Build Plan
+- Director Change direction reopens Concepts
+- stale review/evidence/learning archived on revision
+- finalized runs stay read-only
+- final artifact can be opened from Studio after finalization
+
+## Gate before UI-16
+
+- revision lifecycle tests green
+- stale reviewed-video hash tests green
+- browser render/review/approve/revision flow green
+- Windows + Ubuntu full suite green
+- package audit 0 findings
+- installed-package smoke green
+- Review workflow + revision contracts included in portable package
