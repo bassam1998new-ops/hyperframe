@@ -584,3 +584,11 @@
     margin-left: 0;
   }
 }
+
+
+.review-open-final {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
