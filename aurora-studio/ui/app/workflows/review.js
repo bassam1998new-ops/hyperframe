@@ -133,7 +133,7 @@ export function createReviewWorkflow({
   }
 
   function reviewVisible(run = currentRun()) {
-    return Boolean(run?.review?.video?.path);
+    return Boolean(run?.review);
   }
 
   function renderReady(run = currentRun()) {
@@ -310,7 +310,23 @@ export function createReviewWorkflow({
   }
 
   function renderChecks(review) {
-    $("#review-checks").innerHTML = (review?.checks || [])
+    const checks = [
+      ...(review?.checks || []),
+      {
+        id: "licenses_ok",
+        label: "Asset licenses",
+        required: true,
+        value: review?.assets?.licenses_ok ?? null
+      },
+      {
+        id: "watermark_free",
+        label: "Watermark free",
+        required: true,
+        value: review?.assets?.watermark_free ?? null
+      }
+    ];
+
+    $("#review-checks").innerHTML = checks
       .filter(check => check.required || check.value !== null)
       .map(check => {
         const state =
@@ -356,8 +372,9 @@ export function createReviewWorkflow({
     const note = $("#review-approved-note");
 
     const finalLink = $("#review-open-final");
-    finalLink.hidden = !finalized;
-    if (finalized && run.final?.media?.path) {
+    const finalAvailable = Boolean(run.final?.media?.path);
+    finalLink.hidden = !finalAvailable;
+    if (finalAvailable) {
       finalLink.href = mediaUrl(run.final.media);
     } else {
       finalLink.removeAttribute("href");
@@ -378,6 +395,13 @@ export function createReviewWorkflow({
         run.learning?.status === "completed"
           ? "Owner approved this reviewed render. Learning is complete; finalization still needs attention."
           : "Owner approved this reviewed render. Continue the agent to finish learning and finalization.";
+      return;
+    }
+
+    if (run.approval?.stale) {
+      note.hidden = false;
+      note.textContent =
+        "Previous approval was invalidated because the reviewed render changed.";
       return;
     }
 
