@@ -124,6 +124,7 @@ test("approved Aurora visual primitives remain present", () => {
 test("selected Lucide icons and license notice ship locally", () => {
   const html = read("ui/index.html");
   const notice = read("ui/vendor/LUCIDE-LICENSE.txt");
+  const floatingNotice = read("ui/vendor/FLOATING-UI-LICENSE.txt");
 
   assert.match(html, /M11\.017 2\.814/);
   assert.match(html, /m16 6 4 14/);
@@ -132,6 +133,8 @@ test("selected Lucide icons and license notice ship locally", () => {
   assert.match(notice, /Lucide/);
   assert.match(notice, /ISC License/);
   assert.match(notice, /2026 Lucide Icons and Contributors/);
+  assert.match(floatingNotice, /Floating UI/);
+  assert.match(floatingNotice, /MIT License/);
 });
 
 test("app imports shared API formatting router and toast modules", () => {
