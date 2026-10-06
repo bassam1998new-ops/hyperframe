@@ -126,11 +126,13 @@ try {
     path.join(workspace, ".aurora", "system", "ui", "vendor", "LUCIDE-LICENSE.txt"),
     path.join(workspace, ".aurora", "system", "ui", "vendor", "FLOATING-UI-LICENSE.txt"),
     path.join(workspace, ".aurora", "system", "ui", "vendor", "MEDIA-CHROME-LICENSE.txt"),
+    path.join(workspace, ".aurora", "system", "ui", "vendor", "SORTABLEJS-LICENSE.txt"),
     path.join(workspace, ".aurora", "system", "ui", "styles", "media-player.css"),
     path.join(workspace, ".aurora", "system", "ui", "app", "components", "media-player.js"),
     path.join(workspace, ".aurora", "system", "ui", "app", "workflows", "reference.js"),
     path.join(workspace, ".aurora", "system", "ui", "app", "workflows", "create-intent.js"),
     path.join(workspace, ".aurora", "system", "ui", "app", "workflows", "concepts.js"),
+    path.join(workspace, ".aurora", "system", "ui", "app", "workflows", "storyboard.js"),
     path.join(workspace, ".aurora", "system", "ui", "app", "tooltip.js")
   ];
 
@@ -193,6 +195,25 @@ try {
     );
   }
 
+  const sortablePackage = path.join(
+    workspace,
+    "node_modules",
+    "sortablejs",
+    "package.json"
+  );
+  if (!fs.existsSync(sortablePackage)) {
+    throw new Error("SortableJS dependency was not installed with the package.");
+  }
+
+  const sortableMeta = JSON.parse(
+    fs.readFileSync(sortablePackage, "utf8")
+  );
+  if (sortableMeta.version !== "1.15.7") {
+    throw new Error(
+      "Installed SortableJS version mismatch: " + sortableMeta.version
+    );
+  }
+
   const uiServerModule = await import(
     pathToFileURL(
       path.join(packageDir, "src", "ui-server.mjs")
@@ -211,7 +232,8 @@ try {
       "/vendor/floating-ui-utils-dom.js",
       "/vendor/floating-ui-core.js",
       "/vendor/floating-ui-dom.js",
-      "/vendor/media-chrome.js"
+      "/vendor/media-chrome.js",
+      "/vendor/sortable.js"
     ]) {
       const response = await fetch(
         `http://127.0.0.1:${ui.port}${vendorPath}`
@@ -224,7 +246,9 @@ try {
       const js = await response.text();
       const looksValid = vendorPath.includes("media-chrome")
         ? (js.includes("media-controller") || js.includes("MediaChrome"))
-        : js.includes("FloatingUI");
+        : vendorPath.includes("sortable")
+          ? (js.includes("Sortable") || js.includes("sortable"))
+          : js.includes("FloatingUI");
 
       if (!looksValid) {
         throw new Error(
