@@ -121,6 +121,8 @@ try {
     path.join(workspace, ".aurora", "system", "ui", "app.js"),
     path.join(workspace, ".aurora", "system", "ui", "app", "router.js"),
     path.join(workspace, ".aurora", "system", "ui", "app", "views", "create.js"),
+    path.join(workspace, ".aurora", "system", "ui", "app", "workflows", "assets.js"),
+    path.join(workspace, ".aurora", "system", "ui", "styles", "assets.css"),
     path.join(workspace, ".aurora", "system", "ui", "styles", "tokens.css"),
     path.join(workspace, ".aurora", "system", "ui", "styles", "components.css"),
     path.join(workspace, ".aurora", "system", "ui", "vendor", "LUCIDE-LICENSE.txt"),
