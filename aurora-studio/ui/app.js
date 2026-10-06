@@ -1,4 +1,4 @@
-import { createApi, createMediaUrl } from "./app/api.js";
+import { createApi, createMediaUrl, createRawApi } from "./app/api.js";
 import { createViewRouter } from "./app/router.js";
 import { createToast } from "./app/toast.js";
 import { initTooltips } from "./app/tooltip.js";
@@ -24,6 +24,9 @@ import {
   resourceChanges
 } from "./app/views/settings.js";
 import { renderUpdates } from "./app/views/updates.js";
+import { createReferenceWorkflow } from "./app/workflows/reference.js";
+import { createIntentWorkflow } from "./app/workflows/create-intent.js";
+import { renderAgentHandoff } from "./app/components/agent-handoff.js";
 import {
   daypart,
   money,
@@ -46,6 +49,7 @@ const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
 
 const api = createApi(token);
+const rawApi = createRawApi(token);
 const mediaUrl = createMediaUrl(token);
 
 const toast = createToast();
@@ -113,6 +117,12 @@ function render(next) {
 
   referenceWorkflow.sync(next);
   intentWorkflow.sync(next);
+
+  referenceWorkflow.setFromRun(run);
+  referenceWorkflow.render();
+  intentWorkflow.setFromRun(run);
+  intentWorkflow.render();
+  renderAgentHandoff(next.agent, toast);
 
   renderTools(next.tools || []);
   renderPreview(run, mediaUrl);
