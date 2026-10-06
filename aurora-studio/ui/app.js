@@ -23,12 +23,8 @@ import {
 } from "./app/views/settings.js";
 import { renderUpdates } from "./app/views/updates.js";
 import {
-  commaList,
   daypart,
-  escapeHtml,
-  listValue,
   money,
-  nested,
   titleCase
 } from "./app/format.js";
 
