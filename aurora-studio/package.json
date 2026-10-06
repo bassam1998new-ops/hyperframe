@@ -16,7 +16,8 @@
     "discover": "node ./bin/aurora-studio.mjs discover",
     "validate": "node ./bin/aurora-studio.mjs validate",
     "release:status": "node ./bin/aurora-studio.mjs release status",
-    "release:gate": "node ./bin/aurora-studio.mjs release gate"
+    "release:gate": "node ./bin/aurora-studio.mjs release gate",
+    "ui": "node ./bin/aurora-studio.mjs ui"
   },
   "engines": {
     "node": ">=22"
@@ -39,6 +40,7 @@
   "files": [
     "bin",
     "src",
+    "ui",
     "skills",
     "agent-skills",
     "knowledge",

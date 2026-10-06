@@ -5,7 +5,10 @@ AurorA Studio follows a simple **New / Fixed** release summary so community user
 ## Unreleased
 
 ### New
-- UI functional handoff is ready for visual design.
+- Local V1 Create dashboard with the approved dark Aurora Studio visual direction.
+- `aurora-studio ui` localhost-only token-protected Studio launcher.
+- Real workspace preview, stage/build board, tool health, activity, usage and library shelf.
+- UI functional handoff is now visually locked for the V1 Create screen.
 - Structured post-render review now uses PASS / FIX / REBUILD.
 - Claude and Codex can use project-local AurorA native skills.
 - Standard Windows Blender and After Effects installs can be detected outside PATH.

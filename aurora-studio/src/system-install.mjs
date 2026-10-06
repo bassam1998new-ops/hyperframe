@@ -12,6 +12,7 @@ const SYSTEM_ITEMS = [
   "studio.manifest.json",
   "bin",
   "src",
+  "ui",
   "skills",
   "agent-skills",
   "knowledge",

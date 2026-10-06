@@ -1,10 +1,10 @@
 # AurorA Studio — UI Functional Handoff
 
-Status: ready for visual direction.
+Status: **visual direction locked for V1 Create screen**.
 
-This document defines **what the UI must do**, not how it should look.
+The owner approved a dark cinematic Studio reference on 2026-10-06.
 
-Do not choose colors, typography, layout style, icon style, glass effects, gradients, logo treatment or motion direction until the owner supplies the final visual reference.
+This document defines both the functional contract and the canonical V1 visual DNA for the current build.
 
 ## Product rule
 
@@ -383,13 +383,63 @@ Do **not** add more top-level screens until real users prove they are needed.
 
 ---
 
-## Visual direction status
+## Visual direction — locked for V1
 
-**Not locked yet.**
+Use the approved reference's visual DNA, translated to real AurorA functionality:
 
-The owner will provide the final UI/UX style reference.
+- near-black / deep indigo workspace
+- very thin violet glass borders
+- subtle blur and low-opacity glass panels
+- restrained violet / electric blue / cyan accent gradient
+- AurorA gradient orb as the main identity/status motif
+- dense professional editing workspace, but not noisy
+- compact neutral UI typography
+- large current preview as the visual anchor
+- production/build board beside the preview
+- activity/status rail on the right
+- reusable asset shelf below
+- small green/amber/violet status indicators
+- soft glow only around active/important states
+- rounded panels/buttons, never bubbly or toy-like
 
-Until then:
-- preserve functionality only
-- keep components easy to reskin
-- do not hard-code a visual identity based on temporary development UI
+Do **not** copy fake/demo product labels from the visual reference.
+
+Translate them to real AurorA state:
+- rendering pill → active run/current stage
+- storyboard → real Director/build-plan shots
+- spend → known real provider usage only
+- asset shelf → real AurorA library
+- engine status → HyperFrames / Blender / optional AE availability
+- activity → real checkpoints/decisions
+- prompt field → creates a real AurorA run
+
+### Navigation simplification
+
+Do not copy both crowded side rails from the reference.
+
+Permanent V1 destinations stay:
+- Create
+- Library
+- Project
+- Settings
+- Updates
+
+The current implementation enables Create and the in-page Library shelf first. Other visual pages come in later UI passes; do not fake them.
+
+### V1 implementation
+
+The first coded screen is:
+- **Create dashboard**
+  - Direct / Director switch
+  - request input
+  - real preview
+  - real simplified stage/build board
+  - tool health
+  - activity
+  - real usage
+  - library shelf
+
+Launch:
+`aurora-studio ui`
+
+The UI uses packaged plain HTML/CSS/JS and reads the existing AurorA workspace. It does not create a second backend or duplicate Studio state.

@@ -71,7 +71,8 @@ import {
   runConfiguredSetupFile,
   recordRunUsage,
   summarizeRunUsage,
-  checkRunPaidUsage
+  checkRunPaidUsage,
+  startStudioUi
 } from "../src/studio.mjs";
 
 const [command = "help", ...args] = process.argv.slice(2);
@@ -97,6 +98,12 @@ switch (command) {
     break;
   case "doctor":
     await runDoctor();
+    break;
+  case "ui":
+    await startStudioUi({
+      port: flag("--port") || 4317,
+      open: !flagBool("--no-open")
+    });
     break;
   case "validate":
     await validateStudio();
@@ -379,6 +386,7 @@ AurorA Studio
 
 Quick start:
   aurora-studio setup
+  aurora-studio ui
   aurora-studio doctor
   aurora-studio mode direct|director
   aurora-studio status RUN_ID
@@ -391,7 +399,10 @@ Normal workflow:
 Need every command?
   aurora-studio help --all
 
-UI comes later. .aurora/ is the workspace source of truth.
+Studio UI:
+  aurora-studio ui
+
+.aurora/ remains the workspace source of truth.
 `);
       break;
     }
@@ -402,6 +413,7 @@ AurorA Studio — advanced commands
 Setup:
   aurora-studio setup
   aurora-studio setup --config aurora-setup.json
+  aurora-studio ui [--port 4317] [--no-open]
   aurora-studio doctor
   aurora-studio validate
   aurora-studio tools
