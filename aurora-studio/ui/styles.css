@@ -1516,3 +1516,26 @@ body.setup-mode .run-pill {
     border-top: 1px solid rgba(151,140,205,.09);
   }
 }
+
+
+.setup-resource-block {
+  display: grid;
+  gap: 10px;
+  padding-top: 6px;
+}
+
+.setup-resource-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(151,140,205,.10);
+  border-radius: 10px;
+  background: rgba(255,255,255,.014);
+}
+
+@media (max-width: 760px) {
+  .setup-resource-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
