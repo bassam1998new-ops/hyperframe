@@ -1,0 +1,80 @@
+.aurora-media-controller {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: inherit;
+  background: #04050b;
+  --media-control-background: rgba(7, 8, 19, 0.78);
+  --media-control-hover-background: rgba(117, 76, 255, 0.22);
+  --media-control-foreground: #f5f3ff;
+  --media-primary-color: #f5f3ff;
+  --media-secondary-color: rgba(255, 255, 255, 0.30);
+  --media-range-track-background: rgba(255, 255, 255, 0.16);
+  --media-range-bar-color: #8b5cff;
+  --media-range-thumb-background: #f5f3ff;
+  --media-tooltip-display: none;
+}
+
+.aurora-media-controller video[slot="media"] {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #04050b;
+}
+
+.aurora-media-controls {
+  min-height: 43px;
+  border-top: 1px solid rgba(166, 145, 255, 0.13);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(8, 9, 20, 0.56),
+      rgba(5, 6, 14, 0.92)
+    );
+  backdrop-filter: blur(16px);
+}
+
+.aurora-media-controller media-play-button,
+.aurora-media-controller media-mute-button,
+.aurora-media-controller media-playback-rate-button,
+.aurora-media-controller media-fullscreen-button {
+  min-width: 38px;
+  padding: 0 9px;
+}
+
+.aurora-media-controller media-time-display,
+.aurora-media-controller media-duration-display {
+  min-width: auto;
+  padding-inline: 5px;
+  color: rgba(232, 230, 244, 0.84);
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+
+.aurora-media-controller media-time-range {
+  min-width: 90px;
+  flex: 1;
+}
+
+.aurora-media-controller media-volume-range {
+  width: 76px;
+  min-width: 64px;
+}
+
+.aurora-native-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #04050b;
+}
+
+media-controller:not(:defined) {
+  display: none;
+}
+
+@media (max-width: 620px) {
+  .aurora-media-controller media-volume-range,
+  .aurora-media-controller media-duration-display,
+  .aurora-media-controller media-playback-rate-button {
+    display: none;
+  }
+}

@@ -300,12 +300,19 @@ switch (command) {
     break;
   case "plan": {
     const ref = flag("--reference");
+    const quality = flag("--quality") || "normal";
+    const aspect = flag("--aspect") || "project";
+    const optionNames = new Set(["--reference", "--quality", "--aspect"]);
     const filtered = args.filter((value, index) => {
-      if (value === "--reference") return false;
-      if (index > 0 && args[index - 1] === "--reference") return false;
+      if (optionNames.has(value)) return false;
+      if (index > 0 && optionNames.has(args[index - 1])) return false;
       return true;
     });
-    await planProduction(filtered.join(" "), { referenceId: ref });
+    await planProduction(filtered.join(" "), {
+      referenceId: ref,
+      quality,
+      aspect
+    });
     break;
   }
   case "routing":
@@ -483,7 +490,7 @@ After Effects (optional):
 
 Production:
   aurora-studio route "TASK"
-  aurora-studio plan "TASK" [--reference ID]
+  aurora-studio plan "TASK" [--reference ID] [--quality draft|normal|premium|hero] [--aspect project|9:16|16:9|1:1]
   aurora-studio routing RUN_ID
   aurora-studio status RUN_ID
   aurora-studio checkpoint RUN_ID STAGE STATUS [--artifact PATH] [--note TEXT] [--approved]

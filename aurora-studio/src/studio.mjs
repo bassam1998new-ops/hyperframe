@@ -588,7 +588,12 @@ export async function planProduction(taskText = "", options = {}, cwd = process.
     task: taskText,
     mode: ws.default_mode,
     routeDecision: null,
-    budget
+    budget,
+    intent: {
+      quality: options.quality || "normal",
+      aspect: options.aspect || "project"
+    },
+    referenceId: referenceRecord?.reference?.id || null
   });
 
   let moodRecord = null;
@@ -622,12 +627,14 @@ export async function planProduction(taskText = "", options = {}, cwd = process.
     type: "run_created",
     routing: "deferred",
     mode: ws.default_mode,
-    reference: referenceRecord?.reference?.id || null
+    reference: referenceRecord?.reference?.id || null,
+    intent: run.plan.intent
   }) + "\n");
 
   console.log(JSON.stringify({
     run_id: run.id,
     mode: ws.default_mode,
+    intent: run.plan.intent,
     route: null,
     routing: "deferred_until_after_mood_and_assets",
     first_stage: "understand",
@@ -698,6 +705,8 @@ export async function routeProductionRun(runId, cwd = process.cwd()) {
 
     const routeEvidence = [
       run.plan.task,
+      run.plan.intent?.quality,
+      run.plan.intent?.aspect,
       context.reference?.analysis?.medium,
       context.reference?.analysis?.subject,
       ...(context.reference?.analysis?.technical_constraints || []),
@@ -780,6 +789,8 @@ export async function showRunStatus(runId, cwd = process.cwd()) {
       run_id: runId,
       task: run.plan.task,
       mode: run.plan.mode,
+      intent: run.plan.intent || null,
+      reference_id: run.plan.reference_id || null,
       route: run.plan.route,
       current_stage: run.state.current_stage,
       status: run.state.status,

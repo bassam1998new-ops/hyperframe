@@ -78,6 +78,38 @@
           }
         }
       }
+    },
+    "intent": {
+      "type": "object",
+      "required": [
+        "quality",
+        "aspect"
+      ],
+      "properties": {
+        "quality": {
+          "enum": [
+            "draft",
+            "normal",
+            "premium",
+            "hero"
+          ]
+        },
+        "aspect": {
+          "enum": [
+            "project",
+            "9:16",
+            "16:9",
+            "1:1"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "reference_id": {
+      "type": [
+        "string",
+        "null"
+      ]
     }
   },
   "additionalProperties": true

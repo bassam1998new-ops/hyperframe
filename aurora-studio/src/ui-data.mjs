@@ -6,6 +6,7 @@ import { findAfterEffects } from "./adapters/after-effects.mjs";
 import { runtimeStatus } from "./runtime.mjs";
 import { localRelease } from "./update.mjs";
 import { systemStatus } from "./system-install.mjs";
+import { listReferences } from "./brain.mjs";
 
 const VIDEO_EXT = new Set([".mp4", ".mov", ".m4v", ".webm", ".mkv"]);
 const IMAGE_EXT = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif", ".svg"]);
@@ -230,6 +231,68 @@ function shotRows(run) {
   }));
 }
 
+function referenceSourceDisplay(source) {
+  if (source?.type !== "url") return source?.value || null;
+  try {
+    return new URL(source.value).hostname;
+  } catch {
+    return "External link";
+  }
+}
+
+function referenceRows(cwd) {
+  return listReferences(cwd)
+    .slice()
+    .sort((a, b) =>
+      String(b.updated_at || "").localeCompare(String(a.updated_at || ""))
+    )
+    .map(item => {
+      const source = item.source || {};
+      const preview =
+        source.type === "file"
+          ? mediaDescriptor(cwd, source.value)
+          : null;
+
+      return {
+        id: item.id,
+        name: item.name,
+        role: source.role || "visual",
+        source_type: source.type || "unknown",
+        source_value: referenceSourceDisplay(source),
+        original_name: source.original_name || null,
+        mime: source.mime || null,
+        preview:
+          preview && ["image", "video"].includes(preview.type)
+            ? preview
+            : null,
+        analysis: item.analysis || {},
+        updated_at: item.updated_at || null
+      };
+    });
+}
+
+function agentIntegrationStatus(cwd, run) {
+  const claude = fs.existsSync(
+    path.join(cwd, ".claude", "skills", "aurora-direct", "SKILL.md")
+  );
+  const codex = fs.existsSync(
+    path.join(cwd, ".agents", "skills", "aurora-direct", "SKILL.md")
+  );
+
+  return {
+    bridge_connected: false,
+    claude_installed: claude,
+    codex_installed: codex,
+    handoff: run
+      ? {
+          run_id: run.id,
+          message:
+            `Continue AurorA Studio run ${run.id}. Read .aurora/AGENT.md and the run artifacts, then continue from stage ${run.state.current_stage}.`
+        }
+      : null
+  };
+}
+
 function liveToolStatus(cwd, workspace) {
   const hf = resolveHyperframesBinary(cwd);
   const blender = findBlender();
@@ -269,6 +332,7 @@ export function buildStudioSnapshot(cwd = process.cwd()) {
   const runs = readRuns(cwd);
   const run = activeRun(runs);
   const library = readLibrary(cwd);
+  const references = referenceRows(cwd);
   const receipts = finalReceipts(cwd);
   const usage = summarizeUsage(run?.usage || []);
 
@@ -285,6 +349,7 @@ export function buildStudioSnapshot(cwd = process.cwd()) {
   const release = localRelease();
   const system = systemStatus(cwd);
   const obsidian = (workspace?.integrations || []).find(item => item.id === "obsidian") || null;
+  const agent = agentIntegrationStatus(cwd, run);
 
   return {
     schema_version: 1,
@@ -295,6 +360,8 @@ export function buildStudioSnapshot(cwd = process.cwd()) {
       resources: workspace.resources || {}
     } : null,
     project: project || workspace?.project || null,
+    references,
+    agent,
     tools,
     runtime,
     system,
@@ -322,6 +389,8 @@ export function buildStudioSnapshot(cwd = process.cwd()) {
       id: run.id,
       task: run.plan.task,
       mode: run.plan.mode,
+      intent: run.plan.intent || { quality: "normal", aspect: "project" },
+      reference_id: run.plan.reference_id || null,
       status: run.state.status,
       current_stage: run.state.current_stage,
       route: run.plan.route || [],

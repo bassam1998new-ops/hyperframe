@@ -2,6 +2,8 @@ import { createApi, createMediaUrl } from "./app/api.js";
 import { createViewRouter } from "./app/router.js";
 import { createToast } from "./app/toast.js";
 import { initTooltips } from "./app/tooltip.js";
+import { createReferenceWorkflow } from "./app/workflows/reference.js";
+import { createIntentWorkflow } from "./app/workflows/create-intent.js";
 import {
   renderActivity,
   renderBoard,
@@ -53,6 +55,20 @@ const router = createViewRouter({
 });
 const switchView = router.switchView;
 
+const referenceWorkflow = createReferenceWorkflow({
+  api,
+  getState: () => state,
+  onState: next => render(next),
+  mediaUrl,
+  toast
+});
+
+const intentWorkflow = createIntentWorkflow({
+  getState: () => state,
+  referenceWorkflow,
+  toast
+});
+
 function render(next) {
   state = next;
   const configured = Boolean(next.configured);
@@ -95,8 +111,8 @@ function render(next) {
   $("#run-pill-text").textContent = run ? run.task : configured ? "Ready to create" : "Setup required";
   pillLabel.textContent = run ? titleCase(run.current_stage).toUpperCase() : "READY";
 
-  $("#prompt-input").disabled = !configured || busy;
-  $("#prompt-input").placeholder = configured ? "What are we making?" : "Run setup first";
+  referenceWorkflow.sync(next);
+  intentWorkflow.sync(next);
 
   renderTools(next.tools || []);
   renderPreview(run, mediaUrl);
@@ -143,6 +159,10 @@ async function changeMode(mode) {
 $("#prompt-form").addEventListener("submit", async event => {
   event.preventDefault();
   if (busy || !state?.configured) return;
+  if (intentWorkflow.locked) {
+    toast("Finish or revise the active run before starting another.", true);
+    return;
+  }
 
   const input = $("#prompt-input");
   const task = input.value.trim();
@@ -155,18 +175,29 @@ $("#prompt-form").addEventListener("submit", async event => {
   try {
     const result = await api("/api/plan", {
       method: "POST",
-      body: JSON.stringify({ task })
+      body: JSON.stringify({
+        task,
+        referenceId: referenceWorkflow.selectedReferenceId,
+        quality: intentWorkflow.quality,
+        aspect: intentWorkflow.aspect
+      })
     });
     if (!result.ok) throw new Error(result.stderr || "AurorA could not start the run.");
     input.value = "";
     render(result.state);
     switchView("create");
-    toast("Run created. Your agent can continue the production.");
+    toast(
+      result.state?.agent?.bridge_connected
+        ? "Run created."
+        : "Run created. Continue in Claude or Codex."
+    );
   } catch (error) {
     toast(error.message, true);
   } finally {
     busy = false;
-    input.disabled = false;
+    input.disabled =
+      !state?.configured ||
+      intentWorkflow.locked;
   }
 });
 

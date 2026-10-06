@@ -5,6 +5,10 @@ AurorA Studio follows a simple **New / Fixed** release summary so community user
 ## Unreleased
 
 ### New
+- Create now supports durable reference selection, quality tier and aspect intent.
+- Secure local reference uploads and external reference links.
+- Media Chrome 4.19.3 player with AurorA-styled controls and native fallback.
+- Honest Claude/Codex handoff when a run exists but no live agent bridge is connected.
 - Local V1 Create dashboard with the approved dark Aurora Studio visual direction.
 - `aurora-studio ui` localhost-only token-protected Studio launcher.
 - Real workspace preview, stage/build board, tool health, activity, usage and library shelf.

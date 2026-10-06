@@ -39,7 +39,20 @@ export function makeRunId(taskText = "video", now = new Date()) {
   return `${stamp}-${sanitize(taskText)}`;
 }
 
-export function buildPlan({ task, mode, routeDecision, budget }) {
+export function buildPlan({
+  task,
+  mode,
+  routeDecision,
+  budget,
+  intent = {},
+  referenceId = null
+}) {
+  const quality = ["draft", "normal", "premium", "hero"].includes(intent.quality)
+    ? intent.quality
+    : "normal";
+  const aspect = ["project", "9:16", "16:9", "1:1"].includes(intent.aspect)
+    ? intent.aspect
+    : "project";
   const stages = STAGES.map(name => ({
     id: name,
     status: "pending",
@@ -55,6 +68,11 @@ export function buildPlan({ task, mode, routeDecision, budget }) {
     schema_version: 1,
     task,
     mode,
+    intent: {
+      quality,
+      aspect
+    },
+    reference_id: referenceId || null,
     created_at: new Date().toISOString(),
     route: routeDecision?.selected?.route || [],
     route_score: routeDecision?.selected?.score ?? null,
@@ -99,13 +117,28 @@ function criteriaFor(stage) {
   }
 }
 
-export function createRun({ cwd = process.cwd(), task, mode, routeDecision, budget }) {
+export function createRun({
+  cwd = process.cwd(),
+  task,
+  mode,
+  routeDecision,
+  budget,
+  intent = {},
+  referenceId = null
+}) {
   const id = makeRunId(task);
   const dir = path.join(runsDir(cwd), id);
   fs.mkdirSync(path.join(dir, "history"), { recursive: true });
   fs.mkdirSync(path.join(dir, "temp"), { recursive: true });
 
-  const plan = buildPlan({ task, mode, routeDecision, budget });
+  const plan = buildPlan({
+    task,
+    mode,
+    routeDecision,
+    budget,
+    intent,
+    referenceId
+  });
   fs.writeFileSync(path.join(dir, "plan.json"), JSON.stringify(plan, null, 2) + "\n");
   fs.writeFileSync(path.join(dir, "state.json"), JSON.stringify({
     schema_version: 1,

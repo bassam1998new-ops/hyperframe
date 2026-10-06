@@ -121,3 +121,43 @@
     grid-template-columns: 1fr 1fr;
   }
 }
+
+
+@media (max-width: 1180px) {
+  .create-intent-bar {
+    grid-template-columns: minmax(150px, 1fr) auto auto;
+  }
+
+  .intent-hint {
+    grid-column: 1 / -1;
+    text-align: left;
+  }
+}
+
+@media (max-width: 760px) {
+  .create-intent-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .intent-control {
+    justify-content: space-between;
+  }
+
+  .intent-options {
+    flex: 1;
+  }
+
+  .intent-options button {
+    flex: 1;
+  }
+
+  .agent-handoff {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .reference-role-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

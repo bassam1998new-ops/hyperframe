@@ -76,6 +76,27 @@ export function referencesDir(cwd = process.cwd()) {
   return path.join(auroraDir(cwd), "references");
 }
 
+function normalizeReferenceSource(source) {
+  if (!source) return { type: "unknown", value: null, role: "visual" };
+  if (typeof source === "string") {
+    return { type: "provided", value: source, role: "visual" };
+  }
+
+  const type = String(source.type || "provided");
+  const value = source.value == null ? null : String(source.value);
+  const role = ["visual", "source_material"].includes(source.role)
+    ? source.role
+    : "visual";
+
+  return {
+    type,
+    value,
+    role,
+    ...(source.mime ? { mime: String(source.mime) } : {}),
+    ...(source.original_name ? { original_name: String(source.original_name) } : {})
+  };
+}
+
 export function createReference(name, source = null, cwd = process.cwd()) {
   const dir = referencesDir(cwd);
   fs.mkdirSync(dir, { recursive: true });
@@ -88,7 +109,7 @@ export function createReference(name, source = null, cwd = process.cwd()) {
     schema_version: 1,
     id,
     name,
-    source: source ? { type: "provided", value: source } : { type: "unknown", value: null },
+    source: normalizeReferenceSource(source),
     analysis: {
       medium: null,
       subject: null,
@@ -143,6 +164,17 @@ export function listReferences(cwd = process.cwd()) {
     .map(name => {
       const file = path.join(dir, name);
       const data = JSON.parse(fs.readFileSync(file, "utf8"));
-      return { id: data.id, name: data.name, file };
+      return {
+        id: data.id,
+        name: data.name,
+        file,
+        source: data.source || null,
+        analysis: {
+          medium: data.analysis?.medium ?? null,
+          subject: data.analysis?.subject ?? null,
+          quality_tier: data.analysis?.quality_tier ?? null
+        },
+        updated_at: data.updated_at || data.created_at || null
+      };
     });
 }

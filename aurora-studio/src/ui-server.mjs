@@ -6,10 +6,17 @@ import { spawn, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 import { buildStudioSnapshot, resolveWorkspaceMedia } from "./ui-data.mjs";
+import {
+  MAX_REFERENCE_BYTES,
+  createUrlReference,
+  storeReferenceUpload
+} from "./reference-files.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const UI_ROOT = path.resolve(HERE, "../ui");
 const require = createRequire(import.meta.url);
+
+const MEDIA_CHROME_VENDOR = "/vendor/media-chrome.js";
 
 const FLOATING_VENDOR = {
   "/vendor/floating-ui-utils.js": {
@@ -73,6 +80,44 @@ const RESOURCE_FIELDS = new Set([
   "elevenlabs",
   "local_paths"
 ]);
+
+function packageRootFromEntry(entry, expectedName) {
+  let dir = path.dirname(entry);
+
+  for (let depth = 0; depth < 8; depth += 1) {
+    const packageFile = path.join(dir, "package.json");
+
+    if (fs.existsSync(packageFile)) {
+      try {
+        const pkg = JSON.parse(fs.readFileSync(packageFile, "utf8"));
+        if (pkg.name === expectedName) return dir;
+      } catch {
+        // Keep walking upward; malformed nested metadata is not authoritative.
+      }
+    }
+
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+
+  return null;
+}
+
+function resolveMediaChromeVendor() {
+  try {
+    const entry = require.resolve("media-chrome");
+    const root = packageRootFromEntry(entry, "media-chrome");
+    if (!root) return null;
+
+    const file = path.join(root, "dist", "iife", "index.js");
+
+    if (!fs.existsSync(file) || !fs.statSync(file).isFile()) return null;
+    return file;
+  } catch {
+    return null;
+  }
+}
 
 function resolveFloatingVendor(urlPath) {
   const spec = FLOATING_VENDOR[urlPath];
@@ -226,6 +271,24 @@ export async function startStudioUiServer({
         if (supplied !== token) return unauthorized(res);
       }
 
+      if (req.method === "GET" && url.pathname === MEDIA_CHROME_VENDOR) {
+        const file = resolveMediaChromeVendor();
+        if (!file) {
+          return json(res, 404, {
+            error: "Media Chrome is not installed."
+          });
+        }
+
+        const body = fs.readFileSync(file);
+        res.writeHead(200, {
+          "Content-Type": "text/javascript; charset=utf-8",
+          "Content-Length": body.length,
+          "Cache-Control": "public, max-age=31536000, immutable"
+        });
+        res.end(body);
+        return;
+      }
+
       if (req.method === "GET" && FLOATING_VENDOR[url.pathname]) {
         const file = resolveFloatingVendor(url.pathname);
         if (!file) {
@@ -265,13 +328,78 @@ export async function startStudioUiServer({
         const task = String(body.task || "").trim();
         if (!task) return json(res, 400, { error: "Tell AurorA what you want to make." });
 
-        const args = ["plan", task];
+        const quality = ["draft", "normal", "premium", "hero"].includes(body.quality)
+          ? body.quality
+          : "normal";
+        const aspect = ["project", "9:16", "16:9", "1:1"].includes(body.aspect)
+          ? body.aspect
+          : "project";
+
+        const args = ["plan", task, "--quality", quality, "--aspect", aspect];
         if (body.referenceId) args.push("--reference", String(body.referenceId));
         const result = runCli(cliPath, cwd, args);
         return json(res, result.ok ? 200 : 400, {
           ...result,
           state: buildStudioSnapshot(cwd)
         });
+      }
+
+
+      if (req.method === "POST" && url.pathname === "/api/reference-link") {
+        const body = await readBody(req);
+        try {
+          const result = createUrlReference({
+            name: String(body.name || "").trim(),
+            url: body.url,
+            referenceRole: body.role
+          }, cwd);
+
+          return json(res, 200, {
+            ok: true,
+            reference: result.reference,
+            state: buildStudioSnapshot(cwd)
+          });
+        } catch (error) {
+          return json(res, 400, { error: error.message });
+        }
+      }
+
+      if (req.method === "POST" && url.pathname === "/api/reference-upload") {
+        const encodedName = req.headers["x-aurora-filename"];
+        if (!encodedName) {
+          return json(res, 400, { error: "Reference upload is missing a file name." });
+        }
+
+        let filename;
+        let displayName;
+        try {
+          filename = decodeURIComponent(String(encodedName));
+          displayName = req.headers["x-aurora-reference-name"]
+            ? decodeURIComponent(String(req.headers["x-aurora-reference-name"]))
+            : null;
+        } catch {
+          return json(res, 400, { error: "Reference upload metadata is invalid." });
+        }
+
+        try {
+          const result = await storeReferenceUpload(req, {
+            cwd,
+            filename,
+            name: displayName,
+            referenceRole: req.headers["x-aurora-reference-role"],
+            mime: req.headers["content-type"],
+            maxBytes: MAX_REFERENCE_BYTES
+          });
+
+          return json(res, 200, {
+            ok: true,
+            reference: result.reference,
+            size_bytes: result.size_bytes,
+            state: buildStudioSnapshot(cwd)
+          });
+        } catch (error) {
+          return json(res, 400, { error: error.message });
+        }
       }
 
 

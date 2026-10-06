@@ -140,3 +140,41 @@ test("finalization readiness reports incomplete production stages before cleanup
   assert.ok(readiness.errors.some(error => error.includes("owner approval")));
   assert.ok(readiness.errors.some(error => error.includes("earlier stages")));
 });
+
+
+test("production plan persists quality aspect and reference intent", () => {
+  const plan = buildPlan({
+    task: "reference job",
+    mode: "director",
+    routeDecision: null,
+    intent: {
+      quality: "hero",
+      aspect: "9:16"
+    },
+    referenceId: "campaign-reference"
+  });
+
+  assert.deepEqual(plan.intent, {
+    quality: "hero",
+    aspect: "9:16"
+  });
+  assert.equal(plan.reference_id, "campaign-reference");
+});
+
+test("production plan normalizes invalid quality/aspect intent", () => {
+  const plan = buildPlan({
+    task: "safe defaults",
+    mode: "direct",
+    routeDecision: null,
+    intent: {
+      quality: "ultra-max",
+      aspect: "cinema"
+    }
+  });
+
+  assert.deepEqual(plan.intent, {
+    quality: "normal",
+    aspect: "project"
+  });
+  assert.equal(plan.reference_id, null);
+});

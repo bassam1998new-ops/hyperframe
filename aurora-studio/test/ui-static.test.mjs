@@ -21,6 +21,9 @@ test("browser UI JavaScript modules have valid syntax", () => {
     "ui/app/toast.js",
     "ui/app/dialog.js",
     "ui/app/tooltip.js",
+    "ui/app/components/media-player.js",
+    "ui/app/workflows/reference.js",
+    "ui/app/workflows/create-intent.js",
     "ui/app/views/create.js",
     "ui/app/views/library.js",
     "ui/app/views/project.js",
@@ -167,4 +170,42 @@ test("Floating UI is pinned and tooltip behavior has a graceful fallback", () =>
   assert.match(server, /floating-ui\.dom\.umd\.js/);
   assert.match(server, /floating-ui\.core\.umd\.js/);
   assert.match(server, /floating-ui\.utils\.umd\.js/);
+});
+
+
+test("Media Chrome is pinned, locally served, and used by Create preview", () => {
+  const pkg = JSON.parse(read("package.json"));
+  const server = read("src/ui-server.mjs");
+  const player = read("ui/app/components/media-player.js");
+  const create = read("ui/app/views/create.js");
+  const notice = read("ui/vendor/MEDIA-CHROME-LICENSE.txt");
+
+  assert.equal(pkg.dependencies?.["media-chrome"], "4.19.3");
+  assert.match(server, /media-chrome\.js/);
+  assert.match(server, /dist.*iife.*index\.js/s);
+  assert.match(player, /media-controller/);
+  assert.match(player, /media-time-range/);
+  assert.match(player, /media-fullscreen-button/);
+  assert.match(player, /aurora-native-preview/);
+  assert.match(create, /mountMediaPlayer/);
+  assert.match(notice, /Mux, Inc/);
+  assert.match(notice, /MIT|Permission is hereby granted/);
+});
+
+test("Create UI exposes reference quality aspect and honest agent handoff surfaces", () => {
+  const html = read("ui/index.html");
+  const app = read("ui/app.js");
+  const reference = read("ui/app/workflows/reference.js");
+  const intent = read("ui/app/workflows/create-intent.js");
+
+  assert.match(html, /id="reference-dialog"/);
+  assert.match(html, /data-quality="hero"/);
+  assert.match(html, /data-aspect="9:16"/);
+  assert.match(html, /id="agent-handoff"/);
+  assert.match(reference, /\/api\/reference-upload/);
+  assert.match(reference, /\/api\/reference-link/);
+  assert.match(intent, /bridge_connected/);
+  assert.match(app, /referenceId: referenceWorkflow\.selectedReferenceId/);
+  assert.match(app, /quality: intentWorkflow\.quality/);
+  assert.match(app, /aspect: intentWorkflow\.aspect/);
 });
