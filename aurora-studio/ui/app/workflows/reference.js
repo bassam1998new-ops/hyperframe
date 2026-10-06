@@ -60,6 +60,7 @@ export function createReferenceWorkflow({
   const dialog = bindDialog(dialogNode);
 
   let selectedReferenceId = null;
+  let selectionTouched = false;
   let pendingFile = null;
   let uploading = false;
 
@@ -68,11 +69,15 @@ export function createReferenceWorkflow({
       .find(item => item.id === id) || null;
   }
 
-  function setSelected(id) {
+  function setSelected(id, { manual = true } = {}) {
     selectedReferenceId = id || null;
+    if (manual) selectionTouched = true;
     renderSelection();
     renderRecent();
-    onSelectionChange?.(selectedReferenceId, referenceById(selectedReferenceId));
+    onSelectionChange?.(
+      selectedReferenceId,
+      referenceById(selectedReferenceId)
+    );
   }
 
   function getSelectedId() {
@@ -80,9 +85,10 @@ export function createReferenceWorkflow({
   }
 
   function setFromRun(run) {
+    if (selectionTouched) return;
     if (!run?.reference_id) return;
     if (selectedReferenceId) return;
-    setSelected(run.reference_id);
+    setSelected(run.reference_id, { manual: false });
   }
 
   function renderSelection() {
