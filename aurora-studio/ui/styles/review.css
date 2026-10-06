@@ -202,8 +202,13 @@
   background: #04050b;
 }
 
-.review-compare-cell > img,
-.review-compare-cell > video {
+.review-compare-media {
+  width: 100%;
+  height: 100%;
+}
+
+.review-compare-media > img,
+.review-compare-media > video {
   width: 100%;
   height: 100%;
   object-fit: contain;
