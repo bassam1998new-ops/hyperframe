@@ -188,7 +188,6 @@ export function createReferenceWorkflow({
         headers: {
           "Content-Type":
             pendingFile.type || "application/octet-stream",
-          "Content-Length": String(pendingFile.size),
           "X-Aurora-Filename": encodeURIComponent(pendingFile.name),
           "X-Aurora-Reference-Role": selectedRole("upload-reference-role")
         },
