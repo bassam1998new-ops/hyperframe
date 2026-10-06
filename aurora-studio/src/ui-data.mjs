@@ -6,7 +6,6 @@ import { findAfterEffects } from "./adapters/after-effects.mjs";
 import { runtimeStatus } from "./runtime.mjs";
 import { localRelease } from "./update.mjs";
 import { systemStatus } from "./system-install.mjs";
-import { obsidianInfo } from "./integrations/obsidian.mjs";
 
 const VIDEO_EXT = new Set([".mp4", ".mov", ".m4v", ".webm", ".mkv"]);
 const IMAGE_EXT = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif", ".svg"]);
@@ -285,7 +284,7 @@ export function buildStudioSnapshot(cwd = process.cwd()) {
   const runtime = runtimeStatus();
   const release = localRelease();
   const system = systemStatus(cwd);
-  const obsidian = obsidianInfo();
+  const obsidian = (workspace?.integrations || []).find(item => item.id === "obsidian") || null;
 
   return {
     schema_version: 1,
@@ -301,8 +300,10 @@ export function buildStudioSnapshot(cwd = process.cwd()) {
     system,
     integrations: {
       obsidian: {
-        available: Boolean(obsidian.available),
-        note: obsidian.note || null
+        available: Boolean(obsidian?.available),
+        note: obsidian?.available
+          ? "Obsidian CLI detected."
+          : "Optional knowledge UI."
       }
     },
     release: {
