@@ -25,6 +25,7 @@ const UI_ROOT = path.resolve(HERE, "../ui");
 const require = createRequire(import.meta.url);
 
 const MEDIA_CHROME_VENDOR = "/vendor/media-chrome.js";
+const SORTABLE_VENDOR = "/vendor/sortable.js";
 
 const FLOATING_VENDOR = {
   "/vendor/floating-ui-utils.js": {
@@ -110,6 +111,16 @@ function packageRootFromEntry(entry, expectedName) {
   }
 
   return null;
+}
+
+function resolveSortableVendor() {
+  try {
+    const file = require.resolve("sortablejs");
+    if (!fs.existsSync(file) || !fs.statSync(file).isFile()) return null;
+    return file;
+  } catch {
+    return null;
+  }
 }
 
 function resolveMediaChromeVendor() {
@@ -277,6 +288,24 @@ export async function startStudioUiServer({
       if (url.pathname.startsWith("/api/") || url.pathname === "/media") {
         const supplied = req.headers["x-aurora-token"] || url.searchParams.get("token");
         if (supplied !== token) return unauthorized(res);
+      }
+
+      if (req.method === "GET" && url.pathname === SORTABLE_VENDOR) {
+        const file = resolveSortableVendor();
+        if (!file) {
+          return json(res, 404, {
+            error: "SortableJS is not installed."
+          });
+        }
+
+        const body = fs.readFileSync(file);
+        res.writeHead(200, {
+          "Content-Type": "text/javascript; charset=utf-8",
+          "Content-Length": body.length,
+          "Cache-Control": "public, max-age=31536000, immutable"
+        });
+        res.end(body);
+        return;
       }
 
       if (req.method === "GET" && url.pathname === MEDIA_CHROME_VENDOR) {
