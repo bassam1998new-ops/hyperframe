@@ -25,6 +25,7 @@ test("browser UI JavaScript modules have valid syntax", () => {
     "ui/app/workflows/reference.js",
     "ui/app/workflows/create-intent.js",
     "ui/app/workflows/concepts.js",
+    "ui/app/workflows/storyboard.js",
     "ui/app/views/create.js",
     "ui/app/views/library.js",
     "ui/app/views/project.js",
@@ -228,4 +229,45 @@ test("Director concept UI is structured, selectable, refinable, and lock-aware",
   assert.match(workflow, /Select direction/);
   assert.match(css, /\.concept-card/);
   assert.match(css, /\.concept-status\.locked/);
+});
+
+
+test("Storyboard UI is SortableJS-backed with keyboard-safe fallback controls", () => {
+  const pkg = JSON.parse(read("package.json"));
+  const html = read("ui/index.html");
+  const app = read("ui/app.js");
+  const create = read("ui/app/views/create.js");
+  const workflow = read("ui/app/workflows/storyboard.js");
+  const server = read("src/ui-server.mjs");
+  const notice = read("ui/vendor/SORTABLEJS-LICENSE.txt");
+
+  assert.equal(pkg.dependencies?.sortablejs, "1.15.7");
+
+  assert.match(html, /id="storyboard-add"/);
+  assert.match(html, /id="shot-inspector"/);
+  assert.match(html, /id="shot-move-up"/);
+  assert.match(html, /id="shot-move-down"/);
+  assert.match(html, /id="shot-duplicate"/);
+  assert.match(html, /id="shot-remove"/);
+
+  assert.match(app, /createStoryboardWorkflow/);
+  assert.match(app, /storyboardWorkflow\.sync/);
+
+  assert.match(create, /data-shot-id/);
+  assert.match(create, /shot-drag-handle/);
+  assert.match(create, /output_preview/);
+
+  assert.match(workflow, /\/vendor\/sortable\.js/);
+  assert.match(workflow, /\/api\/storyboard-reorder/);
+  assert.match(workflow, /\/api\/storyboard-add/);
+  assert.match(workflow, /\/api\/storyboard-update/);
+  assert.match(workflow, /\/api\/storyboard-duplicate/);
+  assert.match(workflow, /\/api\/storyboard-remove/);
+  assert.match(workflow, /\/api\/storyboard-move/);
+  assert.match(workflow, /direction === "up"/);
+  assert.match(workflow, /direction === "down"/);
+
+  assert.match(server, /SORTABLE_VENDOR/);
+  assert.match(notice, /SortableJS 1\.15\.7/);
+  assert.match(notice, /MIT License/);
 });
