@@ -2,7 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "..");
@@ -115,7 +115,14 @@ try {
     path.join(workspace, ".aurora", "system", "knowledge", "tools", "registry.json"),
     path.join(workspace, ".aurora", "system", "ui", "index.html"),
     path.join(workspace, ".aurora", "system", "ui", "styles.css"),
-    path.join(workspace, ".aurora", "system", "ui", "app.js")
+    path.join(workspace, ".aurora", "system", "ui", "app.js"),
+    path.join(workspace, ".aurora", "system", "ui", "app", "router.js"),
+    path.join(workspace, ".aurora", "system", "ui", "app", "views", "create.js"),
+    path.join(workspace, ".aurora", "system", "ui", "styles", "tokens.css"),
+    path.join(workspace, ".aurora", "system", "ui", "styles", "components.css"),
+    path.join(workspace, ".aurora", "system", "ui", "vendor", "LUCIDE-LICENSE.txt"),
+    path.join(workspace, ".aurora", "system", "ui", "vendor", "FLOATING-UI-LICENSE.txt"),
+    path.join(workspace, ".aurora", "system", "ui", "app", "tooltip.js")
   ];
 
   for (const file of expected) {
@@ -138,6 +145,62 @@ try {
 
   if (workspaceJson.project?.product !== "Package Smoke Product") {
     throw new Error("Configured setup did not persist the product.");
+  }
+
+  const floatingPackage = path.join(
+    workspace,
+    "node_modules",
+    "@floating-ui",
+    "dom",
+    "package.json"
+  );
+  if (!fs.existsSync(floatingPackage)) {
+    throw new Error("Floating UI dependency was not installed with the package.");
+  }
+
+  const floatingMeta = JSON.parse(fs.readFileSync(floatingPackage, "utf8"));
+  if (floatingMeta.version !== "1.8.0") {
+    throw new Error(
+      "Installed Floating UI version mismatch: " + floatingMeta.version
+    );
+  }
+
+  const uiServerModule = await import(
+    pathToFileURL(
+      path.join(packageDir, "src", "ui-server.mjs")
+    ).href
+  );
+  const ui = await uiServerModule.startStudioUiServer({
+    cwd: workspace,
+    port: 0,
+    open: false,
+    cliPath: cli
+  });
+
+  try {
+    for (const vendorPath of [
+      "/vendor/floating-ui-utils.js",
+      "/vendor/floating-ui-utils-dom.js",
+      "/vendor/floating-ui-core.js",
+      "/vendor/floating-ui-dom.js"
+    ]) {
+      const response = await fetch(
+        `http://127.0.0.1:${ui.port}${vendorPath}`
+      );
+      if (response.status !== 200) {
+        throw new Error(
+          `Floating UI vendor route failed: ${vendorPath} -> ${response.status}`
+        );
+      }
+      const js = await response.text();
+      if (!js.includes("FloatingUI")) {
+        throw new Error(
+          `Floating UI vendor response looks invalid: ${vendorPath}`
+        );
+      }
+    }
+  } finally {
+    await ui.close();
   }
 
   console.log(JSON.stringify({
