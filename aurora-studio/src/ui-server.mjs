@@ -27,10 +27,12 @@ import {
   readAssetPlan
 } from "./asset-plan.mjs";
 import {
+  readLibrary,
   updateLibraryItem,
   removeLibraryItem,
   upsertLibraryItem
 } from "./library.mjs";
+import { licenseGate } from "./asset-sources.mjs";
 import { searchPolyHaven } from "./open-assets/poly-haven.mjs";
 import {
   createGenerationRequest,
@@ -753,11 +755,31 @@ export async function startStudioUiServer({
       if (req.method === "POST" && url.pathname === "/api/library-update") {
         const body = await readBody(req);
         try {
-          const result = updateLibraryItem(
-            String(body.id || ""),
+          const id = String(body.id || "");
+          const changes =
             body.changes && typeof body.changes === "object"
               ? body.changes
-              : {},
+              : {};
+
+          if (changes.approved === true) {
+            const existing = readLibrary(cwd).find(item => item.id === id);
+            if (!existing) {
+              return json(res, 400, { error: "Library item not found." });
+            }
+
+            const gate = licenseGate(existing);
+            if (!gate.allowed) {
+              return json(res, 400, {
+                error:
+                  "Library item cannot be approved until its license is verified.",
+                license_gate: gate
+              });
+            }
+          }
+
+          const result = updateLibraryItem(
+            id,
+            changes,
             cwd
           );
 
