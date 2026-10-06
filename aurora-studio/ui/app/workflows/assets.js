@@ -364,6 +364,29 @@ export function createAssetWorkflow({ api, getState, onState, mediaUrl, toast })
     if (!plan()) return toast("This run has no asset plan yet.", true);
     ensureNeed(); selectTab("needs"); drawer.open(); renderAll();
   }
+
+  function openLibraryItem(id) {
+    if (!plan()) {
+      toast("This run has no asset plan yet.", true);
+      return false;
+    }
+
+    const item = (getState()?.library_all || []).find(
+      entry => entry.id === id
+    );
+
+    if (!item) {
+      toast("Library item is no longer available.", true);
+      return false;
+    }
+
+    ensureNeed();
+    libraryQuery.value = item.name || "";
+    selectTab("library");
+    drawer.open();
+    renderAll();
+    return true;
+  }
   openButton.addEventListener("click", open);
 
   function sync(state = getState()) {
@@ -379,5 +402,10 @@ export function createAssetWorkflow({ api, getState, onState, mediaUrl, toast })
     if (drawer.open) renderAll();
   }
 
-  return { open, sync, setTab: selectTab };
+  return {
+    open,
+    openLibraryItem,
+    sync,
+    setTab: selectTab
+  };
 }
