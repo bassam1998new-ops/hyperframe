@@ -248,6 +248,7 @@ export function renderBoard(run, mediaUrl) {
                     type="button"
                     data-shot-open
                     aria-label="Edit shot ${shot.number}"
+                    title="Edit shot"
                     data-tooltip="Edit shot"
                     data-tooltip-placement="left"
                   >
