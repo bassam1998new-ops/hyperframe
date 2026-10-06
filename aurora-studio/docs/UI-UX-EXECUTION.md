@@ -9,8 +9,8 @@ Do not start a later wave before the current wave passes its package/Windows/Ubu
 | UI-10 | Design system + component foundation | **Complete ✅** |
 | UI-11 | Create core + Media Chrome | **Complete ✅** |
 | UI-12 | Director concepts | **Complete ✅** |
-| UI-13 | Storyboard / build board | **Implemented — CI pending** |
-| UI-14 | Asset workflow | Planned |
+| UI-13 | Storyboard / build board | Complete ✅ |
+| UI-14 | Asset workflow | **Implemented — CI pending** |
 | UI-15 | Render + review | Planned |
 | UI-16 | Library full | Planned |
 | UI-17 | Project Brain | Planned |
@@ -134,3 +134,33 @@ Do not start a later wave before the current wave passes its package/Windows/Ubu
 - Windows + Ubuntu full suite green
 - package audit 0 findings
 - installed-package smoke green
+
+
+## UI-14 delivered
+
+- structured asset-plan editing from Studio
+- safe downstream invalidation when asset evidence changes
+- tracked Library picker with REUSE / MODIFY
+- unapproved Library items cannot be reused from the drawer
+- fail-closed UI approval for unknown commercial rights
+- Poly Haven search
+- server-controlled CC0 tracking metadata
+- open assets are tracked before reuse
+- BUILD_NEW / NOT_NEEDED decisions
+- durable provider generation requests
+- configured provider availability only
+- live-cost / owner-approval budget gate
+- hard budget-cap block
+- generation status is `pending_agent`, never fake “generating”
+- finalized runs remain read-only
+- Library registry removal never deletes source files
+
+## Gate before UI-15
+
+- full tests green on Windows
+- full tests green on Ubuntu
+- package audit 0 findings
+- installed-package smoke green
+- Asset workflow modules included in portable package
+- provider cost approval tests green
+- asset-change invalidation tests green
