@@ -119,20 +119,17 @@ aurora-studio ui
 
 It runs on localhost only and opens a token-protected browser session.
 
-The first screen uses the real workspace state:
-- Direct / Director mode
-- project/product context
-- production-tool availability
-- active run + simplified stage board
-- per-shot build plan when available
-- current render/review preview
-- provider usage / known spend
-- reusable library shelf
-- current activity
+The V1 Studio uses real workspace state across five simple views:
+
+- **Create** — prompt, Direct/Director, preview, build board, activity, usage and recent library
+- **Library** — searchable tracked assets/styles across engines
+- **Project** — editable product brain, audience, brand and creative preferences
+- **Settings** — live production/runtime health plus optional resource toggles
+- **Updates** — local release notes and real update check
+
+A short first-run setup screen appears only when the workspace is not configured.
 
 No separate frontend framework is required. The UI is plain packaged HTML/CSS/JS served by AurorA itself.
-
-Project, Settings and Updates visual screens remain intentionally deferred until the Create screen is proven with real use.
 
 The updater should stay simple:
 - current version
