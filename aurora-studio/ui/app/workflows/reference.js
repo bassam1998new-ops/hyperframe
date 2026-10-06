@@ -2,7 +2,8 @@ import { bindDialog } from "../dialog.js";
 import { escapeHtml, titleCase } from "../format.js";
 
 const $ = selector => document.querySelector(selector);
-const $$ = selector => [...document.querySelectorAll(selector)];
+const $ = selector => [...document.querySelectorAll(selector)];
+const MAX_REFERENCE_BYTES = 512 * 1024 * 1024;
 
 function selectedRole(name) {
   return document.querySelector(
@@ -170,6 +171,14 @@ export function createReferenceWorkflow({
   }
 
   function setPendingFile(file) {
+    if (file && file.size > MAX_REFERENCE_BYTES) {
+      pendingFile = null;
+      $("#reference-file").value = "";
+      $("#reference-upload-selection").hidden = true;
+      toast("Reference is larger than the 512 MB Studio limit.", true);
+      return;
+    }
+
     pendingFile = file || null;
     const selection = $("#reference-upload-selection");
     const name = $("#reference-upload-name");
