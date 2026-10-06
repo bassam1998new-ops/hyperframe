@@ -403,6 +403,55 @@ export async function startStudioUiServer({
       }
 
 
+      if (req.method === "POST" && url.pathname === "/api/concept-select") {
+        const body = await readBody(req);
+        const runId = String(body.runId || "").trim();
+        const conceptId = String(body.conceptId || "").trim();
+
+        if (!runId || !conceptId) {
+          return json(res, 400, {
+            error: "Concept selection requires runId and conceptId."
+          });
+        }
+
+        const result = runCli(
+          cliPath,
+          cwd,
+          ["concepts", "select", runId, conceptId]
+        );
+
+        return json(res, result.ok ? 200 : 400, {
+          ...result,
+          state: buildStudioSnapshot(cwd)
+        });
+      }
+
+      if (req.method === "POST" && url.pathname === "/api/concept-refine") {
+        const body = await readBody(req);
+        const runId = String(body.runId || "").trim();
+        const conceptId = body.conceptId == null
+          ? null
+          : String(body.conceptId).trim();
+        const note = String(body.note || "").trim();
+
+        if (!runId || !note) {
+          return json(res, 400, {
+            error: "Concept refinement requires runId and a note."
+          });
+        }
+
+        const args = ["concepts", "refine", runId, "--note", note];
+        if (conceptId) args.push("--concept", conceptId);
+
+        const result = runCli(cliPath, cwd, args);
+
+        return json(res, result.ok ? 200 : 400, {
+          ...result,
+          state: buildStudioSnapshot(cwd)
+        });
+      }
+
+
       if (req.method === "POST" && url.pathname === "/api/project") {
         const body = await readBody(req);
         const changes = body.changes && typeof body.changes === "object"

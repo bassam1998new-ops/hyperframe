@@ -7,6 +7,15 @@ import { fileURLToPath } from "node:url";
 import { startStudioUiServer } from "../src/ui-server.mjs";
 import { writeConfiguredWorkspace } from "../src/configured-setup.mjs";
 import { hyperframesBin } from "../src/tool-install.mjs";
+import {
+  checkpoint,
+  createRun,
+  loadRun
+} from "../src/governance.mjs";
+import {
+  createConceptSet,
+  readConceptSet
+} from "../src/concepts.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const CLI = path.resolve(HERE, "../bin/aurora-studio.mjs");
@@ -450,5 +459,193 @@ test("Create API persists selected reference quality and aspect into the real ru
   } finally {
     if (previousFfmpeg === undefined) delete process.env.AURORA_FFMPEG_PATH;
     else process.env.AURORA_FFMPEG_PATH = previousFfmpeg;
+  }
+});
+
+
+test("Director concept UI endpoints select and refine real run artifacts", async () => {
+  const cwd = temp();
+
+  fs.mkdirSync(path.join(cwd, ".aurora"), { recursive: true });
+  fs.writeFileSync(path.join(cwd, ".aurora", "workspace.json"), JSON.stringify({
+    schema_version: 1,
+    studio: "AurorA Studio",
+    default_mode: "director",
+    project: {
+      product: "Director Product",
+      purpose: "launch videos",
+      website: ""
+    },
+    tools: [],
+    integrations: [],
+    resources: {},
+    learning: {
+      decision_log: ".aurora/decisions.jsonl",
+      lesson_log: ".aurora/lessons.jsonl",
+      approved_only: true
+    }
+  }));
+  fs.writeFileSync(path.join(cwd, ".aurora", "project.json"), JSON.stringify({
+    schema_version: 1,
+    project_id: "director-product",
+    product: "Director Product",
+    purpose: "launch videos",
+    website: "",
+    audience: [],
+    offer: "",
+    positioning: "",
+    brand: {
+      personality: [],
+      colors: [],
+      fonts: [],
+      logo_paths: [],
+      avoid: []
+    },
+    content: {
+      channels: [],
+      default_formats: [],
+      languages: [],
+      recurring_series: []
+    },
+    creative: {
+      preferred_moods: [],
+      avoid_moods: [],
+      recurring_constraints: []
+    },
+    claims_to_protect: [],
+    sources: [],
+    notes: []
+  }));
+
+  const run = createRun({
+    cwd,
+    task: "Director UI concept test",
+    mode: "director",
+    routeDecision: null
+  });
+
+  checkpoint({
+    cwd,
+    runId: run.id,
+    stage: "understand",
+    status: "completed"
+  });
+
+  const record = createConceptSet(run.id, cwd);
+  record.concept_set.status = "ready";
+  record.concept_set.concepts = [
+    {
+      id: "a",
+      name: "Direction A",
+      core_idea: "Quiet build into a clean reveal.",
+      project_fit: "Fits the premium product.",
+      emotional_arc: "Curiosity to confidence.",
+      visual_motion_grammar: ["slow orbit", "restrained type"],
+      complexity: "medium",
+      cost_class: "low",
+      biggest_risk: "Could be too restrained.",
+      preview: null,
+      notes: []
+    },
+    {
+      id: "b",
+      name: "Direction B",
+      core_idea: "Fast signal pattern becomes the product.",
+      project_fit: "Fits the technology story.",
+      emotional_arc: "Tension to clarity.",
+      visual_motion_grammar: ["signal pulse", "sharp edit"],
+      complexity: "high",
+      cost_class: "medium",
+      biggest_risk: "Could feel too technical.",
+      preview: null,
+      notes: []
+    }
+  ];
+  fs.writeFileSync(
+    record.file,
+    JSON.stringify(record.concept_set, null, 2) + "\n"
+  );
+
+  const ui = await startStudioUiServer({
+    cwd,
+    port: 0,
+    open: false,
+    cliPath: CLI
+  });
+
+  try {
+    const selectResponse = await fetch(
+      `http://127.0.0.1:${ui.port}/api/concept-select`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Aurora-Token": ui.token
+        },
+        body: JSON.stringify({
+          runId: run.id,
+          conceptId: "b"
+        })
+      }
+    );
+
+    assert.equal(selectResponse.status, 200);
+    const selectedPayload = await selectResponse.json();
+    assert.equal(
+      selectedPayload.state.active_run.concepts.selected_id,
+      "b"
+    );
+    assert.equal(
+      selectedPayload.state.active_run.concepts.selected.name,
+      "Direction B"
+    );
+
+    let saved = loadRun(cwd, run.id);
+    assert.equal(saved.state.checkpoints.concept.status, "completed");
+    assert.equal(saved.state.checkpoints.concept.human_approved, true);
+
+    const refineResponse = await fetch(
+      `http://127.0.0.1:${ui.port}/api/concept-refine`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Aurora-Token": ui.token
+        },
+        body: JSON.stringify({
+          runId: run.id,
+          conceptId: "b",
+          note: "Keep the signal idea but make it warmer."
+        })
+      }
+    );
+
+    assert.equal(refineResponse.status, 200);
+    const refinedPayload = await refineResponse.json();
+    assert.equal(
+      refinedPayload.state.active_run.concepts.status,
+      "pending"
+    );
+    assert.equal(
+      refinedPayload.state.active_run.concepts.selected_id,
+      null
+    );
+    assert.equal(
+      refinedPayload.state.active_run.concepts.refinement_requests.length,
+      1
+    );
+
+    const reread = readConceptSet(run.id, cwd);
+    assert.equal(reread.concept_set.status, "pending");
+    assert.equal(reread.concept_set.selected_id, null);
+    assert.equal(
+      reread.concept_set.refinement_requests[0].note,
+      "Keep the signal idea but make it warmer."
+    );
+
+    saved = loadRun(cwd, run.id);
+    assert.equal(saved.state.checkpoints.concept.status, "in_progress");
+  } finally {
+    await ui.close();
   }
 });

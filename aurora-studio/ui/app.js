@@ -4,6 +4,7 @@ import { createToast } from "./app/toast.js";
 import { initTooltips } from "./app/tooltip.js";
 import { createReferenceWorkflow } from "./app/workflows/reference.js";
 import { createIntentWorkflow } from "./app/workflows/create-intent.js";
+import { createConceptWorkflow } from "./app/workflows/concepts.js";
 import {
   renderActivity,
   renderBoard,
@@ -69,6 +70,13 @@ const intentWorkflow = createIntentWorkflow({
   toast
 });
 
+const conceptWorkflow = createConceptWorkflow({
+  api,
+  getState: () => state,
+  onState: next => render(next),
+  toast
+});
+
 function render(next) {
   state = next;
   const configured = Boolean(next.configured);
@@ -117,6 +125,7 @@ function render(next) {
   renderTools(next.tools || []);
   renderPreview(run, mediaUrl);
   renderBoard(run);
+  conceptWorkflow.sync(next);
   renderActivity(next.activity || []);
   renderUsage(run);
   renderLibraryShelf(next.library || [], mediaUrl);

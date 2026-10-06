@@ -187,7 +187,7 @@
             </div>
           </article>
 
-          <section class="panel board-panel">
+          <section class="panel board-panel" id="board-panel">
             <div class="panel-head board-head">
               <div>
                 <span class="eyebrow" id="board-eyebrow">PRODUCTION</span>
@@ -200,6 +200,38 @@
             </div>
             <div class="board-footer">
               <span id="board-footer-text">AurorA keeps routing and checkpoints behind the scenes.</span>
+              <button class="text-button direction-open" id="direction-open" type="button" hidden>
+                View direction
+              </button>
+            </div>
+          </section>
+
+          <section class="panel concepts-panel" id="concepts-panel" hidden>
+            <div class="panel-head concepts-head">
+              <div>
+                <span class="eyebrow">DIRECTOR CONCEPTS</span>
+                <strong id="concepts-title">Choose the direction</strong>
+              </div>
+              <div class="concepts-head-actions">
+                <span class="concept-status" id="concept-status">Pending</span>
+                <button class="text-button" id="concepts-back" type="button" hidden>
+                  Back to production
+                </button>
+              </div>
+            </div>
+
+            <div class="concepts-list" id="concepts-list">
+              <div class="concepts-pending">
+                <div class="brand-orb concept-orb"></div>
+                <strong>AurorA is preparing directions.</strong>
+                <p>Your agent will write 2–3 genuinely different concepts here.</p>
+              </div>
+            </div>
+
+            <div class="concepts-footer">
+              <span id="concepts-footer-text">
+                Software stays unlocked until the creative direction is chosen.
+              </span>
             </div>
           </section>
 
@@ -427,6 +459,43 @@
       </section>
     </main>
   </div>
+
+  <dialog class="aurora-dialog concept-refine-dialog" id="concept-refine-dialog">
+    <div class="aurora-dialog-head">
+      <div>
+        <span class="eyebrow">REFINE DIRECTION</span>
+        <strong id="concept-refine-title">Tell AurorA what to change</strong>
+      </div>
+      <button class="aurora-icon-button" type="button" data-dialog-close="close" aria-label="Close refinement dialog">
+        <svg><use href="#i-close"/></svg>
+      </button>
+    </div>
+
+    <form id="concept-refine-form">
+      <div class="aurora-dialog-body">
+        <input type="hidden" id="concept-refine-id" />
+        <label class="concept-refine-field">
+          What should change?
+          <textarea
+            id="concept-refine-note"
+            rows="5"
+            maxlength="1200"
+            placeholder="Keep the core idea, but make the reveal more human and less technical."
+            required
+          ></textarea>
+        </label>
+        <p class="concept-refine-note">
+          AurorA will invalidate any downstream planning derived from the old direction. Once actual build work starts, direction is locked.
+        </p>
+      </div>
+      <div class="aurora-dialog-foot">
+        <button class="aurora-button" type="button" data-dialog-close="cancel">Cancel</button>
+        <button class="aurora-button" data-variant="primary" id="concept-refine-submit" type="submit">
+          Request refinement
+        </button>
+      </div>
+    </form>
+  </dialog>
 
   <dialog class="aurora-dialog reference-dialog" id="reference-dialog">
     <div class="aurora-dialog-head">

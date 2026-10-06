@@ -49,6 +49,13 @@ import { installAgentHooks, removeAgentHooks } from "./hook-install.mjs";
 import { saveDiscovery } from "./discovery.mjs";
 import { createMood, readMood, validateMoodFile } from "./mood.mjs";
 import {
+  createConceptSet,
+  readConceptSet,
+  validateConceptSetFile,
+  selectConcept,
+  requestConceptRefinement
+} from "./concepts.mjs";
+import {
   createBuildPlan,
   readBuildPlan,
   validateBuildPlanFile
@@ -596,8 +603,10 @@ export async function planProduction(taskText = "", options = {}, cwd = process.
     referenceId: referenceRecord?.reference?.id || null
   });
 
+  let conceptRecord = null;
   let moodRecord = null;
   if (ws.default_mode === "director") {
+    conceptRecord = createConceptSet(run.id, cwd);
     moodRecord = createMood(run.id, cwd);
   }
   const assetPlanRecord = createAssetPlan(run.id, cwd);
@@ -640,6 +649,7 @@ export async function planProduction(taskText = "", options = {}, cwd = process.
     first_stage: "understand",
     plan: path.join(run.dir, "plan.json"),
     context: path.join(run.dir, "context.json"),
+    concepts: conceptRecord?.file || null,
     mood: moodRecord?.file || null,
     asset_plan: assetPlanRecord.file,
     learning_review: learningRecord.file,
@@ -807,6 +817,30 @@ export async function showRunStatus(runId, cwd = process.cwd()) {
 export async function writeRunCheckpoint(runId, stage, status, options = {}, cwd = process.cwd()) {
   try {
     let artifact = options.artifact || null;
+
+    if (stage === "concept" && status === "completed") {
+      const run = loadRun(cwd, runId);
+      if (run.plan.mode === "director") {
+        const validation = validateConceptSetFile(runId, cwd);
+        const conceptRecord = readConceptSet(runId, cwd);
+
+        if (
+          !validation.ok ||
+          conceptRecord?.concept_set?.status !== "selected" ||
+          !conceptRecord?.concept_set?.selected_id
+        ) {
+          throw new Error(
+            "Director concept selection is invalid: " +
+            (validation.errors || []).join("; ") +
+            (conceptRecord?.concept_set?.status !== "selected"
+              ? "; owner-selected concept is required"
+              : "")
+          );
+        }
+
+        artifact ||= conceptRecord.file;
+      }
+    }
 
     if (stage === "build_plan" && status === "completed") {
       const validation = validateBuildPlanFile(runId, cwd);
@@ -1439,6 +1473,94 @@ export async function checkAssetLicense(assetId, forBundling = false, cwd = proc
   console.log(JSON.stringify({ asset_id: assetId, for_bundling: forBundling, ...result }, null, 2));
   if (!result.allowed) process.exitCode = 2;
   return result;
+}
+
+
+export async function createConceptSetRecord(runId, cwd = process.cwd()) {
+  try {
+    const result = createConceptSet(runId, cwd);
+    console.log(JSON.stringify({
+      file: result.file,
+      concept_set: result.concept_set
+    }, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function showConceptSetRecord(runId, cwd = process.cwd()) {
+  try {
+    const result = readConceptSet(runId, cwd);
+    if (!result) throw new Error("Concept-set file not found.");
+    console.log(JSON.stringify(result.concept_set, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function validateConceptSetRecord(runId, cwd = process.cwd()) {
+  try {
+    const result = validateConceptSetFile(runId, cwd);
+    console.log(JSON.stringify(result, null, 2));
+    if (!result.ok) process.exitCode = 2;
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function selectRunConcept(runId, conceptId, cwd = process.cwd()) {
+  try {
+    const result = selectConcept(runId, conceptId, cwd);
+    console.log(JSON.stringify({
+      run_id: runId,
+      selected: result.selected,
+      file: result.file,
+      state: result.state
+    }, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
+}
+
+export async function refineRunConcept(
+  runId,
+  conceptId,
+  note,
+  cwd = process.cwd()
+) {
+  try {
+    const result = requestConceptRefinement(
+      runId,
+      {
+        conceptId: conceptId || null,
+        note
+      },
+      cwd
+    );
+    console.log(JSON.stringify({
+      run_id: runId,
+      file: result.file,
+      concept_set: result.concept_set,
+      state: result.state
+    }, null, 2));
+    return result;
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+    return null;
+  }
 }
 
 

@@ -17,7 +17,7 @@ Core idea:
 Fast. The agent chooses the production path and works with minimum checkpoints.
 
 ### Director
-Controlled. The agent deconstructs the reference, proposes concepts, gets a direction selected, then builds through clear stages.
+Controlled. The agent deconstructs the reference, writes 2–3 structured creative directions, gets an explicit owner selection, then builds through clear stages. Direction can be refined before build begins; once actual build work starts, later changes use the revision workflow.
 
 ## Production tools
 - **HyperFrames** — primary programmable 2D/motion engine

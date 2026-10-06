@@ -15,6 +15,11 @@ import { validateMoodFile } from "../src/mood.mjs";
 import { validateAssetPlanFile } from "../src/asset-plan.mjs";
 import { validateBuildPlanFile } from "../src/build-plan.mjs";
 import { loadRun } from "../src/governance.mjs";
+import {
+  readConceptSet,
+  selectConcept,
+  validateConceptSetFile
+} from "../src/concepts.mjs";
 
 function temp() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "aurora-director-e2e-"));
@@ -58,13 +63,53 @@ test("fresh Director workspace enforces concept and mood before routing", async 
 
     await writeRunCheckpoint(run.id, "understand", "completed", {}, cwd);
 
-    await writeRunCheckpoint(
-      run.id,
-      "concept",
-      "completed",
-      { humanApproved: true, note: "Owner picked concept A" },
-      cwd
+    const conceptRecord = readConceptSet(run.id, cwd);
+    assert.ok(conceptRecord);
+
+    conceptRecord.concept_set.status = "ready";
+    conceptRecord.concept_set.concepts = [
+      {
+        id: "concept-a",
+        name: "Quiet Precision",
+        core_idea: "Build quiet tension into a precise product reveal.",
+        project_fit: "Fits the premium simplicity of the product.",
+        emotional_arc: "Curiosity to confidence.",
+        visual_motion_grammar: [
+          "restrained kinetic type",
+          "controlled graphic movement"
+        ],
+        complexity: "medium",
+        cost_class: "low",
+        biggest_risk: "Could feel too restrained.",
+        preview: null,
+        notes: []
+      },
+      {
+        id: "concept-b",
+        name: "Signal Reveal",
+        core_idea: "A fast signal system resolves into the product.",
+        project_fit: "Fits a technology-led launch.",
+        emotional_arc: "Energy to clarity.",
+        visual_motion_grammar: [
+          "signal pulses",
+          "sharp editorial cuts"
+        ],
+        complexity: "high",
+        cost_class: "medium",
+        biggest_risk: "Could become too technical.",
+        preview: null,
+        notes: []
+      }
+    ];
+    fs.writeFileSync(
+      conceptRecord.file,
+      JSON.stringify(conceptRecord.concept_set, null, 2) + "\n"
     );
+
+    assert.equal(validateConceptSetFile(run.id, cwd).ok, true);
+
+    const selected = selectConcept(run.id, "concept-a", cwd);
+    assert.equal(selected.selected.name, "Quiet Precision");
 
     const moodFile = path.join(run.dir, "mood.json");
     const mood = JSON.parse(fs.readFileSync(moodFile, "utf8"));

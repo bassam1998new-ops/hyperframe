@@ -5,6 +5,8 @@ AurorA Studio follows a simple **New / Fixed** release summary so community user
 ## Unreleased
 
 ### New
+- Director concepts now use a structured 2–3 direction workflow with owner selection and refinement.
+- Direction changes safely invalidate derived planning before build; direction locks once build starts.
 - Create now supports durable reference selection, quality tier and aspect intent.
 - Secure local reference uploads and external reference links.
 - Media Chrome 4.19.3 player with AurorA-styled controls and native fallback.

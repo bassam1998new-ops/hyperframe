@@ -28,22 +28,54 @@ Director mode gives the owner control over the idea before expensive production 
 **Do not select Blender / HyperFrames / After Effects at plan time.**
 
 ## Concepts
-Give 2–3 genuinely different ideas, not color/layout variants.
 
-For each:
-- core idea
-- why it fits this product
-- emotional arc
-- visual/motion grammar
-- likely complexity/cost
-- biggest risk
+Director runs have a structured:
+`.aurora/runs/<run>/concepts.json`
+
+Create/read it with:
+
+```bash
+aurora-studio concepts create RUN_ID
+```
+
+Fill **2–3 genuinely different ideas**, not color/layout variants.
+
+For each concept write:
+- `id`
+- `name`
+- `core_idea`
+- `project_fit`
+- `emotional_arc`
+- `visual_motion_grammar[]`
+- `complexity`: low / medium / high / hero
+- `cost_class`: free / low / medium / high / unknown
+- `biggest_risk`
+- optional preview/notes
 
 Do not lock the software unless a hard requirement makes a capability mandatory.
 
-When the owner picks:
+When concepts are ready:
+- set `status=ready`
+- validate:
+  `aurora-studio concepts validate RUN_ID`
+
+The owner selects through Studio or:
+
 ```bash
-aurora-studio checkpoint RUN_ID concept completed --approved
+aurora-studio concepts select RUN_ID CONCEPT_ID
 ```
+
+Do **not** manually complete the concept checkpoint. Selection records the owner gate.
+
+If the owner wants changes:
+
+```bash
+aurora-studio concepts refine RUN_ID --concept CONCEPT_ID --note "..."
+```
+
+Refinement/change of direction is allowed before actual build begins. If mood/assets/routing/build-plan were already prepared, AurorA invalidates and rebuilds those derived plans.
+
+Once actual build/render work has started, direction is locked. Use the later revision workflow instead of silently replacing the concept.
 
 ## Mood
 Create/fill the run's `mood.json`.
