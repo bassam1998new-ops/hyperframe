@@ -10,20 +10,23 @@ export function createIntentWorkflow({
   let quality = "normal";
   let aspect = "project";
   let touched = false;
+  let locked = false;
 
   function render() {
-    $$("#quality-options [data-quality]").forEach(button => {
+    $("#quality-options [data-quality]").forEach(button => {
       button.classList.toggle(
         "active",
         button.dataset.quality === quality
       );
+      button.disabled = locked;
     });
 
-    $$("#aspect-options [data-aspect]").forEach(button => {
+    $("#aspect-options [data-aspect]").forEach(button => {
       button.classList.toggle(
         "active",
         button.dataset.aspect === aspect
       );
+      button.disabled = locked;
     });
 
     const reference = getReference?.(getSelectedReference?.());
@@ -57,11 +60,29 @@ export function createIntentWorkflow({
     });
   });
 
+  function sync(next) {
+    locked = Boolean(
+      next?.active_run &&
+      next.active_run.status !== "completed"
+    );
+    render();
+  }
+
   return {
+    get aspect() {
+      return aspect;
+    },
+    get locked() {
+      return locked;
+    },
+    get quality() {
+      return quality;
+    },
     get value() {
       return { quality, aspect };
     },
     render,
-    setFromRun
+    setFromRun,
+    sync
   };
 }
