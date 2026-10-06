@@ -5,6 +5,8 @@ AurorA Studio follows a simple **New / Fixed** release summary so community user
 ## Unreleased
 
 ### New
+- Asset decision drawer with tracked Library reuse/modify, Poly Haven CC0 search, BUILD_NEW/NOT_NEEDED decisions, and provider-generation handoffs.
+- Provider generation requests use real budget approval/cap rules and remain `pending_agent` until an agent fulfills them.
 - Editable Storyboard/build board with drag reorder, shot inspector, add/edit/duplicate/remove, and keyboard-safe move controls.
 - SortableJS 1.15.7 is pinned and self-hosted for storyboard reordering.
 - Director concepts now use a structured 2–3 direction workflow with owner selection and refinement.
@@ -26,6 +28,8 @@ AurorA Studio follows a simple **New / Fixed** release summary so community user
 - npm trusted-publishing workflow is prepared but remains fail-closed until public release is explicitly enabled.
 
 ### Fixed
+- Asset changes now invalidate stale routing, build plans, reviews, approvals and finalization state before production continues.
+- Library approval from the UI now fails closed when commercial rights are not verified.
 - PASS review is bound to the exact reviewed video before finalization.
 - Windows agent-hook commands avoid embedded-quote failures.
 - Windows HyperFrames execution avoids unsafe global npm shell shims.
