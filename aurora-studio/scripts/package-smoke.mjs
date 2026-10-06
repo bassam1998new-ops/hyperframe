@@ -115,7 +115,12 @@ try {
     path.join(workspace, ".aurora", "system", "knowledge", "tools", "registry.json"),
     path.join(workspace, ".aurora", "system", "ui", "index.html"),
     path.join(workspace, ".aurora", "system", "ui", "styles.css"),
-    path.join(workspace, ".aurora", "system", "ui", "app.js")
+    path.join(workspace, ".aurora", "system", "ui", "app.js"),
+    path.join(workspace, ".aurora", "system", "ui", "app", "router.js"),
+    path.join(workspace, ".aurora", "system", "ui", "app", "views", "create.js"),
+    path.join(workspace, ".aurora", "system", "ui", "styles", "tokens.css"),
+    path.join(workspace, ".aurora", "system", "ui", "styles", "components.css"),
+    path.join(workspace, ".aurora", "system", "ui", "vendor", "LUCIDE-LICENSE.txt")
   ];
 
   for (const file of expected) {
