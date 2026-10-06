@@ -88,6 +88,7 @@ const required = [
   "CHANGELOG.md",
   "bin/aurora-studio.mjs",
   "src/reference-files.mjs",
+  "src/concepts.mjs",
   "ui/index.html",
   "ui/styles.css",
   "ui/styles/tokens.css",
@@ -107,6 +108,7 @@ const required = [
   "ui/app/components/media-player.js",
   "ui/app/workflows/reference.js",
   "ui/app/workflows/create-intent.js",
+  "ui/app/workflows/concepts.js",
   "ui/app/tooltip.js",
   "ui/app/views/create.js",
   "ui/app/views/library.js",
@@ -119,6 +121,7 @@ const required = [
   "release.json",
   "studio.manifest.json",
   "knowledge/tools/registry.json",
+  "schemas/concepts.schema.json",
   "skills/DIRECTOR.md",
   "skills/DIRECT.md"
 ];
