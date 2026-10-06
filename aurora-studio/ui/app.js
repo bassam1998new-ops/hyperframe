@@ -7,6 +7,7 @@ import { createIntentWorkflow } from "./app/workflows/create-intent.js";
 import { createConceptWorkflow } from "./app/workflows/concepts.js";
 import { createStoryboardWorkflow } from "./app/workflows/storyboard.js";
 import { createAssetWorkflow } from "./app/workflows/assets.js";
+import { createLibraryWorkflow } from "./app/workflows/library.js";
 import { createReviewWorkflow } from "./app/workflows/review.js";
 import {
   renderActivity,
@@ -95,6 +96,16 @@ const assetWorkflow = createAssetWorkflow({
   toast
 });
 
+const libraryWorkflow = createLibraryWorkflow({
+  api,
+  getState: () => state,
+  onState: next => render(next),
+  mediaUrl,
+  toast,
+  switchView,
+  assetWorkflow
+});
+
 const reviewWorkflow = createReviewWorkflow({
   api,
   mediaUrl,
@@ -154,14 +165,20 @@ function render(next) {
   conceptWorkflow.sync(next);
   storyboardWorkflow.sync(next);
   assetWorkflow.sync(next);
+  libraryWorkflow.sync(next);
   reviewWorkflow.sync(next);
   renderActivity(next.activity || []);
   renderUsage(run);
-  renderLibraryShelf(next.library || [], mediaUrl);
+  renderLibraryShelf(
+    next.library || [],
+    mediaUrl,
+    id => libraryWorkflow.open(id)
+  );
   renderFullLibrary(next.library_all || [], {
     query: libraryQuery,
     filter: libraryFilter,
-    mediaUrl
+    mediaUrl,
+    onOpen: id => libraryWorkflow.open(id)
   });
   fillProjectForm(next.project || {}, { dirty: projectDirty });
   renderSettings(next, { dirty: settingsDirty });
@@ -257,7 +274,8 @@ $("#library-search").addEventListener("input", event => {
   renderFullLibrary(state?.library_all || [], {
     query: libraryQuery,
     filter: libraryFilter,
-    mediaUrl
+    mediaUrl,
+    onOpen: id => libraryWorkflow.open(id)
   });
 });
 
@@ -265,7 +283,12 @@ $$(".filter-button").forEach(button => {
   button.addEventListener("click", () => {
     libraryFilter = button.dataset.filter;
     $$(".filter-button").forEach(item => item.classList.toggle("active", item === button));
-    renderFullLibrary(state?.library_all || []);
+    renderFullLibrary(state?.library_all || [], {
+      query: libraryQuery,
+      filter: libraryFilter,
+      mediaUrl,
+      onOpen: id => libraryWorkflow.open(id)
+    });
   });
 });
 
