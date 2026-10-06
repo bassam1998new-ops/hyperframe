@@ -1354,3 +1354,23 @@
   color: var(--aurora-muted-2);
   font-size: 8px;
 }
+
+
+.concept-status.locked {
+  border-color: rgba(241,189,56,.28);
+  color: #e7cb83;
+  background: rgba(241,189,56,.06);
+}
+
+.direction-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 7px;
+  border: 1px solid rgba(49,223,122,.22);
+  border-radius: 7px;
+  color: #a6edc0;
+  background: rgba(49,223,122,.055);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .03em;
+}
