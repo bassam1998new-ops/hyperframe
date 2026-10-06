@@ -11,6 +11,10 @@ import {
   conceptDirectionLocked,
   readConceptSet
 } from "./concepts.mjs";
+import { assetPlanEditability } from "./asset-plan.mjs";
+import { listProviders } from "./providers.mjs";
+import { listAssetSources } from "./asset-sources.mjs";
+import { readGenerationRequests } from "./generation-requests.mjs";
 
 const VIDEO_EXT = new Set([".mp4", ".mov", ".m4v", ".webm", ".mkv"]);
 const IMAGE_EXT = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif", ".svg"]);
@@ -77,6 +81,7 @@ function readRuns(cwd) {
       const plan = readJson(path.join(dir, "plan.json"));
       if (!state || !plan) return [];
 
+      const assetPlan = readJson(path.join(dir, "asset-plan.json"));
       const buildPlan = readJson(path.join(dir, "build-plan.json"));
       const review = readJson(path.join(dir, "review.json"));
       const context = readJson(path.join(dir, "context.json"));
@@ -88,6 +93,7 @@ function readRuns(cwd) {
         dir,
         state,
         plan,
+        asset_plan: assetPlan,
         build_plan: buildPlan,
         review,
         context,
@@ -202,6 +208,63 @@ function libraryCards(cwd, items, limit = 7) {
         preview: preview && ["image", "video"].includes(preview.type) ? preview : null
       };
     });
+}
+
+function libraryItemSummary(cwd, item) {
+  const preview = mediaDescriptor(cwd, item.path);
+  return {
+    id: item.id,
+    name: item.name,
+    description: item.description || "",
+    kind: item.kind,
+    type: item.type,
+    path: item.path || null,
+    source_url: item.source_url || null,
+    source_name: item.source_name || null,
+    approved: Boolean(item.approved),
+    quality_tier: item.quality_tier || "unknown",
+    tags: item.tags || [],
+    tools: item.tools || [],
+    license: {
+      id: item.license?.id || "unknown",
+      commercial_allowed: item.license?.commercial_allowed ?? null,
+      redistribution_allowed: item.license?.redistribution_allowed ?? null,
+      attribution_required: item.license?.attribution_required ?? null
+    },
+    preview:
+      preview && ["image", "video"].includes(preview.type)
+        ? preview
+        : null
+  };
+}
+
+function assetPlanRows(cwd, run, library) {
+  if (!run?.asset_plan) return null;
+
+  const byId = new Map(library.map(item => [item.id, item]));
+  const editability = assetPlanEditability(run.id, cwd);
+
+  return {
+    status: run.asset_plan.status || "pending",
+    summary: run.asset_plan.summary || "",
+    editable: Boolean(editability.ok),
+    locked_reason: editability.ok ? null : editability.reason,
+    needs: (run.asset_plan.needs || []).map(need => ({
+      id: need.id,
+      description: need.description,
+      kind: need.kind,
+      decision: need.decision,
+      selected_library_ids: need.selected_library_ids || [],
+      selected_assets: (need.selected_library_ids || [])
+        .map(id => byId.get(id))
+        .filter(Boolean)
+        .map(item => libraryItemSummary(cwd, item)),
+      required_capabilities: need.required_capabilities || [],
+      search_queries: need.search_queries || [],
+      notes: need.notes || [],
+      confidence: need.confidence ?? null
+    }))
+  };
 }
 
 function stageRows(run) {
@@ -423,6 +486,31 @@ export function buildStudioSnapshot(cwd = process.cwd()) {
   const system = systemStatus(cwd);
   const obsidian = (workspace?.integrations || []).find(item => item.id === "obsidian") || null;
   const agent = agentIntegrationStatus(cwd, run);
+  const providers = listProviders(cwd).map(provider => ({
+    id: provider.id,
+    name: provider.name,
+    kind: provider.kind,
+    available: Boolean(provider.available),
+    account_available: Boolean(provider.account_available),
+    browser_control_required: Boolean(provider.browser_control_required),
+    browser_control_available: Boolean(provider.browser_control_available),
+    blocked_reason: provider.blocked_reason || null,
+    best_for: provider.best_for || [],
+    cost_dynamic: Boolean(provider.cost_dynamic)
+  }));
+  const assetSources = listAssetSources().map(source => ({
+    id: source.id,
+    name: source.name,
+    url: source.url,
+    categories: source.categories || [],
+    automation: source.automation,
+    license_policy: source.license_policy,
+    default_license: source.default_license || null
+  }));
+  const assetPlan = assetPlanRows(cwd, run, library);
+  const generationRequests = run
+    ? readGenerationRequests(run.id, cwd).slice(-20).reverse()
+    : [];
 
   return {
     schema_version: 1,
@@ -435,6 +523,8 @@ export function buildStudioSnapshot(cwd = process.cwd()) {
     project: project || workspace?.project || null,
     references,
     agent,
+    providers,
+    asset_sources: assetSources,
     tools,
     runtime,
     system,
@@ -470,6 +560,8 @@ export function buildStudioSnapshot(cwd = process.cwd()) {
       route_confidence: run.plan.route_confidence || 0,
       stages: stageRows(run),
       build_plan_status: run.build_plan?.status || null,
+      asset_plan: assetPlan,
+      generation_requests: generationRequests,
       storyboard_editable: Boolean(
         run.build_plan &&
         run.plan.route?.length &&
@@ -486,7 +578,7 @@ export function buildStudioSnapshot(cwd = process.cwd()) {
       usage
     } : null,
     library: libraryCards(cwd, library),
-    library_all: libraryCards(cwd, library, 200),
+    library_all: library.map(item => libraryItemSummary(cwd, item)),
     activity
   };
 }
