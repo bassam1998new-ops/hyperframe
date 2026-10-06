@@ -40,7 +40,8 @@ test("UI snapshot reflects real workspace run usage library and render", () => {
     route_confidence: 0.9,
     created_at: "2026-10-06T02:00:00Z",
     stages: [
-      { id: "understand", status: "pending" },
+      { id: "understand", status: "completed" },
+      { id: "concept", status: "completed" },
       { id: "build", status: "pending" },
       { id: "render", status: "pending" }
     ]
@@ -52,8 +53,48 @@ test("UI snapshot reflects real workspace run usage library and render", () => {
     updated_at: "2026-10-06T02:10:00Z",
     checkpoints: {
       understand: { status: "completed", updated_at: "2026-10-06T02:01:00Z" },
+      concept: {
+        status: "completed",
+        human_approved: true,
+        updated_at: "2026-10-06T02:03:00Z"
+      },
       build: { status: "in_progress", updated_at: "2026-10-06T02:10:00Z" }
     }
+  }));
+
+  fs.writeFileSync(path.join(runDir, "concepts.json"), JSON.stringify({
+    schema_version: 1,
+    run_id: runId,
+    status: "selected",
+    selected_id: "premium-orbit",
+    concepts: [{
+      id: "premium-orbit",
+      name: "Premium Orbit",
+      core_idea: "A controlled orbit reveals the product.",
+      project_fit: "Fits the premium launch.",
+      emotional_arc: "Mystery to confidence.",
+      visual_motion_grammar: ["slow orbit", "precise type"],
+      complexity: "high",
+      cost_class: "medium",
+      biggest_risk: "Could feel too slow.",
+      preview: null,
+      notes: []
+    }, {
+      id: "signal",
+      name: "Signal",
+      core_idea: "A signal builds into the product reveal.",
+      project_fit: "Fits a technology product.",
+      emotional_arc: "Tension to clarity.",
+      visual_motion_grammar: ["signal pulses", "fast cuts"],
+      complexity: "medium",
+      cost_class: "low",
+      biggest_risk: "Could feel generic.",
+      preview: null,
+      notes: []
+    }],
+    refinement_requests: [],
+    created_at: "2026-10-06T02:02:00Z",
+    updated_at: "2026-10-06T02:03:00Z"
   }));
 
   fs.writeFileSync(path.join(runDir, "build-plan.json"), JSON.stringify({
@@ -108,6 +149,10 @@ test("UI snapshot reflects real workspace run usage library and render", () => {
   assert.equal(snapshot.active_run.current_stage, "build");
   assert.deepEqual(snapshot.active_run.route, ["blender", "hyperframe"]);
   assert.equal(snapshot.active_run.shots[0].engine, "blender");
+  assert.equal(snapshot.active_run.concepts.status, "selected");
+  assert.equal(snapshot.active_run.concepts.selected_id, "premium-orbit");
+  assert.equal(snapshot.active_run.concepts.selected.name, "Premium Orbit");
+  assert.equal(snapshot.active_run.concepts.direction_locked, true);
   assert.equal(snapshot.active_run.usage.actual_usd, 0.2);
   assert.equal(snapshot.stats.library_approved, 1);
   assert.equal(snapshot.active_run.preview.path, "renders/hero.webm");
