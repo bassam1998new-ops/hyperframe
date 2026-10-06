@@ -1,0 +1,230 @@
+import { escapeHtml, money, titleCase } from "../format.js";
+
+const $ = selector => document.querySelector(selector);
+
+function phaseRows(run) {
+  if (!run) return [];
+
+  const stages = new Map((run.stages || []).map(stage => [stage.id, stage]));
+  const groups = run.mode === "director"
+    ? [
+        ["Direction", ["understand", "concept", "mood"]],
+        ["Assets", ["assets"]],
+        ["Build", ["routing", "build_plan", "build"]],
+        ["Review", ["pre_render_review", "render", "post_render_review"]],
+        ["Ready", ["approval", "finalize"]]
+      ]
+    : [
+        ["Understand", ["understand", "concept", "mood"]],
+        ["Assets", ["assets"]],
+        ["Build", ["routing", "build_plan", "build"]],
+        ["Review", ["pre_render_review", "render", "post_render_review"]],
+        ["Ready", ["approval", "finalize"]]
+      ];
+
+  return groups.map(([label, ids]) => {
+    const items = ids.map(id => stages.get(id)).filter(Boolean);
+    const current = items.find(item => item.current);
+    let status = current ? "in_progress" : "pending";
+
+    if (items.some(item => item.status === "failed")) status = "failed";
+    else if (items.some(item => item.status === "awaiting_human")) status = "awaiting_human";
+    else if (
+      items.length &&
+      items.every(item => ["completed", "skipped"].includes(item.status))
+    ) {
+      status = "completed";
+    } else if (
+      items.some(item => ["completed", "in_progress"].includes(item.status))
+    ) {
+      status = "in_progress";
+    }
+
+    return {
+      label,
+      status,
+      detail: current
+        ? "Current: " + titleCase(current.id)
+        : status === "completed"
+          ? "Complete"
+          : "Waiting"
+    };
+  });
+}
+
+export function renderPreview(run, mediaUrl) {
+  const stage = $("#preview-stage");
+  const status = $("#preview-status");
+  const meta = $("#preview-meta");
+  const title = $("#preview-title");
+  const detail = $("#preview-detail");
+  const chips = $("#route-chips");
+
+  title.textContent = run?.task || "AurorA Studio";
+  detail.textContent = run
+    ? titleCase(run.current_stage) + " · " + titleCase(run.mode) + " mode"
+    : "Waiting for a production run";
+
+  const statusText = run ? titleCase(run.status) : "Ready";
+  status.innerHTML = "<i></i> " + escapeHtml(statusText);
+  meta.textContent = run?.review?.decision && run.review.decision !== "PENDING"
+    ? "Review: " + run.review.decision
+    : run?.preview
+      ? "Live workspace render"
+      : "No render yet";
+
+  chips.innerHTML = (run?.route || [])
+    .map(route =>
+      '<span class="route-chip">' +
+      escapeHtml(titleCase(route)) +
+      "</span>"
+    )
+    .join("");
+
+  if (!run?.preview) {
+    stage.innerHTML = `
+      <div class="preview-empty">
+        <div class="aurora-scene">
+          <div class="scene-orbit orbit-one"></div>
+          <div class="scene-orbit orbit-two"></div>
+          <div class="scene-glow"></div>
+          <div class="scene-word">AURORA</div>
+        </div>
+        <div class="preview-empty-copy">
+          <strong>${run ? "No preview file yet" : "Nothing rendering yet"}</strong>
+          <span>${
+            run
+              ? escapeHtml(titleCase(run.current_stage)) + " is in progress."
+              : "Start a run and AurorA will show the current render here."
+          }</span>
+        </div>
+      </div>`;
+    return;
+  }
+
+  const src = mediaUrl(run.preview);
+  if (run.preview.type === "video") {
+    stage.innerHTML =
+      '<video controls playsinline src="' + escapeHtml(src) + '"></video>';
+  } else {
+    stage.innerHTML =
+      '<img alt="Current AurorA render" src="' + escapeHtml(src) + '" />';
+  }
+}
+
+export function renderBoard(run) {
+  const eyebrow = $("#board-eyebrow");
+  const title = $("#board-title");
+  const list = $("#board-list");
+  const count = $("#board-count");
+  const footer = $("#board-footer-text");
+
+  if (!run) {
+    eyebrow.textContent = "PRODUCTION";
+    title.textContent = "No active run";
+    count.textContent = "0";
+    list.innerHTML =
+      '<div class="empty-card">Start a run to see the real production board.</div>';
+    footer.textContent =
+      "AurorA keeps routing and checkpoints behind the scenes.";
+    return;
+  }
+
+  const shots = run.shots || [];
+  const director = run.mode === "director";
+  eyebrow.textContent = director ? "DIRECTOR BOARD" : "PRODUCTION";
+  title.textContent = run.task;
+
+  if (shots.length) {
+    count.textContent = String(shots.length);
+    footer.textContent =
+      "Each shot uses the engine selected by the real build plan.";
+    list.innerHTML = shots.map(shot => `
+      <div class="board-row">
+        <div class="board-number">${shot.number}</div>
+        <div class="board-copy">
+          <strong>${escapeHtml(shot.purpose || shot.id)}</strong>
+          <p>${escapeHtml(shot.output || "Output not set")}</p>
+        </div>
+        <div class="board-side">
+          <span class="engine-chip">${escapeHtml(titleCase(shot.engine))}</span>
+          <span class="quality-chip">${escapeHtml(titleCase(shot.quality || "normal"))}</span>
+        </div>
+      </div>
+    `).join("");
+    return;
+  }
+
+  const phases = phaseRows(run);
+  count.textContent = String(phases.length);
+  footer.textContent = director
+    ? "Concept and final approval stay visible. Internal routing stays behind the scenes."
+    : "Direct mode keeps the internal stage machine simple.";
+
+  list.innerHTML = phases.map((phase, index) => `
+    <div class="board-row ${phase.status === "in_progress" ? "current" : ""}">
+      <div class="board-number">${index + 1}</div>
+      <div class="board-copy">
+        <strong>${escapeHtml(phase.label)}</strong>
+        <p>${escapeHtml(phase.detail)}</p>
+      </div>
+      <div class="board-side">
+        <span class="stage-state ${escapeHtml(phase.status)}">${escapeHtml(titleCase(phase.status))}</span>
+      </div>
+    </div>
+  `).join("");
+}
+
+export function renderActivity(activity) {
+  const list = $("#activity-list");
+  if (!activity?.length) {
+    list.innerHTML =
+      '<div class="empty-card compact">No run activity yet.</div>';
+    return;
+  }
+
+  list.innerHTML = activity.map(item => `
+    <div class="activity-item ${escapeHtml(item.status || "info")}">
+      <strong><i></i>${escapeHtml(titleCase(item.title))}</strong>
+      <p>${escapeHtml(item.detail || titleCase(item.status || "updated"))}</p>
+    </div>
+  `).join("");
+}
+
+export function renderTools(tools) {
+  const available = (tools || []).filter(tool => tool.available).length;
+
+  $("#tool-summary").textContent = tools?.length
+    ? available + " of " + tools.length + " production tools reachable"
+    : "Workspace tools not detected yet";
+
+  $("#studio-dot").style.background =
+    available ? "var(--aurora-green)" : "var(--aurora-amber)";
+
+  $("#tool-chips").innerHTML = (tools || []).map(tool => `
+    <span class="tool-chip ${tool.available ? "on" : ""}">
+      <i></i>${escapeHtml(tool.name)}
+    </span>
+  `).join("") || '<span class="tool-chip"><i></i>No tool state</span>';
+}
+
+export function renderUsage(run) {
+  const node = $("#usage-content");
+  if (!run?.usage) {
+    node.textContent = "No paid usage recorded.";
+    return;
+  }
+
+  const pieces = [];
+  if (run.usage.actual_usd > 0) {
+    pieces.push("Known spend " + money(run.usage.actual_usd));
+  }
+
+  for (const [provider, values] of Object.entries(run.usage.units || {})) {
+    for (const [unit, amount] of Object.entries(values)) {
+      pieces.push(titleCase(provider) + ": " + amount + " " + unit);
+    }
+  }
+
+  node.textContent = pieces.join(" · ") || "No paid usage recorded.";
+}
