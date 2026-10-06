@@ -1,3 +1,14 @@
+import { createApi, createMediaUrl } from "./app/api.js";
+import {
+  commaList,
+  daypart,
+  escapeHtml,
+  listValue,
+  money,
+  nested,
+  titleCase
+} from "./app/format.js";
+
 const params = new URLSearchParams(location.search);
 const token = params.get("token") || "";
 
@@ -14,59 +25,8 @@ let remoteUpdate = null;
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
 
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function titleCase(value) {
-  return String(value || "")
-    .replaceAll("_", " ")
-    .replace(/\b\w/g, c => c.toUpperCase());
-}
-
-function money(value) {
-  return "$" + Number(value || 0).toFixed(2);
-}
-
-function listValue(value) {
-  return Array.isArray(value) ? value.join(", ") : String(value || "");
-}
-
-function commaList(value) {
-  return String(value || "")
-    .split(",")
-    .map(item => item.trim())
-    .filter(Boolean);
-}
-
-function nested(object, dotted) {
-  return dotted.split(".").reduce((value, key) => value?.[key], object);
-}
-
-function mediaUrl(media) {
-  if (!media?.path) return null;
-  return "/media?path=" + encodeURIComponent(media.path) + "&token=" + encodeURIComponent(token);
-}
-
-async function api(path, options = {}) {
-  const headers = new Headers(options.headers || {});
-  headers.set("X-Aurora-Token", token);
-  if (options.body && !headers.has("Content-Type")) {
-    headers.set("Content-Type", "application/json");
-  }
-
-  const response = await fetch(path, { ...options, headers });
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(payload.error || payload.stderr || "AurorA request failed.");
-  }
-  return payload;
-}
+const api = createApi(token);
+const mediaUrl = createMediaUrl(token);
 
 function toast(message, error = false) {
   const node = $("#toast");
