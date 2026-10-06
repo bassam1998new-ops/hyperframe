@@ -355,6 +355,14 @@ export function createReviewWorkflow({
     const finalized = Boolean(run?.final?.media?.path);
     const note = $("#review-approved-note");
 
+    const finalLink = $("#review-open-final");
+    finalLink.hidden = !finalized;
+    if (finalized && run.final?.media?.path) {
+      finalLink.href = mediaUrl(run.final.media);
+    } else {
+      finalLink.removeAttribute("href");
+    }
+
     if (finalized) {
       note.hidden = false;
       note.innerHTML =
@@ -367,10 +375,14 @@ export function createReviewWorkflow({
     if (approved) {
       note.hidden = false;
       note.textContent =
-        "Owner approved this reviewed render. Continue the agent to finish learning and finalization.";
+        run.learning?.status === "completed"
+          ? "Owner approved this reviewed render. Learning is complete; finalization still needs attention."
+          : "Owner approved this reviewed render. Continue the agent to finish learning and finalization.";
       return;
     }
 
+    $("#review-open-final").hidden = true;
+    $("#review-open-final").removeAttribute("href");
     note.hidden = true;
     note.textContent = "";
   }
