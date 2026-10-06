@@ -126,6 +126,7 @@ try {
     path.join(workspace, ".aurora", "system", "ui", "vendor", "MEDIA-CHROME-LICENSE.txt"),
     path.join(workspace, ".aurora", "system", "ui", "styles", "media-player.css"),
     path.join(workspace, ".aurora", "system", "ui", "app", "components", "media-player.js"),
+    path.join(workspace, ".aurora", "system", "ui", "app", "components", "agent-handoff.js"),
     path.join(workspace, ".aurora", "system", "ui", "app", "workflows", "reference.js"),
     path.join(workspace, ".aurora", "system", "ui", "app", "workflows", "create-intent.js"),
     path.join(workspace, ".aurora", "system", "ui", "app", "tooltip.js")
