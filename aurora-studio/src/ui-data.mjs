@@ -771,8 +771,14 @@ export function buildStudioSnapshot(cwd = process.cwd()) {
       render,
       approval: {
         status: run.state.checkpoints?.approval?.status || "pending",
+        recorded:
+          run.state.checkpoints?.approval?.human_approved === true,
         human_approved:
-          run.state.checkpoints?.approval?.human_approved === true
+          run.state.checkpoints?.approval?.human_approved === true &&
+          Boolean(review?.can_approve),
+        stale:
+          run.state.checkpoints?.approval?.human_approved === true &&
+          !Boolean(review?.can_approve)
       },
       learning: learning ? {
         status: learning.review?.status || "pending",
