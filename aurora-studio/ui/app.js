@@ -1,6 +1,7 @@
 import { createApi, createMediaUrl } from "./app/api.js";
 import { createViewRouter } from "./app/router.js";
 import { createToast } from "./app/toast.js";
+import { initTooltips } from "./app/tooltip.js";
 import {
   renderActivity,
   renderBoard,
@@ -320,6 +321,7 @@ async function start() {
   router.setInitial(router.initialFromLocation());
   switchView(router.currentView, false);
   await refresh(true);
+  initTooltips();
   pollTimer = setInterval(() => refresh(false), 2500);
 }
 
