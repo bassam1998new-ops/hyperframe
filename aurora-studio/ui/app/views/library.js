@@ -22,16 +22,35 @@ function card(item, mediaUrl) {
 
   const tools = (item.tools || []).map(titleCase).join(" + ");
 
+  const status = item.approved ? "Approved" : "Pending";
+  const licenseId = typeof item.license === "string"
+    ? item.license
+    : item.license?.id || "unknown";
+
   return `
-    <article class="library-card">
-      <div class="library-thumb">${media}</div>
+    <button
+      class="library-card"
+      type="button"
+      data-library-id="${escapeHtml(item.id)}"
+      aria-label="Open ${escapeHtml(item.name)} details"
+    >
+      <div class="library-thumb">
+        ${media}
+        <span class="library-card-status ${item.approved ? "approved" : "pending"}">
+          ${status}
+        </span>
+      </div>
       <div class="library-body">
         <strong>${escapeHtml(item.name)}</strong>
         <p>${escapeHtml(
           tools || titleCase(item.type || item.kind || "asset")
-        )} · ${escapeHtml(item.license || "unknown")}</p>
+        )} · ${escapeHtml(licenseId)}</p>
+        <div class="library-card-foot">
+          <span>${escapeHtml(titleCase(item.quality_tier || "unknown"))}</span>
+          <span>${Number(item.use_count || 0)} use${Number(item.use_count || 0) === 1 ? "" : "s"}</span>
+        </div>
       </div>
-    </article>
+    </button>
   `;
 }
 
@@ -57,6 +76,11 @@ function matches(item, query, filter) {
   if (filter === "font") {
     return item.kind === "font" || item.type === "font";
   }
+  if (filter === "template") {
+    return item.kind === "template" || item.type === "template";
+  }
+  if (filter === "approved") return Boolean(item.approved);
+  if (filter === "pending") return !item.approved;
   if (filter === "model") {
     return (
       ["model", "rig", "animation", "material", "hdri"].includes(item.kind) ||
@@ -79,7 +103,16 @@ function matches(item, query, filter) {
   return item.kind === filter;
 }
 
-export function renderLibraryShelf(items, mediaUrl) {
+function bindOpen(container, onOpen) {
+  if (typeof onOpen !== "function") return;
+  container.querySelectorAll("[data-library-id]").forEach(button => {
+    button.addEventListener("click", () => {
+      onOpen(button.dataset.libraryId);
+    });
+  });
+}
+
+export function renderLibraryShelf(items, mediaUrl, onOpen = null) {
   const grid = $("#library-grid");
   if (!items?.length) {
     grid.innerHTML =
@@ -88,6 +121,7 @@ export function renderLibraryShelf(items, mediaUrl) {
   }
 
   grid.innerHTML = items.map(item => card(item, mediaUrl)).join("");
+  bindOpen(grid, onOpen);
 }
 
 export function renderFullLibrary(
@@ -95,7 +129,8 @@ export function renderFullLibrary(
   {
     query = "",
     filter = "all",
-    mediaUrl
+    mediaUrl,
+    onOpen = null
   } = {}
 ) {
   const filtered = (items || []).filter(item =>
@@ -107,7 +142,10 @@ export function renderFullLibrary(
     " item" +
     (filtered.length === 1 ? "" : "s");
 
-  $("#library-full-grid").innerHTML = filtered.length
+  const grid = $("#library-full-grid");
+  grid.innerHTML = filtered.length
     ? filtered.map(item => card(item, mediaUrl)).join("")
     : '<div class="empty-card">No tracked library items match this filter.</div>';
+
+  bindOpen(grid, onOpen);
 }
