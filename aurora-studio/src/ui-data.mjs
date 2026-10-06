@@ -198,6 +198,78 @@ function previewForRun(cwd, run) {
   return null;
 }
 
+function libraryUsageMap(runs) {
+  const usage = new Map();
+
+  const add = (id, entry) => {
+    if (!id) return;
+    const list = usage.get(id) || [];
+    list.push(entry);
+    usage.set(id, list);
+  };
+
+  for (const run of runs || []) {
+    for (const need of run.asset_plan?.needs || []) {
+      for (const id of need.selected_library_ids || []) {
+        add(id, {
+          run_id: run.id,
+          task: run.plan?.task || "",
+          type: "asset_decision",
+          detail: need.description || "",
+          decision: need.decision || null,
+          at: run.updated_at || run.plan?.created_at || null
+        });
+      }
+    }
+
+    for (const shot of run.build_plan?.shots || []) {
+      for (const id of shot.asset_ids || []) {
+        add(id, {
+          run_id: run.id,
+          task: run.plan?.task || "",
+          type: "shot",
+          detail: shot.purpose || shot.id || "",
+          shot_id: shot.id || null,
+          at: run.updated_at || run.plan?.created_at || null
+        });
+      }
+    }
+  }
+
+  for (const [id, entries] of usage.entries()) {
+    entries.sort((a, b) =>
+      String(b.at || "").localeCompare(String(a.at || ""))
+    );
+    usage.set(id, entries.slice(0, 12));
+  }
+
+  return usage;
+}
+
+function trackedLocalAvailability(cwd, item) {
+  if (!item.path) return {
+    available: false,
+    is_directory: false
+  };
+
+  const resolved = path.isAbsolute(item.path)
+    ? path.resolve(item.path)
+    : path.resolve(cwd, item.path);
+
+  try {
+    const stat = fs.statSync(resolved);
+    return {
+      available: true,
+      is_directory: stat.isDirectory()
+    };
+  } catch {
+    return {
+      available: false,
+      is_directory: false
+    };
+  }
+}
+
 function libraryCards(cwd, items, limit = 7) {
   return items
     .slice()
@@ -219,8 +291,10 @@ function libraryCards(cwd, items, limit = 7) {
     });
 }
 
-function libraryItemSummary(cwd, item) {
+function libraryItemSummary(cwd, item, usage = []) {
   const preview = mediaDescriptor(cwd, item.path);
+  const local = trackedLocalAvailability(cwd, item);
+
   return {
     id: item.id,
     name: item.name,
@@ -233,6 +307,12 @@ function libraryItemSummary(cwd, item) {
     approved: Boolean(item.approved),
     quality_tier: item.quality_tier || "unknown",
     tags: item.tags || [],
+    created_at: item.created_at || null,
+    updated_at: item.updated_at || null,
+    local_available: local.available,
+    local_is_directory: local.is_directory,
+    use_count: usage.length,
+    use_history: usage,
     tools: item.tools || [],
     license: {
       id: item.license?.id || "unknown",
@@ -661,6 +741,7 @@ export function buildStudioSnapshot(cwd = process.cwd()) {
   const runs = readRuns(cwd);
   const run = activeRun(runs);
   const library = readLibrary(cwd);
+  const libraryUsage = libraryUsageMap(runs);
   const references = referenceRows(cwd);
   const receipts = finalReceipts(cwd);
   const usage = summarizeUsage(run?.usage || []);
@@ -792,7 +873,9 @@ export function buildStudioSnapshot(cwd = process.cwd()) {
       usage
     } : null,
     library: libraryCards(cwd, library),
-    library_all: library.map(item => libraryItemSummary(cwd, item)),
+    library_all: library.map(item =>
+      libraryItemSummary(cwd, item, libraryUsage.get(item.id) || [])
+    ),
     activity
   };
 }
