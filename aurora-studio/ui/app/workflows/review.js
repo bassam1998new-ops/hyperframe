@@ -210,11 +210,13 @@ export function createReviewWorkflow({
     if (compareMode === "side" && reference) {
       stage.innerHTML = `
         <div class="review-side-by-side">
-          <div class="review-compare-cell" id="review-result-cell">
+          <div class="review-compare-cell">
             <span class="review-compare-label">Result</span>
+            <div class="review-compare-media" id="review-result-cell"></div>
           </div>
-          <div class="review-compare-cell" id="review-reference-cell">
+          <div class="review-compare-cell">
             <span class="review-compare-label">Reference</span>
+            <div class="review-compare-media" id="review-reference-cell"></div>
           </div>
         </div>
       `;
@@ -662,6 +664,12 @@ export function createReviewWorkflow({
 
       if (result.finalized) {
         toast("Approved and finalized.");
+      } else if (result.finalization?.ok === false) {
+        toast(
+          "Approved, but finalization needs attention: " +
+          (result.finalization.error || "unknown finalization error"),
+          true
+        );
       } else if (result.needs_learning) {
         toast(
           "Approved. Continue in Claude/Codex to finish learning and finalization."
