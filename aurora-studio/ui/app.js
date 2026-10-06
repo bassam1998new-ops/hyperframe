@@ -24,8 +24,6 @@ import {
   resourceChanges
 } from "./app/views/settings.js";
 import { renderUpdates } from "./app/views/updates.js";
-import { createReferenceWorkflow } from "./app/workflows/reference.js";
-import { createIntentWorkflow } from "./app/workflows/create-intent.js";
 import { renderAgentHandoff } from "./app/components/agent-handoff.js";
 import {
   daypart,
@@ -59,18 +57,21 @@ const router = createViewRouter({
 });
 const switchView = router.switchView;
 
+let intentWorkflow;
+
 const referenceWorkflow = createReferenceWorkflow({
   api,
+  rawApi,
+  mediaUrl,
   getState: () => state,
   onState: next => render(next),
-  mediaUrl,
-  toast
+  toast,
+  onSelectionChange: () => intentWorkflow?.render()
 });
 
-const intentWorkflow = createIntentWorkflow({
-  getState: () => state,
-  referenceWorkflow,
-  toast
+intentWorkflow = createIntentWorkflow({
+  getSelectedReference: () => referenceWorkflow.getSelectedId(),
+  getReference: id => referenceWorkflow.getReference(id)
 });
 
 function render(next) {
@@ -116,11 +117,10 @@ function render(next) {
   pillLabel.textContent = run ? titleCase(run.current_stage).toUpperCase() : "READY";
 
   referenceWorkflow.sync(next);
-  intentWorkflow.sync(next);
-
   referenceWorkflow.setFromRun(run);
-  referenceWorkflow.render();
+  intentWorkflow.sync(next);
   intentWorkflow.setFromRun(run);
+  referenceWorkflow.render();
   intentWorkflow.render();
   renderAgentHandoff(next.agent, toast);
 
@@ -187,9 +187,8 @@ $("#prompt-form").addEventListener("submit", async event => {
       method: "POST",
       body: JSON.stringify({
         task,
-        referenceId: referenceWorkflow.selectedReferenceId,
-        quality: intentWorkflow.quality,
-        aspect: intentWorkflow.aspect
+        referenceId: referenceWorkflow.getSelectedId(),
+        ...intentWorkflow.value
       })
     });
     if (!result.ok) throw new Error(result.stderr || "AurorA could not start the run.");
