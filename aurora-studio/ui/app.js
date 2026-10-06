@@ -1,4 +1,6 @@
 import { createApi, createMediaUrl } from "./app/api.js";
+import { createViewRouter } from "./app/router.js";
+import { createToast } from "./app/toast.js";
 import {
   commaList,
   daypart,
@@ -15,7 +17,6 @@ const token = params.get("token") || "";
 let state = null;
 let busy = false;
 let pollTimer = null;
-let currentView = "create";
 let projectDirty = false;
 let settingsDirty = false;
 let libraryFilter = "all";
@@ -28,43 +29,12 @@ const $$ = selector => [...document.querySelectorAll(selector)];
 const api = createApi(token);
 const mediaUrl = createMediaUrl(token);
 
-function toast(message, error = false) {
-  const node = $("#toast");
-  node.textContent = message;
-  node.classList.toggle("error", error);
-  node.classList.add("show");
-  clearTimeout(node._timer);
-  node._timer = setTimeout(() => node.classList.remove("show"), 2800);
-}
-
-function daypart() {
-  const hour = new Date().getHours();
-  if (hour < 5) return "Late night";
-  if (hour < 12) return "Morning";
-  if (hour < 18) return "Afternoon";
-  return "Evening";
-}
-
-function switchView(view, updateHash = true) {
-  const allowed = new Set(["create", "library", "project", "settings", "updates", "setup"]);
-  if (!allowed.has(view)) view = "create";
-  if (state && !state.configured) view = "setup";
-
-  currentView = view;
-  $$("[data-view-panel]").forEach(panel => {
-    panel.classList.toggle("active", panel.dataset.viewPanel === view);
-  });
-  $$(".nav-item").forEach(button => {
-    button.classList.toggle("active", button.dataset.view === view);
-  });
-
-  $("#crumb-view").textContent = titleCase(view === "setup" ? "Setup" : view);
-  document.body.classList.toggle("setup-mode", view === "setup");
-
-  if (updateHash && view !== "setup") {
-    history.replaceState(null, "", location.pathname + location.search + "#" + view);
-  }
-}
+const toast = createToast();
+const router = createViewRouter({
+  getState: () => state,
+  titleCase
+});
+const switchView = router.switchView;
 
 function phaseRows(run) {
   if (!run) return [];
@@ -499,7 +469,7 @@ function render(next) {
 
   if (!configured) {
     switchView("setup", false);
-  } else if (currentView === "setup") {
+  } else if (router.currentView === "setup") {
     switchView((location.hash || "#create").slice(1) || "create", false);
   }
 
@@ -744,12 +714,8 @@ async function start() {
     return;
   }
 
-  const initial = (location.hash || "#create").slice(1);
-  if (["create", "library", "project", "settings", "updates"].includes(initial)) {
-    currentView = initial;
-  }
-
-  switchView(currentView, false);
+  router.setInitial(router.initialFromLocation());
+  switchView(router.currentView, false);
   await refresh(true);
   pollTimer = setInterval(() => refresh(false), 2500);
 }
