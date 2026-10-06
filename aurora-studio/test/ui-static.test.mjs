@@ -25,9 +25,6 @@ test("browser UI JavaScript modules have valid syntax", () => {
     "ui/app/components/agent-handoff.js",
     "ui/app/workflows/reference.js",
     "ui/app/workflows/create-intent.js",
-    "ui/app/components/media-player.js",
-    "ui/app/workflows/reference.js",
-    "ui/app/workflows/create-intent.js",
     "ui/app/views/create.js",
     "ui/app/views/library.js",
     "ui/app/views/project.js",
@@ -201,15 +198,21 @@ test("Create UI exposes reference quality aspect and honest agent handoff surfac
   const app = read("ui/app.js");
   const reference = read("ui/app/workflows/reference.js");
   const intent = read("ui/app/workflows/create-intent.js");
+  const handoff = read("ui/app/components/agent-handoff.js");
 
   assert.match(html, /id="reference-dialog"/);
   assert.match(html, /data-quality="hero"/);
   assert.match(html, /data-aspect="9:16"/);
   assert.match(html, /id="agent-handoff"/);
+
   assert.match(reference, /\/api\/reference-upload/);
   assert.match(reference, /\/api\/reference-link/);
-  assert.match(intent, /bridge_connected/);
-  assert.match(app, /referenceId: referenceWorkflow\.selectedReferenceId/);
-  assert.match(app, /quality: intentWorkflow\.quality/);
-  assert.match(app, /aspect: intentWorkflow\.aspect/);
+  assert.match(reference, /512 \* 1024 \* 1024/);
+
+  assert.match(intent, /quality = "normal"/);
+  assert.match(intent, /aspect = "project"/);
+
+  assert.match(handoff, /!agent\?\.bridge_connected/);
+  assert.match(app, /referenceId: referenceWorkflow\.getSelectedId\(\)/);
+  assert.match(app, /\.\.\.intentWorkflow\.value/);
 });
