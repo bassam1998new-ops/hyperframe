@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AurorA Studio Director Concepts",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "run_id",
+    "status",
+    "selected_id",
+    "concepts",
+    "refinement_requests"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "run_id": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["pending", "ready", "selected"] },
+    "selected_id": { "type": ["string", "null"] },
+    "concepts": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "core_idea",
+          "project_fit",
+          "emotional_arc",
+          "visual_motion_grammar",
+          "complexity",
+          "cost_class",
+          "biggest_risk"
+        ],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "core_idea": { "type": "string", "minLength": 1 },
+          "project_fit": { "type": "string", "minLength": 1 },
+          "emotional_arc": { "type": "string", "minLength": 1 },
+          "visual_motion_grammar": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string" }
+          },
+          "complexity": {
+            "enum": ["low", "medium", "high", "hero"]
+          },
+          "cost_class": {
+            "enum": ["free", "low", "medium", "high", "unknown"]
+          },
+          "biggest_risk": { "type": "string", "minLength": 1 },
+          "preview": {
+            "type": ["object", "null"]
+          },
+          "notes": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "refinement_requests": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "concept_id",
+          "note",
+          "status",
+          "created_at"
+        ],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "concept_id": { "type": ["string", "null"] },
+          "note": { "type": "string", "minLength": 1 },
+          "status": { "enum": ["open", "resolved"] },
+          "created_at": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}
