@@ -231,6 +231,15 @@ function shotRows(run) {
   }));
 }
 
+function referenceSourceDisplay(source) {
+  if (source?.type !== "url") return source?.value || null;
+  try {
+    return new URL(source.value).hostname;
+  } catch {
+    return "External link";
+  }
+}
+
 function referenceRows(cwd) {
   return listReferences(cwd)
     .slice()
@@ -249,7 +258,7 @@ function referenceRows(cwd) {
         name: item.name,
         role: source.role || "visual",
         source_type: source.type || "unknown",
-        source_value: source.value || null,
+        source_value: referenceSourceDisplay(source),
         original_name: source.original_name || null,
         mime: source.mime || null,
         preview:
