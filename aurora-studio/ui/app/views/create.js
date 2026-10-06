@@ -85,13 +85,26 @@ export function renderPreview(run, mediaUrl) {
       ].filter(Boolean)
     : [];
 
+  const conceptChips =
+    run?.concepts?.selected
+      ? [
+          '<span class="direction-chip">Direction · ' +
+          escapeHtml(run.concepts.selected.name) +
+          "</span>"
+        ]
+      : [];
+
   const routeChips = (run?.route || []).map(route =>
     '<span class="route-chip">' +
     escapeHtml(titleCase(route)) +
     "</span>"
   );
 
-  chips.innerHTML = [...intentChips, ...routeChips].join("");
+  chips.innerHTML = [
+    ...conceptChips,
+    ...intentChips,
+    ...routeChips
+  ].join("");
 
   if (!run?.preview) {
     stage.innerHTML = `
