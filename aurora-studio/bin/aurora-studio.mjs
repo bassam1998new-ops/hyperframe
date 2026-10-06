@@ -399,7 +399,10 @@ Normal workflow:
 Need every command?
   aurora-studio help --all
 
-UI comes later. .aurora/ is the workspace source of truth.
+Studio UI:
+  aurora-studio ui
+
+.aurora/ remains the workspace source of truth.
 `);
       break;
     }
