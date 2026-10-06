@@ -121,7 +121,7 @@ It runs on localhost only and opens a token-protected browser session.
 
 The V1 Studio uses real workspace state across five simple views:
 
-- **Create** — prompt, Direct/Director, preview, build board, activity, usage and recent library
+- **Create** — prompt, Direct/Director, reference upload/link, Draft/Normal/Premium/Hero intent, aspect intent, Media Chrome preview, build board, activity, usage and recent library
 - **Library** — searchable tracked assets/styles across engines
 - **Project** — editable product brain, audience, brand and creative preferences
 - **Settings** — live production/runtime health plus optional resource toggles
