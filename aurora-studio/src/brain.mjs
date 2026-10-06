@@ -164,6 +164,17 @@ export function listReferences(cwd = process.cwd()) {
     .map(name => {
       const file = path.join(dir, name);
       const data = JSON.parse(fs.readFileSync(file, "utf8"));
-      return { id: data.id, name: data.name, file };
+      return {
+        id: data.id,
+        name: data.name,
+        file,
+        source: data.source || null,
+        analysis: {
+          medium: data.analysis?.medium ?? null,
+          subject: data.analysis?.subject ?? null,
+          quality_tier: data.analysis?.quality_tier ?? null
+        },
+        updated_at: data.updated_at || data.created_at || null
+      };
     });
 }
