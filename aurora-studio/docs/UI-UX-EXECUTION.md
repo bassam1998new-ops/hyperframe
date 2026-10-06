@@ -11,8 +11,8 @@ Do not start a later wave before the current wave passes its package/Windows/Ubu
 | UI-12 | Director concepts | **Complete ✅** |
 | UI-13 | Storyboard / build board | Complete ✅ |
 | UI-14 | Asset workflow | **Complete ✅** |
-| UI-15 | Render + review | **Implemented — CI pending** |
-| UI-16 | Library full | Planned |
+| UI-15 | Render + review | **Complete ✅** |
+| UI-16 | Library full | **Implemented — CI pending** |
 | UI-17 | Project Brain | Planned |
 | UI-18 | Settings | Planned |
 | UI-19 | Updates | Planned |
@@ -201,3 +201,36 @@ Do not start a later wave before the current wave passes its package/Windows/Ubu
 - package audit 0 findings
 - installed-package smoke green
 - Review workflow + revision contracts included in portable package
+
+
+## UI-16 delivered
+
+- full tracked Library grid
+- search by name/type/license/tool/tag
+- filters for Assets / Styles / 3D / Audio / Fonts / Templates
+- Approved / Pending review filters
+- clickable keyboard-safe Library cards
+- approval state visible on cards
+- real use-count visible on cards
+- detail drawer with real preview
+- editable name / description / tags / quality tier
+- license-aware approve/unapprove control
+- source/license/commercial/redistribution/attribution metadata
+- local file availability
+- safe tracked-item Reveal action
+- source URL action
+- tracked use history derived from real run asset/shot references
+- Use in current run routes through existing asset-plan workflow
+- removal confirmation
+- removing from Library never deletes original source file
+
+## Gate before UI-17
+
+- Library metadata/update/remove tests green
+- safe reveal tests green
+- factual use-history snapshot test green
+- browser Library workflow test green
+- Library workflow/styles included in portable package
+- Windows + Ubuntu full suite green
+- package audit 0 findings
+- installed-package smoke green
