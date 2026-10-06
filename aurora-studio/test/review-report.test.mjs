@@ -4,9 +4,11 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { createRun } from "../src/governance.mjs";
+import { sha256File } from "../src/final-artifact.mjs";
 import {
   createReviewReport,
-  validateReviewReport
+  validateReviewReport,
+  validateReviewReportFile
 } from "../src/review-report.mjs";
 
 function temp() {
@@ -155,4 +157,121 @@ test("new render resets an old PASS review to pending", () => {
   assert.equal(result.report.summary, "");
   assert.equal(result.report.creative.project_fit, null);
   assert.notEqual(result.report.video_sha256, old.video_sha256);
+});
+
+
+test("file validation rejects a video changed after PASS review", () => {
+  const cwd = temp();
+  const run = createRun({
+    cwd,
+    task: "hash integrity",
+    mode: "direct",
+    routeDecision: null
+  });
+
+  const video = path.join(cwd, "final.mp4");
+  fs.writeFileSync(video, "original-video");
+  const frameDir = path.join(run.dir, "review-frames");
+  fs.mkdirSync(frameDir, { recursive: true });
+
+  const frames = [1, 2, 3].map(index => {
+    const file = path.join(frameDir, `frame-0${index}.jpg`);
+    fs.writeFileSync(file, `frame-${index}`);
+    return {
+      index,
+      time_seconds: index,
+      path: path.relative(cwd, file),
+      sha256: sha256File(file)
+    };
+  });
+
+  const report = passingReport();
+  report.run_id = run.id;
+  report.video = "final.mp4";
+  report.video_sha256 = sha256File(video);
+  report.visual_evidence = {
+    video: "final.mp4",
+    video_sha256: report.video_sha256,
+    generated_at: new Date().toISOString(),
+    count: frames.length,
+    frames,
+    error: null
+  };
+
+  fs.writeFileSync(
+    path.join(run.dir, "review.json"),
+    JSON.stringify(report, null, 2)
+  );
+
+  fs.writeFileSync(video, "changed-after-review");
+
+  const validation = validateReviewReportFile(run.id, cwd);
+  assert.equal(validation.ok, false);
+  assert.equal(validation.can_complete_post_review, false);
+  assert.ok(
+    validation.errors.some(error =>
+      error.includes("SHA-256 changed after review")
+    )
+  );
+});
+
+test("new reviewed file invalidates stale post-review and approval checkpoints", () => {
+  const cwd = temp();
+  const run = createRun({
+    cwd,
+    task: "approval invalidation",
+    mode: "direct",
+    routeDecision: null
+  });
+
+  const oldVideo = path.join(cwd, "old.mp4");
+  const newVideo = path.join(cwd, "new.mp4");
+  fs.writeFileSync(oldVideo, "old-video");
+  fs.writeFileSync(newVideo, "new-video");
+
+  const oldReport = passingReport();
+  oldReport.run_id = run.id;
+  oldReport.video = "old.mp4";
+  oldReport.video_sha256 = sha256File(oldVideo);
+  fs.writeFileSync(
+    path.join(run.dir, "review.json"),
+    JSON.stringify(oldReport, null, 2)
+  );
+
+  const loaded = JSON.parse(
+    fs.readFileSync(path.join(run.dir, "state.json"), "utf8")
+  );
+  loaded.checkpoints.post_render_review = {
+    status: "completed",
+    updated_at: new Date().toISOString(),
+    artifact: path.join(run.dir, "review.json"),
+    note: "old review",
+    human_approved: false
+  };
+  loaded.checkpoints.approval = {
+    status: "completed",
+    updated_at: new Date().toISOString(),
+    artifact: null,
+    note: "old approval",
+    human_approved: true
+  };
+  loaded.current_stage = "approval";
+  fs.writeFileSync(
+    path.join(run.dir, "state.json"),
+    JSON.stringify(loaded, null, 2)
+  );
+
+  createReviewReport(run.id, newVideo, cwd);
+
+  const refreshed = JSON.parse(
+    fs.readFileSync(path.join(run.dir, "state.json"), "utf8")
+  );
+
+  assert.equal(
+    refreshed.checkpoints.post_render_review.status,
+    "in_progress"
+  );
+  assert.equal(refreshed.checkpoints.approval, undefined);
+  assert.equal(refreshed.checkpoints.finalize, undefined);
+  assert.equal(refreshed.current_stage, "post_render_review");
 });
