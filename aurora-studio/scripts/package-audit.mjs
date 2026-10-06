@@ -87,6 +87,7 @@ const required = [
   "README.md",
   "CHANGELOG.md",
   "bin/aurora-studio.mjs",
+  "src/reference-files.mjs",
   "ui/index.html",
   "ui/styles.css",
   "ui/styles/tokens.css",
