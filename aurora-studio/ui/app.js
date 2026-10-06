@@ -463,6 +463,12 @@ function renderSettings(next) {
       ok: Boolean(next.system?.installed),
       value: next.system?.installed_version || "Missing",
       detail: next.system?.needs_sync ? "Sync needed" : "Managed knowledge/runtime"
+    },
+    {
+      name: "Obsidian",
+      ok: Boolean(next.integrations?.obsidian?.available),
+      value: next.integrations?.obsidian?.available ? "Detected" : "Optional",
+      detail: next.integrations?.obsidian?.note || "Optional knowledge UI"
     }
   ];
 
@@ -750,7 +756,13 @@ $("#setup-form").addEventListener("submit", async event => {
         mode: String(data.get("mode") || "direct"),
         install_hyperframes: data.get("install_hyperframes") === "on",
         install_agents: data.get("install_agents") === "on",
-        resources: {}
+        resources: {
+          browser_control: data.get("browser_control") === "on",
+          chatgpt_browser: data.get("chatgpt_browser") === "on",
+          google_flow: data.get("google_flow") === "on",
+          meta_ai: data.get("meta_ai") === "on",
+          elevenlabs: data.get("elevenlabs") === "on"
+        }
       })
     });
 
