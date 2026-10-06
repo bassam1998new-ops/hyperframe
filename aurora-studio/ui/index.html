@@ -159,7 +159,113 @@
           </button>
         </section>
 
-        <section class="workspace-grid">
+        <section class="render-ready panel" id="render-ready" hidden>
+          <div class="render-ready-copy">
+            <span class="eyebrow">READY TO RENDER</span>
+            <strong id="render-ready-title">Continue the build in your agent</strong>
+            <p id="render-ready-copy">
+              AurorA has a valid build plan, but this route does not expose a universal direct renderer yet.
+            </p>
+            <code id="render-handoff-message"></code>
+          </div>
+          <div class="render-ready-actions">
+            <label class="render-candidate-field" id="render-candidate-field" hidden>
+              Existing video output
+              <select id="render-candidate"></select>
+            </label>
+            <button class="aurora-button" id="render-register" type="button" hidden>
+              Use for review
+            </button>
+            <button class="aurora-button" id="copy-render-handoff" type="button">
+              <svg><use href="#i-copy"/></svg>
+              Copy render task
+            </button>
+          </div>
+        </section>
+
+        <section class="review-workspace" id="review-workspace" hidden>
+          <article class="panel review-preview-panel">
+            <div class="panel-head review-preview-head">
+              <div>
+                <span class="eyebrow">FINAL REVIEW</span>
+                <span class="review-decision" id="review-decision">Pending</span>
+              </div>
+              <div class="review-compare-tabs" id="review-compare-tabs" role="tablist" aria-label="Review comparison">
+                <button class="active" type="button" data-review-view="result">Result</button>
+                <button type="button" data-review-view="reference" id="review-reference-tab">Reference</button>
+                <button type="button" data-review-view="side" id="review-side-tab">Side by side</button>
+              </div>
+            </div>
+
+            <div class="review-media-stage" id="review-media-stage"></div>
+
+            <div class="review-evidence-wrap">
+              <div class="review-evidence-head">
+                <span class="section-label">SAMPLED REVIEW FRAMES</span>
+                <button class="text-button" id="review-refresh" type="button">
+                  <svg><use href="#i-refresh"/></svg>
+                  Refresh review
+                </button>
+              </div>
+              <div class="review-evidence" id="review-evidence"></div>
+            </div>
+          </article>
+
+          <aside class="panel review-summary-panel">
+            <div class="panel-head">
+              <div>
+                <span class="eyebrow">AURORA REVIEW</span>
+                <strong id="review-summary-title">Waiting for review</strong>
+              </div>
+              <span class="review-state-pill" id="review-state-pill">Pending</span>
+            </div>
+
+            <div class="review-summary-scroll">
+              <p class="review-summary-copy" id="review-summary-copy"></p>
+
+              <section class="review-block">
+                <span class="section-label">TECHNICAL</span>
+                <div class="review-technical" id="review-technical"></div>
+              </section>
+
+              <section class="review-block" id="review-issues-block">
+                <span class="section-label">ISSUES</span>
+                <div class="review-issues" id="review-issues"></div>
+              </section>
+
+              <section class="review-block">
+                <span class="section-label">QUALITY CHECKS</span>
+                <div class="review-checks" id="review-checks"></div>
+              </section>
+
+              <section class="review-block">
+                <span class="section-label">PRODUCTION</span>
+                <div class="review-production" id="review-production"></div>
+              </section>
+            </div>
+
+            <div class="review-actions">
+              <button class="aurora-button" id="review-revise" type="button">
+                <svg><use href="#i-edit"/></svg>
+                Revise
+              </button>
+              <button class="aurora-button" id="review-rebuild" type="button">
+                Rebuild
+              </button>
+              <button class="aurora-button" id="review-change-direction" type="button" hidden>
+                Change direction
+              </button>
+              <button class="aurora-button" data-variant="primary" id="review-approve" type="button">
+                <svg><use href="#i-check"/></svg>
+                Approve
+              </button>
+            </div>
+
+            <div class="review-approved-note" id="review-approved-note" hidden></div>
+          </aside>
+        </section>
+
+        <section class="workspace-grid" id="create-workspace">
           <article class="panel preview-panel">
             <div class="panel-head">
               <div>
@@ -289,7 +395,7 @@
           </aside>
         </section>
 
-        <section class="panel library-panel">
+        <section class="panel library-panel" id="create-library-shelf">
           <div class="panel-head">
             <div>
               <span class="eyebrow">LIBRARY</span>
@@ -858,6 +964,87 @@
 
         <div class="generation-request-list" id="generation-request-list"></div>
       </section>
+    </div>
+  </dialog>
+
+  <dialog class="aurora-dialog revision-dialog" id="revision-dialog">
+    <form id="revision-form">
+      <div class="aurora-dialog-head">
+        <div>
+          <span class="eyebrow">REVISE OUTPUT</span>
+          <strong id="revision-dialog-title">Tell AurorA what to fix</strong>
+        </div>
+        <button
+          class="aurora-icon-button"
+          type="button"
+          data-dialog-close="close"
+          aria-label="Close revision dialog"
+        >
+          <svg><use href="#i-close"/></svg>
+        </button>
+      </div>
+
+      <div class="aurora-dialog-body">
+        <div class="revision-kind-row" id="revision-kind-row">
+          <button class="active" type="button" data-revision-kind="fix">Fix</button>
+          <button type="button" data-revision-kind="rebuild">Rebuild</button>
+          <button type="button" data-revision-kind="change_direction" id="revision-direction-option">Change direction</button>
+        </div>
+
+        <label class="revision-field">
+          What should change?
+          <textarea
+            name="note"
+            rows="5"
+            maxlength="1600"
+            placeholder="Keep the direction. Fix the caption timing and make the final reveal slower."
+            required
+          ></textarea>
+        </label>
+
+        <label class="revision-field" id="revision-shot-field">
+          Apply to shot
+          <select name="shot_id" id="revision-shot">
+            <option value="">Whole production</option>
+          </select>
+        </label>
+
+        <p class="revision-impact" id="revision-impact">
+          Fix keeps the current direction and storyboard, then reopens Build.
+        </p>
+      </div>
+
+      <div class="aurora-dialog-foot">
+        <button class="aurora-button" type="button" data-dialog-close="cancel">Cancel</button>
+        <button class="aurora-button" data-variant="primary" type="submit" id="revision-submit">
+          Request revision
+        </button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="aurora-dialog approval-dialog" id="approval-dialog" data-dismissible="false">
+    <div class="aurora-dialog-head">
+      <div>
+        <span class="eyebrow">FINAL APPROVAL</span>
+        <strong>Approve this exact reviewed render?</strong>
+      </div>
+    </div>
+
+    <div class="aurora-dialog-body">
+      <p class="approval-copy">
+        AurorA will record owner approval for the exact file that passed review.
+        If the learning review is already complete, Studio will finalize it immediately.
+      </p>
+      <div class="approval-summary" id="approval-summary"></div>
+    </div>
+
+    <div class="aurora-dialog-foot">
+      <button class="aurora-button" id="approval-cancel" type="button">Cancel</button>
+      <button class="aurora-button" data-variant="primary" id="approval-confirm" type="button">
+        <svg><use href="#i-check"/></svg>
+        Approve final
+      </button>
     </div>
   </dialog>
 
