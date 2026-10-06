@@ -266,12 +266,14 @@ export async function startStudioUiServer({
             : Boolean(value);
         }
 
+        const { local_paths = [], ...providerResources } = mergedResources;
         const result = runConfiguredSetup(cliPath, cwd, {
           product: snapshot.project?.product || "",
           purpose: snapshot.project?.purpose || "",
           website: snapshot.project?.website || "",
           mode: snapshot.workspace?.mode || "direct",
-          resources: mergedResources,
+          resources: providerResources,
+          local_paths,
           agents: "none",
           install_hyperframes: false
         });
@@ -297,12 +299,14 @@ export async function startStudioUiServer({
             : Boolean(resources[key]);
         }
 
+        const { local_paths = [], ...providerResources } = safeResources;
         const result = runConfiguredSetup(cliPath, cwd, {
           product: String(body.product || "").trim(),
           purpose: String(body.purpose || "").trim(),
           website: String(body.website || "").trim(),
           mode,
-          resources: safeResources,
+          resources: providerResources,
+          local_paths,
           agents: body.install_agents === false ? "none" : "all",
           install_hyperframes: body.install_hyperframes !== false
         });
