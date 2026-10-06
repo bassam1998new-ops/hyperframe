@@ -19,6 +19,23 @@ import {
   removeBuildPlanShot,
   moveBuildPlanShot
 } from "./build-plan.mjs";
+import {
+  addAssetPlanNeed,
+  updateAssetPlanNeed,
+  removeAssetPlanNeed,
+  completeAssetPlan,
+  readAssetPlan
+} from "./asset-plan.mjs";
+import {
+  updateLibraryItem,
+  removeLibraryItem,
+  upsertLibraryItem
+} from "./library.mjs";
+import { searchPolyHaven } from "./open-assets/poly-haven.mjs";
+import {
+  createGenerationRequest,
+  generationCapabilityForNeed
+} from "./generation-requests.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const UI_ROOT = path.resolve(HERE, "../ui");
@@ -633,6 +650,292 @@ export async function startStudioUiServer({
           moveBuildPlanShot(runId, shotId, direction, cwd);
           return json(res, 200, {
             ok: true,
+            state: buildStudioSnapshot(cwd)
+          });
+        } catch (error) {
+          return json(res, 400, { error: error.message });
+        }
+      }
+
+
+      if (req.method === "POST" && url.pathname === "/api/asset-plan-update") {
+        const body = await readBody(req);
+        try {
+          const result = updateAssetPlanNeed(
+            String(body.runId || ""),
+            String(body.needId || ""),
+            body.changes && typeof body.changes === "object"
+              ? body.changes
+              : {},
+            cwd
+          );
+
+          return json(res, 200, {
+            ok: true,
+            result: {
+              plan: result.plan,
+              validation: result.validation,
+              invalidation: result.invalidation
+            },
+            state: buildStudioSnapshot(cwd)
+          });
+        } catch (error) {
+          return json(res, 400, { error: error.message });
+        }
+      }
+
+      if (req.method === "POST" && url.pathname === "/api/asset-plan-add") {
+        const body = await readBody(req);
+        try {
+          const result = addAssetPlanNeed(
+            String(body.runId || ""),
+            {
+              description: body.description,
+              kind: body.kind,
+              decision: body.decision,
+              required_capabilities: Array.isArray(body.required_capabilities)
+                ? body.required_capabilities
+                : [],
+              search_queries: Array.isArray(body.search_queries)
+                ? body.search_queries
+                : []
+            },
+            cwd
+          );
+
+          return json(res, 200, {
+            ok: true,
+            need_id: result.need_id,
+            state: buildStudioSnapshot(cwd)
+          });
+        } catch (error) {
+          return json(res, 400, { error: error.message });
+        }
+      }
+
+      if (req.method === "POST" && url.pathname === "/api/asset-plan-remove") {
+        const body = await readBody(req);
+        try {
+          removeAssetPlanNeed(
+            String(body.runId || ""),
+            String(body.needId || ""),
+            cwd
+          );
+
+          return json(res, 200, {
+            ok: true,
+            state: buildStudioSnapshot(cwd)
+          });
+        } catch (error) {
+          return json(res, 400, { error: error.message });
+        }
+      }
+
+      if (req.method === "POST" && url.pathname === "/api/asset-plan-complete") {
+        const body = await readBody(req);
+        try {
+          const result = completeAssetPlan(
+            String(body.runId || ""),
+            String(body.summary || "").trim(),
+            cwd
+          );
+
+          return json(res, 200, {
+            ok: true,
+            validation: result.validation,
+            state: buildStudioSnapshot(cwd)
+          });
+        } catch (error) {
+          return json(res, 400, { error: error.message });
+        }
+      }
+
+      if (req.method === "POST" && url.pathname === "/api/library-update") {
+        const body = await readBody(req);
+        try {
+          const result = updateLibraryItem(
+            String(body.id || ""),
+            body.changes && typeof body.changes === "object"
+              ? body.changes
+              : {},
+            cwd
+          );
+
+          return json(res, 200, {
+            ok: true,
+            item: result.item,
+            state: buildStudioSnapshot(cwd)
+          });
+        } catch (error) {
+          return json(res, 400, { error: error.message });
+        }
+      }
+
+      if (req.method === "POST" && url.pathname === "/api/library-remove") {
+        const body = await readBody(req);
+        try {
+          const result = removeLibraryItem(
+            String(body.id || ""),
+            cwd
+          );
+
+          return json(res, 200, {
+            ok: true,
+            removed: result.removed,
+            source_file_deleted: false,
+            state: buildStudioSnapshot(cwd)
+          });
+        } catch (error) {
+          return json(res, 400, { error: error.message });
+        }
+      }
+
+      if (req.method === "POST" && url.pathname === "/api/open-assets/search") {
+        const body = await readBody(req);
+        try {
+          const result = await searchPolyHaven(
+            String(body.query || ""),
+            {
+              type: String(body.type || "all"),
+              limit: Math.max(1, Math.min(24, Number(body.limit || 12))),
+              forceRefresh: Boolean(body.forceRefresh),
+              cwd
+            }
+          );
+
+          return json(res, 200, {
+            ok: true,
+            ...result
+          });
+        } catch (error) {
+          return json(res, 400, { error: error.message });
+        }
+      }
+
+      if (req.method === "POST" && url.pathname === "/api/open-assets/track") {
+        const body = await readBody(req);
+        const asset = body.asset && typeof body.asset === "object"
+          ? body.asset
+          : {};
+        const id = String(asset.id || "").trim();
+
+        if (!/^[a-z0-9_-]+$/i.test(id)) {
+          return json(res, 400, { error: "Poly Haven asset id is invalid." });
+        }
+
+        const kindByType = {
+          model: "model",
+          texture: "material",
+          hdri: "hdri"
+        };
+        const kind = kindByType[String(asset.asset_type || "").toLowerCase()] || "asset";
+
+        try {
+          const result = upsertLibraryItem({
+            id: `poly-haven-${id}`,
+            kind,
+            name: String(asset.name || id).trim(),
+            description: String(asset.description || "").trim(),
+            type: String(asset.asset_type || "other"),
+            path: null,
+            source_url: `https://polyhaven.com/a/${encodeURIComponent(id)}`,
+            source_name: "Poly Haven",
+            license_id: "CC0-1.0",
+            commercial_allowed: true,
+            redistribution_allowed: true,
+            attribution_required: false,
+            tags: Array.isArray(asset.tags)
+              ? asset.tags.map(String).filter(Boolean)
+              : [],
+            tools: ["blender"],
+            approved: true,
+            quality_tier: "unknown"
+          }, cwd);
+
+          return json(res, 200, {
+            ok: true,
+            item: result.item,
+            created: result.created,
+            state: buildStudioSnapshot(cwd)
+          });
+        } catch (error) {
+          return json(res, 400, { error: error.message });
+        }
+      }
+
+      if (req.method === "POST" && url.pathname === "/api/generation-request") {
+        const body = await readBody(req);
+        const runId = String(body.runId || "");
+        const needId = body.needId ? String(body.needId) : null;
+
+        try {
+          let need = null;
+          if (needId) {
+            const record = readAssetPlan(runId, cwd);
+            need = record?.plan?.needs?.find(item => item.id === needId) || null;
+            if (!need) {
+              return json(res, 400, { error: "Asset need not found." });
+            }
+          }
+
+          const capability = body.capability ||
+            generationCapabilityForNeed(need || { kind: body.kind });
+
+          const result = createGenerationRequest({
+            run_id: runId,
+            need_id: needId,
+            provider: body.provider,
+            capability,
+            prompt: body.prompt,
+            operation: body.operation || "asset_generation",
+            model: body.model,
+            resolution: body.resolution,
+            quantity: body.quantity,
+            unit: body.unit || "credits",
+            estimated_usd: body.estimated_usd
+          }, {
+            cwd,
+            ownerApproved: Boolean(body.ownerApproved)
+          });
+
+          if (result.approval_required) {
+            return json(res, 200, {
+              ok: false,
+              approval_required: true,
+              budget: result.budget,
+              provider: result.provider,
+              state: buildStudioSnapshot(cwd)
+            });
+          }
+
+          if (needId && result.request) {
+            const existingNotes = Array.isArray(need?.notes)
+              ? need.notes
+              : [];
+            const required = [
+              ...(need?.required_capabilities || []),
+              capability
+            ];
+
+            updateAssetPlanNeed(
+              runId,
+              needId,
+              {
+                decision: "build_new",
+                required_capabilities: [...new Set(required)],
+                notes: [
+                  ...existingNotes,
+                  `Generation request ${result.request.id} queued for ${result.request.provider_name}.`
+                ]
+              },
+              cwd
+            );
+          }
+
+          return json(res, 200, {
+            ok: true,
+            request: result.request,
+            budget: result.budget,
             state: buildStudioSnapshot(cwd)
           });
         } catch (error) {
