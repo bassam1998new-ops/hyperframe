@@ -265,7 +265,8 @@ test("Storyboard UI is SortableJS-backed with keyboard-safe fallback controls", 
   assert.match(workflow, /\/api\/storyboard-remove/);
   assert.match(workflow, /\/api\/storyboard-move/);
   assert.match(workflow, /direction === "up"/);
-  assert.match(workflow, /direction === "down"/);
+  assert.match(workflow, /move\("up"\)/);
+  assert.match(workflow, /move\("down"\)/);
 
   assert.match(server, /SORTABLE_VENDOR/);
   assert.match(notice, /SortableJS 1\.15\.7/);
