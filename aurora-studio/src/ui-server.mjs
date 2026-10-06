@@ -4,10 +4,31 @@ import http from "node:http";
 import crypto from "node:crypto";
 import { spawn, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
 import { buildStudioSnapshot, resolveWorkspaceMedia } from "./ui-data.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const UI_ROOT = path.resolve(HERE, "../ui");
+const require = createRequire(import.meta.url);
+
+const FLOATING_VENDOR = {
+  "/vendor/floating-ui-utils.js": {
+    package: "@floating-ui/utils",
+    file: "dist/floating-ui.utils.umd.js"
+  },
+  "/vendor/floating-ui-utils-dom.js": {
+    package: "@floating-ui/utils",
+    file: "dist/floating-ui.utils.dom.umd.js"
+  },
+  "/vendor/floating-ui-core.js": {
+    package: "@floating-ui/core",
+    file: "dist/floating-ui.core.umd.js"
+  },
+  "/vendor/floating-ui-dom.js": {
+    package: "@floating-ui/dom",
+    file: "dist/floating-ui.dom.umd.js"
+  }
+};
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -52,6 +73,22 @@ const RESOURCE_FIELDS = new Set([
   "elevenlabs",
   "local_paths"
 ]);
+
+function resolveFloatingVendor(urlPath) {
+  const spec = FLOATING_VENDOR[urlPath];
+  if (!spec) return null;
+
+  try {
+    const packageJson = require.resolve(spec.package + "/package.json");
+    const root = path.dirname(packageJson);
+    const file = path.join(root, spec.file);
+
+    if (!fs.existsSync(file) || !fs.statSync(file).isFile()) return null;
+    return file;
+  } catch {
+    return null;
+  }
+}
 
 function json(res, status, value) {
   const body = JSON.stringify(value);
@@ -187,6 +224,24 @@ export async function startStudioUiServer({
       if (url.pathname.startsWith("/api/") || url.pathname === "/media") {
         const supplied = req.headers["x-aurora-token"] || url.searchParams.get("token");
         if (supplied !== token) return unauthorized(res);
+      }
+
+      if (req.method === "GET" && FLOATING_VENDOR[url.pathname]) {
+        const file = resolveFloatingVendor(url.pathname);
+        if (!file) {
+          return json(res, 404, {
+            error: "Optional Floating UI dependency is not installed."
+          });
+        }
+
+        const body = fs.readFileSync(file);
+        res.writeHead(200, {
+          "Content-Type": "text/javascript; charset=utf-8",
+          "Content-Length": body.length,
+          "Cache-Control": "public, max-age=31536000, immutable"
+        });
+        res.end(body);
+        return;
       }
 
       if (req.method === "GET" && url.pathname === "/api/state") {
