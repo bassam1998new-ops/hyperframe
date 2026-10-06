@@ -6,6 +6,7 @@ import { createReferenceWorkflow } from "./app/workflows/reference.js";
 import { createIntentWorkflow } from "./app/workflows/create-intent.js";
 import { createConceptWorkflow } from "./app/workflows/concepts.js";
 import { createStoryboardWorkflow } from "./app/workflows/storyboard.js";
+import { createAssetWorkflow } from "./app/workflows/assets.js";
 import {
   renderActivity,
   renderBoard,
@@ -85,6 +86,14 @@ const storyboardWorkflow = createStoryboardWorkflow({
   toast
 });
 
+const assetWorkflow = createAssetWorkflow({
+  api,
+  getState: () => state,
+  onState: next => render(next),
+  mediaUrl,
+  toast
+});
+
 function render(next) {
   state = next;
   const configured = Boolean(next.configured);
@@ -135,6 +144,7 @@ function render(next) {
   renderBoard(run, mediaUrl);
   conceptWorkflow.sync(next);
   storyboardWorkflow.sync(next);
+  assetWorkflow.sync(next);
   renderActivity(next.activity || []);
   renderUsage(run);
   renderLibraryShelf(next.library || [], mediaUrl);
