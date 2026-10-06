@@ -38,6 +38,11 @@ test("UI snapshot reflects real workspace run usage library and render", () => {
     mode: "director",
     route: ["blender", "hyperframe"],
     route_confidence: 0.9,
+    intent: {
+      quality: "hero",
+      aspect: "9:16"
+    },
+    reference_id: "hero-reference",
     created_at: "2026-10-06T02:00:00Z",
     stages: [
       { id: "understand", status: "pending" },
@@ -65,6 +70,28 @@ test("UI snapshot reflects real workspace run usage library and render", () => {
       output: "renders/hero.webm"
     }]
   }));
+
+  fs.mkdirSync(path.join(root, "references"), { recursive: true });
+  fs.writeFileSync(
+    path.join(root, "references", "hero-reference.json"),
+    JSON.stringify({
+      schema_version: 1,
+      id: "hero-reference",
+      name: "Hero Reference",
+      source: {
+        type: "url",
+        value: "https://example.com/hero",
+        role: "visual"
+      },
+      analysis: {
+        medium: "video",
+        subject: "product hero",
+        quality_tier: "premium"
+      },
+      created_at: "2026-10-06T01:30:00Z",
+      updated_at: "2026-10-06T01:30:00Z"
+    })
+  );
 
   fs.writeFileSync(path.join(runDir, "usage.jsonl"),
     JSON.stringify({
@@ -107,6 +134,17 @@ test("UI snapshot reflects real workspace run usage library and render", () => {
   assert.equal(snapshot.active_run.id, runId);
   assert.equal(snapshot.active_run.current_stage, "build");
   assert.deepEqual(snapshot.active_run.route, ["blender", "hyperframe"]);
+  assert.deepEqual(snapshot.active_run.intent, {
+    quality: "hero",
+    aspect: "9:16"
+  });
+  assert.equal(snapshot.active_run.reference_id, "hero-reference");
+  assert.equal(snapshot.references.length, 1);
+  assert.equal(snapshot.references[0].id, "hero-reference");
+  assert.equal(snapshot.references[0].role, "visual");
+  assert.equal(snapshot.agent.bridge_connected, false);
+  assert.equal(snapshot.agent.handoff.run_id, runId);
+  assert.match(snapshot.agent.handoff.message, new RegExp(runId));
   assert.equal(snapshot.active_run.shots[0].engine, "blender");
   assert.equal(snapshot.active_run.usage.actual_usd, 0.2);
   assert.equal(snapshot.stats.library_approved, 1);
