@@ -119,6 +119,19 @@ aurora-studio ui
 
 It runs on localhost only and opens a token-protected browser session.
 
+### Create V2
+
+The Create surface now supports:
+
+- visual reference or source-material upload
+- reference links and recent reference reuse
+- Draft / Normal / Premium / Hero quality intent
+- Project / 9:16 / 16:9 / 1:1 aspect intent
+- Media Chrome 4.19.3 player controls with AurorA styling
+- explicit Claude/Codex handoff when Studio has created the run but no live agent bridge exists
+
+All of those choices are written into AurorA's real run/reference contracts; they are not browser-only UI state.
+
 The V1 Studio uses real workspace state across five simple views:
 
 - **Create** — prompt, Direct/Director, reference upload/link, Draft/Normal/Premium/Hero intent, aspect intent, Media Chrome preview, build board, activity, usage and recent library
