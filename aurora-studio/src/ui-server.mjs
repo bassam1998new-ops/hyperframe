@@ -24,6 +24,35 @@ const MIME = {
   ".mov": "video/quicktime"
 };
 
+
+const PROJECT_FIELDS = new Set([
+  "product",
+  "website",
+  "purpose",
+  "audience",
+  "offer",
+  "positioning",
+  "brand.personality",
+  "brand.colors",
+  "brand.fonts",
+  "brand.logo_paths",
+  "brand.avoid",
+  "content.languages",
+  "content.channels",
+  "creative.preferred_moods",
+  "creative.avoid_moods",
+  "creative.recurring_constraints"
+]);
+
+const RESOURCE_FIELDS = new Set([
+  "browser_control",
+  "chatgpt_browser",
+  "google_flow",
+  "meta_ai",
+  "elevenlabs",
+  "local_paths"
+]);
+
 function json(res, status, value) {
   const body = JSON.stringify(value);
   res.writeHead(status, {
@@ -107,6 +136,39 @@ function runCli(cliPath, cwd, args) {
   };
 }
 
+
+function cliValue(value) {
+  if (Array.isArray(value) || (value && typeof value === "object")) {
+    return JSON.stringify(value);
+  }
+  return value == null ? "" : String(value);
+}
+
+function writeTemporarySetupConfig(cwd, config) {
+  const dir = path.join(cwd, ".aurora", "temp");
+  fs.mkdirSync(dir, { recursive: true });
+  const file = path.join(dir, `ui-setup-${crypto.randomBytes(6).toString("hex")}.json`);
+  fs.writeFileSync(file, JSON.stringify(config, null, 2) + "\n");
+  return file;
+}
+
+function runConfiguredSetup(cliPath, cwd, config) {
+  const file = writeTemporarySetupConfig(cwd, config);
+  try {
+    return runCli(cliPath, cwd, ["setup", "--config", file]);
+  } finally {
+    fs.rmSync(file, { force: true });
+  }
+}
+
+function parseCliJson(stdout) {
+  try {
+    return JSON.parse(String(stdout || "").trim());
+  } catch {
+    return null;
+  }
+}
+
 export async function startStudioUiServer({
   cwd = process.cwd(),
   port = 4317,
@@ -154,6 +216,112 @@ export async function startStudioUiServer({
         return json(res, result.ok ? 200 : 400, {
           ...result,
           state: buildStudioSnapshot(cwd)
+        });
+      }
+
+
+      if (req.method === "POST" && url.pathname === "/api/project") {
+        const body = await readBody(req);
+        const changes = body.changes && typeof body.changes === "object"
+          ? body.changes
+          : {};
+
+        for (const [field, value] of Object.entries(changes)) {
+          if (!PROJECT_FIELDS.has(field)) {
+            return json(res, 400, { error: `Project field is not editable from Studio UI: ${field}` });
+          }
+
+          const result = runCli(cliPath, cwd, ["project", "set", field, cliValue(value)]);
+          if (!result.ok) {
+            return json(res, 400, {
+              error: result.stderr || `Could not update project field: ${field}`
+            });
+          }
+        }
+
+        return json(res, 200, {
+          ok: true,
+          state: buildStudioSnapshot(cwd)
+        });
+      }
+
+      if (req.method === "POST" && url.pathname === "/api/resources") {
+        const body = await readBody(req);
+        const snapshot = buildStudioSnapshot(cwd);
+        if (!snapshot.configured) {
+          return json(res, 400, { error: "Set up the AurorA workspace first." });
+        }
+
+        const incoming = body.resources && typeof body.resources === "object"
+          ? body.resources
+          : {};
+        const mergedResources = { ...(snapshot.workspace?.resources || {}) };
+
+        for (const [key, value] of Object.entries(incoming)) {
+          if (!RESOURCE_FIELDS.has(key)) {
+            return json(res, 400, { error: `Resource setting is not editable: ${key}` });
+          }
+          mergedResources[key] = key === "local_paths"
+            ? (Array.isArray(value) ? value.map(String) : [])
+            : Boolean(value);
+        }
+
+        const { local_paths = [], ...providerResources } = mergedResources;
+        const result = runConfiguredSetup(cliPath, cwd, {
+          product: snapshot.project?.product || "",
+          purpose: snapshot.project?.purpose || "",
+          website: snapshot.project?.website || "",
+          mode: snapshot.workspace?.mode || "direct",
+          resources: providerResources,
+          local_paths,
+          agents: "none",
+          install_hyperframes: false
+        });
+
+        return json(res, result.ok ? 200 : 400, {
+          ...result,
+          state: buildStudioSnapshot(cwd)
+        });
+      }
+
+      if (req.method === "POST" && url.pathname === "/api/setup") {
+        const body = await readBody(req);
+        const mode = ["direct", "director"].includes(body.mode) ? body.mode : "direct";
+        const resources = body.resources && typeof body.resources === "object"
+          ? body.resources
+          : {};
+
+        const safeResources = {};
+        for (const key of RESOURCE_FIELDS) {
+          if (!(key in resources)) continue;
+          safeResources[key] = key === "local_paths"
+            ? (Array.isArray(resources[key]) ? resources[key].map(String) : [])
+            : Boolean(resources[key]);
+        }
+
+        const { local_paths = [], ...providerResources } = safeResources;
+        const result = runConfiguredSetup(cliPath, cwd, {
+          product: String(body.product || "").trim(),
+          purpose: String(body.purpose || "").trim(),
+          website: String(body.website || "").trim(),
+          mode,
+          resources: providerResources,
+          local_paths,
+          agents: body.install_agents === false ? "none" : "all",
+          install_hyperframes: body.install_hyperframes !== false
+        });
+
+        return json(res, result.ok ? 200 : 400, {
+          ...result,
+          state: buildStudioSnapshot(cwd)
+        });
+      }
+
+      if (req.method === "POST" && url.pathname === "/api/update-check") {
+        const result = runCli(cliPath, cwd, ["update", "check"]);
+        return json(res, result.ok ? 200 : 400, {
+          ...result,
+          update: parseCliJson(result.stdout)
         });
       }
 

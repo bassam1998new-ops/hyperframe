@@ -8,6 +8,9 @@ AurorA Studio follows a simple **New / Fixed** release summary so community user
 - Local V1 Create dashboard with the approved dark Aurora Studio visual direction.
 - `aurora-studio ui` localhost-only token-protected Studio launcher.
 - Real workspace preview, stage/build board, tool health, activity, usage and library shelf.
+- Library, Project, Settings and Updates V1 views.
+- First-run Studio setup directly from the local UI.
+- Project Brain edits and resource toggles write through existing AurorA commands/contracts.
 - UI functional handoff is now visually locked for the V1 Create screen.
 - Structured post-render review now uses PASS / FIX / REBUILD.
 - Claude and Codex can use project-local AurorA native skills.

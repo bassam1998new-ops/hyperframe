@@ -428,18 +428,52 @@ The current implementation enables Create and the in-page Library shelf first. O
 
 ### V1 implementation
 
-The first coded screen is:
-- **Create dashboard**
-  - Direct / Director switch
-  - request input
-  - real preview
-  - real simplified stage/build board
-  - tool health
-  - activity
-  - real usage
-  - library shelf
+Implemented views:
+
+1. **First-run setup**
+   - product/service
+   - website
+   - video purpose
+   - Direct/Director default
+   - optional tested HyperFrames install
+   - optional Claude/Codex integration
+
+2. **Create**
+   - Direct / Director switch
+   - request input
+   - real preview
+   - simplified real stage/build board
+   - per-shot engine badges
+   - tool health
+   - activity
+   - real usage
+   - recent library shelf
+
+3. **Library**
+   - full tracked library
+   - search
+   - simple type filters
+   - real source/license/tool metadata
+
+4. **Project**
+   - editable product/service context
+   - audience / offer / positioning
+   - brand personality/colors/fonts/logos/avoid rules
+   - channels/languages/creative preferences
+
+5. **Settings**
+   - live HyperFrames/Blender/AE detection
+   - Node / FFmpeg / ffprobe status
+   - browser/resource availability toggles
+   - approved extra local folders
+
+6. **Updates**
+   - local version/channel
+   - New / Fixed notes
+   - real update check
+   - no auto-apply yet
 
 Launch:
 `aurora-studio ui`
 
-The UI uses packaged plain HTML/CSS/JS and reads the existing AurorA workspace. It does not create a second backend or duplicate Studio state.
+The UI uses packaged plain HTML/CSS/JS and the existing AurorA CLI/file contracts. It does not create a second backend or duplicate Studio state.

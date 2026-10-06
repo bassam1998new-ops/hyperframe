@@ -1,5 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
+import { resolveHyperframesBinary } from "./tool-install.mjs";
+import { findBlender } from "./adapters/blender.mjs";
+import { findAfterEffects } from "./adapters/after-effects.mjs";
+import { runtimeStatus } from "./runtime.mjs";
+import { localRelease } from "./update.mjs";
+import { systemStatus } from "./system-install.mjs";
 
 const VIDEO_EXT = new Set([".mp4", ".mov", ".m4v", ".webm", ".mkv"]);
 const IMAGE_EXT = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif", ".svg"]);
@@ -172,11 +178,11 @@ function previewForRun(cwd, run) {
   return null;
 }
 
-function libraryCards(cwd, items) {
+function libraryCards(cwd, items, limit = 7) {
   return items
     .slice()
     .sort((a, b) => String(b.updated_at || b.created_at || "").localeCompare(String(a.updated_at || a.created_at || "")))
-    .slice(0, 7)
+    .slice(0, limit)
     .map(item => {
       const preview = mediaDescriptor(cwd, item.path);
       return {
@@ -224,6 +230,38 @@ function shotRows(run) {
   }));
 }
 
+function liveToolStatus(cwd, workspace) {
+  const hf = resolveHyperframesBinary(cwd);
+  const blender = findBlender();
+  const ae = findAfterEffects();
+
+  const fallback = new Map((workspace?.tools || []).map(tool => [tool.id, tool]));
+
+  return [
+    {
+      id: "hyperframe",
+      name: fallback.get("hyperframe")?.name || "HyperFrames",
+      available: Boolean(hf.available),
+      required: true,
+      source: hf.source || null
+    },
+    {
+      id: "blender",
+      name: fallback.get("blender")?.name || "Blender",
+      available: Boolean(blender),
+      required: false,
+      source: blender ? "detected" : null
+    },
+    {
+      id: "after_effects",
+      name: fallback.get("after_effects")?.name || "After Effects",
+      available: Boolean(ae.afterfx || ae.aerender),
+      required: false,
+      source: ae.afterfx || ae.aerender ? "detected" : null
+    }
+  ];
+}
+
 export function buildStudioSnapshot(cwd = process.cwd()) {
   const root = auroraDir(cwd);
   const workspace = readJson(path.join(root, "workspace.json"));
@@ -242,12 +280,11 @@ export function buildStudioSnapshot(cwd = process.cwd()) {
     .sort((a, b) => String(b.at).localeCompare(String(a.at)))
     .slice(0, 8);
 
-  const tools = (workspace?.tools || []).map(tool => ({
-    id: tool.id,
-    name: tool.name,
-    available: Boolean(tool.available),
-    required: Boolean(tool.required)
-  }));
+  const tools = liveToolStatus(cwd, workspace);
+  const runtime = runtimeStatus();
+  const release = localRelease();
+  const system = systemStatus(cwd);
+  const obsidian = (workspace?.integrations || []).find(item => item.id === "obsidian") || null;
 
   return {
     schema_version: 1,
@@ -259,6 +296,22 @@ export function buildStudioSnapshot(cwd = process.cwd()) {
     } : null,
     project: project || workspace?.project || null,
     tools,
+    runtime,
+    system,
+    integrations: {
+      obsidian: {
+        available: Boolean(obsidian?.available),
+        note: obsidian?.available
+          ? "Obsidian CLI detected."
+          : "Optional knowledge UI."
+      }
+    },
+    release: {
+      version: release.latest_version,
+      channel: release.channel,
+      public_install_ready: Boolean(release.public_install_ready),
+      notes: release.notes || { new: [], fixed: [] }
+    },
     stats: {
       finals: receipts.length,
       library_total: library.length,
@@ -284,6 +337,7 @@ export function buildStudioSnapshot(cwd = process.cwd()) {
       usage
     } : null,
     library: libraryCards(cwd, library),
+    library_all: libraryCards(cwd, library, 200),
     activity
   };
 }
