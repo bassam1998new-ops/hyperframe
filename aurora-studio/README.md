@@ -56,6 +56,7 @@ or:
 Useful human commands:
 
 ```bash
+aurora-studio ui
 aurora-studio doctor
 aurora-studio mode direct
 aurora-studio mode director
@@ -108,10 +109,32 @@ Setup can install the small Claude/Codex pointers, project-local native AurorA s
 
 The bundled bootstrap prompt is still available for other compatible agents.
 
-## UI
-UI/UX comes later. The file contracts and agent behavior must be stable first.
+## Studio UI
 
-The planned updater should stay simple:
+AurorA now includes a local V1 **Create** dashboard:
+
+```bash
+aurora-studio ui
+```
+
+It runs on localhost only and opens a token-protected browser session.
+
+The first screen uses the real workspace state:
+- Direct / Director mode
+- project/product context
+- production-tool availability
+- active run + simplified stage board
+- per-shot build plan when available
+- current render/review preview
+- provider usage / known spend
+- reusable library shelf
+- current activity
+
+No separate frontend framework is required. The UI is plain packaged HTML/CSS/JS served by AurorA itself.
+
+Project, Settings and Updates visual screens remain intentionally deferred until the Create screen is proven with real use.
+
+The updater should stay simple:
 - current version
 - update available
 - short New / Fixed list
