@@ -81,10 +81,35 @@ const RESOURCE_FIELDS = new Set([
   "local_paths"
 ]);
 
+function packageRootFromEntry(entry, expectedName) {
+  let dir = path.dirname(entry);
+
+  for (let depth = 0; depth < 8; depth += 1) {
+    const packageFile = path.join(dir, "package.json");
+
+    if (fs.existsSync(packageFile)) {
+      try {
+        const pkg = JSON.parse(fs.readFileSync(packageFile, "utf8"));
+        if (pkg.name === expectedName) return dir;
+      } catch {
+        // Keep walking upward; malformed nested metadata is not authoritative.
+      }
+    }
+
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+
+  return null;
+}
+
 function resolveMediaChromeVendor() {
   try {
     const entry = require.resolve("media-chrome");
-    const root = path.resolve(path.dirname(entry), "..");
+    const root = packageRootFromEntry(entry, "media-chrome");
+    if (!root) return null;
+
     const file = path.join(root, "dist", "iife", "index.js");
 
     if (!fs.existsSync(file) || !fs.statSync(file).isFile()) return null;
