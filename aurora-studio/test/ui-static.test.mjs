@@ -20,6 +20,7 @@ test("browser UI JavaScript modules have valid syntax", () => {
     "ui/app/router.js",
     "ui/app/toast.js",
     "ui/app/dialog.js",
+    "ui/app/tooltip.js",
     "ui/app/views/create.js",
     "ui/app/views/library.js",
     "ui/app/views/project.js",
@@ -149,4 +150,18 @@ test("app imports shared API formatting router and toast modules", () => {
   assert.doesNotMatch(app, /function escapeHtml\(/);
   assert.doesNotMatch(app, /async function api\(/);
   assert.doesNotMatch(app, /function switchView\(/);
+});
+
+
+test("Floating UI is pinned and tooltip behavior has a graceful fallback", () => {
+  const pkg = JSON.parse(read("package.json"));
+  const tooltip = read("ui/app/tooltip.js");
+  const server = read("src/ui-server.mjs");
+
+  assert.equal(pkg.dependencies?.["@floating-ui/dom"], "1.8.0");
+  assert.match(tooltip, /window\.FloatingUIDOM/);
+  assert.match(tooltip, /return \{ enhanced: false/);
+  assert.match(server, /floating-ui\.dom\.umd\.js/);
+  assert.match(server, /floating-ui\.core\.umd\.js/);
+  assert.match(server, /floating-ui\.utils\.umd\.js/);
 });
