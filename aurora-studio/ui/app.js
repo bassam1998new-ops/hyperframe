@@ -195,7 +195,9 @@ $("#prompt-form").addEventListener("submit", async event => {
     toast(error.message, true);
   } finally {
     busy = false;
-    input.disabled = false;
+    input.disabled =
+      !state?.configured ||
+      intentWorkflow.locked;
   }
 });
 
