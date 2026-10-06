@@ -103,6 +103,18 @@ export function createReferenceWorkflow({
         `;
       }
 
+      const analysisBits = [
+        item.analysis?.medium,
+        item.analysis?.subject,
+        item.analysis?.quality_tier
+      ].filter(Boolean);
+
+      const secondary = [
+        titleCase(item.role || "visual"),
+        prettySource(item),
+        ...analysisBits
+      ].join(" · ");
+
       return `
         <button
           class="reference-list-item ${item.id === selectedReferenceId ? "selected" : ""}"
@@ -112,11 +124,7 @@ export function createReferenceWorkflow({
           ${preview}
           <span>
             <strong>${escapeHtml(item.name)}</strong>
-            <small>
-              ${escapeHtml(titleCase(item.role || "visual"))}
-              ·
-              ${escapeHtml(prettySource(item))}
-            </small>
+            <small>${escapeHtml(secondary)}</small>
           </span>
           ${item.id === selectedReferenceId ? '<svg class="reference-check"><use href="#i-check"/></svg>' : ""}
         </button>
