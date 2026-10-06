@@ -438,6 +438,9 @@
           <button class="filter-button" data-filter="model">3D</button>
           <button class="filter-button" data-filter="audio">Audio</button>
           <button class="filter-button" data-filter="font">Fonts</button>
+          <button class="filter-button" data-filter="template">Templates</button>
+          <button class="filter-button" data-filter="approved">Approved</button>
+          <button class="filter-button" data-filter="pending">Pending</button>
         </div>
 
         <section class="panel page-panel">
@@ -973,6 +976,130 @@
 
         <div class="generation-request-list" id="generation-request-list"></div>
       </section>
+    </div>
+  </dialog>
+
+  <dialog class="aurora-dialog aurora-drawer library-detail-drawer" id="library-detail-drawer">
+    <form id="library-detail-form">
+      <div class="aurora-dialog-head">
+        <div>
+          <span class="eyebrow" id="library-detail-kind">LIBRARY ITEM</span>
+          <strong id="library-detail-title">Item details</strong>
+        </div>
+        <button
+          class="aurora-icon-button"
+          type="button"
+          data-dialog-close="close"
+          aria-label="Close Library item"
+        >
+          <svg><use href="#i-close"/></svg>
+        </button>
+      </div>
+
+      <div class="aurora-dialog-body library-detail-body">
+        <div class="library-detail-hero">
+          <div class="library-detail-preview" id="library-detail-preview"></div>
+          <div class="library-detail-summary">
+            <span class="library-approval-pill pending" id="library-detail-status">Pending review</span>
+            <div class="library-detail-tools" id="library-detail-tools"></div>
+            <div class="library-use-stat">
+              <span>Tracked uses</span>
+              <strong id="library-use-count">0</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="library-detail-form-grid">
+          <label class="library-field span-two">
+            Name
+            <input name="name" maxlength="180" required />
+          </label>
+
+          <label class="library-field span-two">
+            Description
+            <textarea name="description" rows="3" maxlength="900"></textarea>
+          </label>
+
+          <label class="library-field">
+            Quality tier
+            <select name="quality_tier">
+              <option value="unknown">Unknown</option>
+              <option value="draft">Draft</option>
+              <option value="normal">Normal</option>
+              <option value="premium">Premium</option>
+              <option value="hero">Hero</option>
+            </select>
+          </label>
+
+          <label class="library-approval-control">
+            <input name="approved" type="checkbox" />
+            <span>
+              <b>Approved for reuse</b>
+              <small>Studio will still enforce license checks.</small>
+            </span>
+          </label>
+
+          <label class="library-field span-two">
+            Tags
+            <input name="tags" placeholder="product, hero, premium, glass" />
+          </label>
+        </div>
+
+        <section class="library-detail-section">
+          <span class="section-label">SOURCE & LICENSE</span>
+          <div class="library-meta-grid">
+            <div><span>Source</span><strong id="library-source-name">—</strong></div>
+            <div><span>License</span><strong id="library-license-id">—</strong></div>
+            <div><span>Commercial</span><strong id="library-license-commercial">Unknown</strong></div>
+            <div><span>Redistribution</span><strong id="library-license-redistribution">Unknown</strong></div>
+            <div><span>Attribution</span><strong id="library-license-attribution">Unknown</strong></div>
+            <div class="span-two"><span>Local path</span><strong id="library-local-path">—</strong></div>
+          </div>
+        </section>
+
+        <section class="library-detail-section">
+          <span class="section-label">USE HISTORY</span>
+          <div class="library-use-history" id="library-use-history"></div>
+        </section>
+      </div>
+
+      <div class="aurora-dialog-foot library-detail-foot">
+        <button class="aurora-button" data-variant="danger" id="library-remove-open" type="button">
+          <svg><use href="#i-trash"/></svg>
+          Remove
+        </button>
+        <span class="library-detail-spacer"></span>
+        <a
+          class="aurora-button"
+          id="library-source-open"
+          target="_blank"
+          rel="noopener noreferrer"
+          hidden
+        >Open source</a>
+        <button class="aurora-button" id="library-reveal" type="button">Reveal</button>
+        <button class="aurora-button" id="library-use-current" type="button">Use in run</button>
+        <button class="aurora-button" data-variant="primary" id="library-detail-save" type="submit">Save item</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="aurora-dialog library-remove-dialog" id="library-remove-dialog" data-dismissible="false">
+    <div class="aurora-dialog-head">
+      <div>
+        <span class="eyebrow">REMOVE FROM LIBRARY</span>
+        <strong>Remove <span id="library-remove-name">this item</span>?</strong>
+      </div>
+    </div>
+    <div class="aurora-dialog-body">
+      <p class="library-remove-copy">
+        This removes the tracking record only. AurorA will not delete the original source file.
+      </p>
+    </div>
+    <div class="aurora-dialog-foot">
+      <button class="aurora-button" id="library-remove-cancel" type="button">Cancel</button>
+      <button class="aurora-button" data-variant="danger" id="library-remove-confirm" type="button">
+        Remove from Library
+      </button>
     </div>
   </dialog>
 
