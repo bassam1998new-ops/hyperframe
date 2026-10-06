@@ -121,6 +121,7 @@ try {
     path.join(workspace, ".aurora", "system", "ui", "styles", "tokens.css"),
     path.join(workspace, ".aurora", "system", "ui", "styles", "components.css"),
     path.join(workspace, ".aurora", "system", "ui", "vendor", "LUCIDE-LICENSE.txt"),
+    path.join(workspace, ".aurora", "system", "ui", "vendor", "FLOATING-UI-LICENSE.txt"),
     path.join(workspace, ".aurora", "system", "ui", "app", "tooltip.js")
   ];
 
