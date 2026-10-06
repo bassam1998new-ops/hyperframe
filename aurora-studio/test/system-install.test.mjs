@@ -19,6 +19,9 @@ test("sync installs agent-readable system knowledge into workspace", () => {
   assert.ok(fs.existsSync(path.join(result.system_dir, "bin", "aurora-studio.mjs")));
   assert.ok(fs.existsSync(path.join(result.system_dir, "src", "studio.mjs")));
   assert.ok(fs.existsSync(path.join(result.system_dir, "prompts", "AGENT-START.md")));
+  assert.ok(fs.existsSync(path.join(result.system_dir, "ui", "index.html")));
+  assert.ok(fs.existsSync(path.join(result.system_dir, "ui", "styles.css")));
+  assert.ok(fs.existsSync(path.join(result.system_dir, "ui", "app.js")));
   assert.ok(fs.existsSync(path.join(result.system_dir, "skills", "DIRECTOR.md")));
   assert.ok(fs.existsSync(path.join(result.system_dir, "knowledge", "providers", "google-flow.md")));
   assert.ok(fs.existsSync(path.join(result.system_dir, "schemas", "reference.schema.json")));
