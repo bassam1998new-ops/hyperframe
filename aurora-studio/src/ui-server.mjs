@@ -30,6 +30,7 @@ import {
   readLibrary,
   updateLibraryItem,
   removeLibraryItem,
+  revealLibraryItem,
   upsertLibraryItem
 } from "./library.mjs";
 import { licenseGate } from "./asset-sources.mjs";
@@ -796,6 +797,24 @@ export async function startStudioUiServer({
             ok: true,
             item: result.item,
             state: buildStudioSnapshot(cwd)
+          });
+        } catch (error) {
+          return json(res, 400, { error: error.message });
+        }
+      }
+
+      if (req.method === "POST" && url.pathname === "/api/library-reveal") {
+        const body = await readBody(req);
+
+        try {
+          const result = revealLibraryItem(
+            String(body.id || ""),
+            cwd
+          );
+
+          return json(res, 200, {
+            ok: true,
+            result
           });
         } catch (error) {
           return json(res, 400, { error: error.message });
