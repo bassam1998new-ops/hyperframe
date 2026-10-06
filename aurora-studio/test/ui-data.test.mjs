@@ -103,7 +103,8 @@ test("UI snapshot reflects real workspace run usage library and render", () => {
       purpose: "3D product hero",
       engine: "blender",
       quality: "premium",
-      output: "renders/hero.webm"
+      output: "renders/hero.webm",
+      asset_ids: ["style-1"]
     }]
   }));
 
@@ -155,6 +156,10 @@ test("UI snapshot reflects real workspace run usage library and render", () => {
   assert.equal(snapshot.active_run.concepts.direction_locked, true);
   assert.equal(snapshot.active_run.usage.actual_usd, 0.2);
   assert.equal(snapshot.stats.library_approved, 1);
+  assert.equal(snapshot.library_all[0].use_count, 1);
+  assert.equal(snapshot.library_all[0].use_history[0].type, "shot");
+  assert.equal(snapshot.library_all[0].use_history[0].run_id, runId);
+  assert.equal(snapshot.library[0].use_count, 1);
   assert.equal(snapshot.active_run.preview.path, "renders/hero.webm");
 });
 
