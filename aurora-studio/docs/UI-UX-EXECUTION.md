@@ -8,8 +8,8 @@ Do not start a later wave before the current wave passes its package/Windows/Ubu
 | --- | --- | --- |
 | UI-10 | Design system + component foundation | **Complete ✅** |
 | UI-11 | Create core + Media Chrome | **Complete ✅** |
-| UI-12 | Director concepts | **Implemented — CI pending** |
-| UI-13 | Storyboard / build board | Planned |
+| UI-12 | Director concepts | **Complete ✅** |
+| UI-13 | Storyboard / build board | **Implemented — CI pending** |
 | UI-14 | Asset workflow | Planned |
 | UI-15 | Render + review | Planned |
 | UI-16 | Library full | Planned |
@@ -99,6 +99,38 @@ Do not start a later wave before the current wave passes its package/Windows/Ubu
 - Director E2E uses structured concept selection
 - Studio snapshot concept state test green
 - UI select/refine endpoint tests green
+- Windows + Ubuntu full suite green
+- package audit 0 findings
+- installed-package smoke green
+
+
+## UI-13 delivered
+
+- safe structured storyboard mutations around `build-plan.json`
+- add / edit / duplicate / remove shot
+- exact shot reorder contract
+- drag reorder with pinned SortableJS 1.15.7
+- Move up / Move down non-drag accessibility fallback
+- shot inspector drawer
+- per-shot engine restricted to selected production route
+- per-shot Draft / Normal / Premium / Hero quality
+- optional duration / planned output
+- real output thumbnail only when the file exists
+- real planned / complete status only; no fake percentage
+- prior build plan archived before every edit
+- stale review archived when storyboard changes
+- downstream build/render/review/approval/finalize state invalidated after edits
+- finalized runs are read-only
+- browser endpoints are allowlisted storyboard operations only
+- local/offline SortableJS vendor route + MIT notice
+
+## Gate before UI-14
+
+- storyboard mutation tests green
+- downstream invalidation/history tests green
+- browser storyboard endpoint test green
+- SortableJS exact version 1.15.7 installed
+- local SortableJS vendor route works in installed package
 - Windows + Ubuntu full suite green
 - package audit 0 findings
 - installed-package smoke green
