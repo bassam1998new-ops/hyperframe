@@ -212,14 +212,16 @@ function archiveCurrentReview(run) {
   return target;
 }
 
-function reopenAfterBuildPlanEdit(run, buildPlanFile) {
+function reopenAfterBuildPlanEdit(
+  run,
+  buildPlanFile,
+  previousBuildPlan
+) {
   const history = historyFile(run);
   fs.writeFileSync(history, JSON.stringify({
     state: run.state,
     plan: run.plan,
-    build_plan: fs.existsSync(buildPlanFile)
-      ? JSON.parse(fs.readFileSync(buildPlanFile, "utf8"))
-      : null,
+    build_plan: previousBuildPlan || null,
     captured_at: new Date().toISOString()
   }, null, 2) + "\n");
 
@@ -265,7 +267,12 @@ function reopenAfterBuildPlanEdit(run, buildPlanFile) {
   };
 }
 
-function writeEditedBuildPlan(run, plan, cwd) {
+function writeEditedBuildPlan(
+  run,
+  plan,
+  cwd,
+  previousBuildPlan = null
+) {
   const file = buildPlanPath(run.plan.run_id || run.state.run_id, cwd);
   plan.status = "pending";
   plan.route = run.plan.route || [];
@@ -280,7 +287,11 @@ function writeEditedBuildPlan(run, plan, cwd) {
   }
 
   fs.writeFileSync(file, JSON.stringify(plan, null, 2) + "\n");
-  const invalidation = reopenAfterBuildPlanEdit(run, file);
+  const invalidation = reopenAfterBuildPlanEdit(
+    run,
+    file,
+    previousBuildPlan
+  );
 
   return {
     plan,
@@ -301,12 +312,13 @@ function editableRun(runId, cwd) {
   return {
     run,
     plan: clone(record.plan),
+    previous_plan: clone(record.plan),
     file: record.file
   };
 }
 
 export function addBuildPlanShot(runId, input = {}, cwd = process.cwd()) {
-  const { run, plan } = editableRun(runId, cwd);
+  const { run, plan, previous_plan } = editableRun(runId, cwd);
   const purpose = String(input.purpose || "").trim();
 
   if (!purpose) throw new Error("New shot needs a purpose.");
@@ -354,7 +366,7 @@ export function addBuildPlanShot(runId, input = {}, cwd = process.cwd()) {
   });
 
   return {
-    ...writeEditedBuildPlan(run, plan, cwd),
+    ...writeEditedBuildPlan(run, plan, cwd, previous_plan),
     shot_id: id
   };
 }
@@ -365,7 +377,7 @@ export function updateBuildPlanShot(
   changes = {},
   cwd = process.cwd()
 ) {
-  const { run, plan } = editableRun(runId, cwd);
+  const { run, plan, previous_plan } = editableRun(runId, cwd);
   const shot = (plan.shots || []).find(item => item.id === shotId);
 
   if (!shot) throw new Error(`Shot not found: ${shotId}`);
@@ -420,7 +432,7 @@ export function updateBuildPlanShot(
     shot.output = String(safe.output || "").trim();
   }
 
-  return writeEditedBuildPlan(run, plan, cwd);
+  return writeEditedBuildPlan(run, plan, cwd, previous_plan);
 }
 
 export function reorderBuildPlanShots(
@@ -428,7 +440,7 @@ export function reorderBuildPlanShots(
   order = [],
   cwd = process.cwd()
 ) {
-  const { run, plan } = editableRun(runId, cwd);
+  const { run, plan, previous_plan } = editableRun(runId, cwd);
   const current = plan.shots || [];
 
   if (!Array.isArray(order) || order.length !== current.length) {
@@ -448,7 +460,7 @@ export function reorderBuildPlanShots(
   const byId = new Map(current.map(shot => [shot.id, shot]));
   plan.shots = order.map(id => byId.get(id));
 
-  return writeEditedBuildPlan(run, plan, cwd);
+  return writeEditedBuildPlan(run, plan, cwd, previous_plan);
 }
 
 export function duplicateBuildPlanShot(
@@ -456,7 +468,7 @@ export function duplicateBuildPlanShot(
   shotId,
   cwd = process.cwd()
 ) {
-  const { run, plan } = editableRun(runId, cwd);
+  const { run, plan, previous_plan } = editableRun(runId, cwd);
   const index = (plan.shots || []).findIndex(item => item.id === shotId);
 
   if (index < 0) throw new Error(`Shot not found: ${shotId}`);
@@ -472,7 +484,7 @@ export function duplicateBuildPlanShot(
   plan.shots.splice(index + 1, 0, duplicate);
 
   return {
-    ...writeEditedBuildPlan(run, plan, cwd),
+    ...writeEditedBuildPlan(run, plan, cwd, previous_plan),
     shot_id: duplicate.id
   };
 }
@@ -482,7 +494,7 @@ export function removeBuildPlanShot(
   shotId,
   cwd = process.cwd()
 ) {
-  const { run, plan } = editableRun(runId, cwd);
+  const { run, plan, previous_plan } = editableRun(runId, cwd);
   const before = plan.shots?.length || 0;
   plan.shots = (plan.shots || []).filter(item => item.id !== shotId);
 
@@ -490,7 +502,7 @@ export function removeBuildPlanShot(
     throw new Error(`Shot not found: ${shotId}`);
   }
 
-  return writeEditedBuildPlan(run, plan, cwd);
+  return writeEditedBuildPlan(run, plan, cwd, previous_plan);
 }
 
 export function moveBuildPlanShot(
@@ -499,7 +511,7 @@ export function moveBuildPlanShot(
   direction,
   cwd = process.cwd()
 ) {
-  const { run, plan } = editableRun(runId, cwd);
+  const { run, plan, previous_plan } = editableRun(runId, cwd);
   const index = (plan.shots || []).findIndex(item => item.id === shotId);
 
   if (index < 0) throw new Error(`Shot not found: ${shotId}`);
@@ -526,5 +538,5 @@ export function moveBuildPlanShot(
   const [shot] = plan.shots.splice(index, 1);
   plan.shots.splice(target, 0, shot);
 
-  return writeEditedBuildPlan(run, plan, cwd);
+  return writeEditedBuildPlan(run, plan, cwd, previous_plan);
 }
