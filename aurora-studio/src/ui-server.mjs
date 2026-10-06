@@ -11,6 +11,14 @@ import {
   createUrlReference,
   storeReferenceUpload
 } from "./reference-files.mjs";
+import {
+  addBuildPlanShot,
+  updateBuildPlanShot,
+  reorderBuildPlanShots,
+  duplicateBuildPlanShot,
+  removeBuildPlanShot,
+  moveBuildPlanShot
+} from "./build-plan.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const UI_ROOT = path.resolve(HERE, "../ui");
@@ -449,6 +457,158 @@ export async function startStudioUiServer({
           ...result,
           state: buildStudioSnapshot(cwd)
         });
+      }
+
+
+      if (req.method === "POST" && url.pathname === "/api/storyboard-add") {
+        const body = await readBody(req);
+        const runId = String(body.runId || "").trim();
+
+        if (!runId) {
+          return json(res, 400, { error: "Storyboard add requires runId." });
+        }
+
+        try {
+          const result = addBuildPlanShot(runId, {
+            purpose: body.purpose,
+            duration_seconds: body.duration_seconds,
+            engine: body.engine,
+            quality: body.quality,
+            output: body.output
+          }, cwd);
+
+          return json(res, 200, {
+            ok: true,
+            shot_id: result.shot_id,
+            state: buildStudioSnapshot(cwd)
+          });
+        } catch (error) {
+          return json(res, 400, { error: error.message });
+        }
+      }
+
+      if (req.method === "POST" && url.pathname === "/api/storyboard-update") {
+        const body = await readBody(req);
+        const runId = String(body.runId || "").trim();
+        const shotId = String(body.shotId || "").trim();
+
+        if (!runId || !shotId) {
+          return json(res, 400, {
+            error: "Storyboard update requires runId and shotId."
+          });
+        }
+
+        try {
+          updateBuildPlanShot(
+            runId,
+            shotId,
+            body.changes && typeof body.changes === "object"
+              ? body.changes
+              : {},
+            cwd
+          );
+
+          return json(res, 200, {
+            ok: true,
+            state: buildStudioSnapshot(cwd)
+          });
+        } catch (error) {
+          return json(res, 400, { error: error.message });
+        }
+      }
+
+      if (req.method === "POST" && url.pathname === "/api/storyboard-reorder") {
+        const body = await readBody(req);
+        const runId = String(body.runId || "").trim();
+
+        if (!runId || !Array.isArray(body.order)) {
+          return json(res, 400, {
+            error: "Storyboard reorder requires runId and order."
+          });
+        }
+
+        try {
+          reorderBuildPlanShots(
+            runId,
+            body.order.map(String),
+            cwd
+          );
+
+          return json(res, 200, {
+            ok: true,
+            state: buildStudioSnapshot(cwd)
+          });
+        } catch (error) {
+          return json(res, 400, { error: error.message });
+        }
+      }
+
+      if (req.method === "POST" && url.pathname === "/api/storyboard-duplicate") {
+        const body = await readBody(req);
+        const runId = String(body.runId || "").trim();
+        const shotId = String(body.shotId || "").trim();
+
+        if (!runId || !shotId) {
+          return json(res, 400, {
+            error: "Storyboard duplicate requires runId and shotId."
+          });
+        }
+
+        try {
+          const result = duplicateBuildPlanShot(runId, shotId, cwd);
+          return json(res, 200, {
+            ok: true,
+            shot_id: result.shot_id,
+            state: buildStudioSnapshot(cwd)
+          });
+        } catch (error) {
+          return json(res, 400, { error: error.message });
+        }
+      }
+
+      if (req.method === "POST" && url.pathname === "/api/storyboard-remove") {
+        const body = await readBody(req);
+        const runId = String(body.runId || "").trim();
+        const shotId = String(body.shotId || "").trim();
+
+        if (!runId || !shotId) {
+          return json(res, 400, {
+            error: "Storyboard remove requires runId and shotId."
+          });
+        }
+
+        try {
+          removeBuildPlanShot(runId, shotId, cwd);
+          return json(res, 200, {
+            ok: true,
+            state: buildStudioSnapshot(cwd)
+          });
+        } catch (error) {
+          return json(res, 400, { error: error.message });
+        }
+      }
+
+      if (req.method === "POST" && url.pathname === "/api/storyboard-move") {
+        const body = await readBody(req);
+        const runId = String(body.runId || "").trim();
+        const shotId = String(body.shotId || "").trim();
+        const direction = String(body.direction || "").trim();
+
+        if (!runId || !shotId) {
+          return json(res, 400, {
+            error: "Storyboard move requires runId and shotId."
+          });
+        }
+
+        try {
+          moveBuildPlanShot(runId, shotId, direction, cwd);
+          return json(res, 200, {
+            ok: true,
+            state: buildStudioSnapshot(cwd)
+          });
+        } catch (error) {
+          return json(res, 400, { error: error.message });
+        }
       }
 
 
