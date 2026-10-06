@@ -240,9 +240,18 @@ test("change-direction revision reopens Director concepts and clears derived rou
   assert.equal(result.state.checkpoints.mood, undefined);
   assert.equal(result.state.checkpoints.assets, undefined);
   assert.equal(result.state.checkpoints.routing, undefined);
-  assert.equal(fs.existsSync(path.join(run.dir, "mood.json")), false);
-  assert.equal(fs.existsSync(path.join(run.dir, "asset-plan.json")), false);
+  assert.equal(fs.existsSync(path.join(run.dir, "mood.json")), true);
+  assert.equal(fs.existsSync(path.join(run.dir, "asset-plan.json")), true);
   assert.equal(fs.existsSync(path.join(run.dir, "build-plan.json")), false);
+
+  const freshMood = JSON.parse(
+    fs.readFileSync(path.join(run.dir, "mood.json"), "utf8")
+  );
+  const freshAssets = JSON.parse(
+    fs.readFileSync(path.join(run.dir, "asset-plan.json"), "utf8")
+  );
+  assert.equal(freshMood.status, "pending");
+  assert.equal(freshAssets.status, "pending");
 
   const concepts = readConceptSet(run.id, cwd).concept_set;
   assert.equal(concepts.status, "pending");
