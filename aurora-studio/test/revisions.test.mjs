@@ -250,7 +250,8 @@ test("change-direction revision reopens Director concepts and clears derived rou
   const freshAssets = JSON.parse(
     fs.readFileSync(path.join(run.dir, "asset-plan.json"), "utf8")
   );
-  assert.equal(freshMood.status, "pending");
+  assert.equal(freshMood.tool_agnostic, true);
+  assert.equal(freshMood.intent.one_sentence, "");
   assert.equal(freshAssets.status, "pending");
 
   const concepts = readConceptSet(run.id, cwd).concept_set;
