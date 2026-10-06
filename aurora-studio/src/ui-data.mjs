@@ -6,6 +6,15 @@ import { findAfterEffects } from "./adapters/after-effects.mjs";
 import { runtimeStatus } from "./runtime.mjs";
 import { localRelease } from "./update.mjs";
 import { systemStatus } from "./system-install.mjs";
+import {
+  validateReviewReportFile
+} from "./review-report.mjs";
+import {
+  readLearningReview
+} from "./learning.mjs";
+import {
+  readRevisions
+} from "./revisions.mjs";
 import { listReferences } from "./brain.mjs";
 import {
   conceptDirectionLocked,
@@ -366,6 +375,191 @@ function shotRows(cwd, run) {
   });
 }
 
+function reviewTechnicalSummary(report) {
+  const streams = report?.technical?.metadata?.streams || [];
+  const video = streams.find(stream => stream.codec_type === "video") || null;
+  const audio = streams.find(stream => stream.codec_type === "audio") || null;
+  const duration = Number(report?.technical?.metadata?.format?.duration || 0);
+
+  return {
+    ok: Boolean(report?.technical?.ok),
+    duration_seconds: duration > 0 ? Number(duration.toFixed(2)) : null,
+    width: video?.width || null,
+    height: video?.height || null,
+    video_codec: video?.codec_name || null,
+    audio_codec: audio?.codec_name || null,
+    audio_channels: audio?.channels || null,
+    errors: report?.technical?.errors || [],
+    warnings: report?.technical?.warnings || []
+  };
+}
+
+function reviewCheckRows(report) {
+  const checks = [
+    ["reference_fit", "Reference fit", false],
+    ["project_fit", "Project fit", true],
+    ["story_clarity", "Story clarity", true],
+    ["motion_intentional", "Motion feels intentional", true],
+    ["typography", "Typography", true],
+    ["captions", "Captions", false],
+    ["arabic", "Arabic", false],
+    ["camera_crop_safe_zones", "Crop & safe zones", true],
+    ["audio", "Audio", true],
+    ["three_d_vfx_quality", "3D / VFX quality", false],
+    ["ai_slop_free", "No AI-slop artifacts", true]
+  ];
+
+  return checks.map(([id, label, required]) => ({
+    id,
+    label,
+    required,
+    value: report?.creative?.[id] ?? null
+  }));
+}
+
+function reviewSummary(cwd, run) {
+  if (!run?.review) return null;
+
+  let validation;
+  try {
+    validation = validateReviewReportFile(run.id, cwd);
+  } catch (error) {
+    validation = {
+      ok: false,
+      can_complete_post_review: false,
+      errors: [error.message],
+      warnings: []
+    };
+  }
+
+  const frames = Array.isArray(run.review.visual_evidence?.frames)
+    ? run.review.visual_evidence.frames
+    : [];
+
+  const evidence = frames.flatMap(frame => {
+    const media = mediaDescriptor(cwd, frame.path);
+    if (!media || media.type !== "image") return [];
+    return [{
+      index: frame.index,
+      time_seconds: frame.time_seconds,
+      media
+    }];
+  });
+
+  return {
+    status: run.review.status,
+    decision: run.review.decision,
+    summary: run.review.summary,
+    video: mediaDescriptor(cwd, run.review.video),
+    video_sha256: run.review.video_sha256 || null,
+    can_approve: Boolean(validation.can_complete_post_review),
+    validation_errors: validation.errors || [],
+    validation_warnings: validation.warnings || [],
+    issues: [
+      ...(run.review.issues || []),
+      ...(run.review.assets?.issues || [])
+    ],
+    notes: run.review.creative?.notes || [],
+    checks: reviewCheckRows(run.review),
+    assets: {
+      licenses_ok: run.review.assets?.licenses_ok ?? null,
+      watermark_free: run.review.assets?.watermark_free ?? null
+    },
+    technical: reviewTechnicalSummary(run.review),
+    evidence
+  };
+}
+
+function renderSummary(cwd, run) {
+  if (!run) return null;
+
+  const checkpoints = run.state.checkpoints || {};
+  const renderArtifact = checkpoints.render?.artifact
+    ? mediaDescriptor(cwd, checkpoints.render.artifact)
+    : null;
+
+  const candidates = [];
+  const seen = new Set();
+
+  for (const shot of run.build_plan?.shots || []) {
+    if (!shot.output) continue;
+    const media = mediaDescriptor(cwd, shot.output);
+    if (!media || media.type !== "video") continue;
+    if (seen.has(media.path)) continue;
+    seen.add(media.path);
+    candidates.push({
+      path: media.path,
+      media,
+      shot_id: shot.id,
+      shot_purpose: shot.purpose,
+      engine: shot.engine
+    });
+  }
+
+  const preRenderReady =
+    checkpoints.pre_render_review?.status === "completed";
+
+  const renderComplete =
+    checkpoints.render?.status === "completed";
+
+  return {
+    execution_mode: "agent_handoff",
+    direct_execution_available: false,
+    direct_execution_reason:
+      "This route does not yet expose a universal direct render executor in Studio.",
+    pre_render_ready: preRenderReady,
+    render_complete: renderComplete,
+    artifact: renderArtifact,
+    candidates,
+    can_register_output:
+      preRenderReady &&
+      !renderComplete &&
+      candidates.length > 0,
+    handoff_message:
+      !renderComplete && run.state.status !== "completed"
+        ? `Continue AurorA Studio run ${run.id} and render the approved build plan. Register the final render artifact when complete.`
+        : null
+  };
+}
+
+function finalReceipt(cwd, run) {
+  const file = path.join(run.dir, "final.json");
+  const receipt = readJson(file);
+  if (!receipt) return null;
+
+  return {
+    run_id: receipt.run_id,
+    approved_at: receipt.approved_at || null,
+    final_path: receipt.final_path || null,
+    sha256: receipt.sha256 || null,
+    bytes: receipt.bytes ?? null,
+    copied: Boolean(receipt.copied),
+    media: receipt.final_path
+      ? mediaDescriptor(cwd, receipt.final_path)
+      : null
+  };
+}
+
+function revisionRows(runId, cwd) {
+  try {
+    return readRevisions(runId, cwd)
+      .slice()
+      .reverse()
+      .slice(0, 20)
+      .map(item => ({
+        id: item.id,
+        timestamp: item.timestamp,
+        kind: item.kind,
+        note: item.note,
+        shot_id: item.shot_id || null,
+        shot_purpose: item.shot_purpose || null,
+        reopened_stage: item.reopened_stage
+      }));
+  } catch {
+    return [];
+  }
+}
+
 function referenceSourceDisplay(source) {
   if (source?.type !== "url") return source?.value || null;
   try {
@@ -471,6 +665,10 @@ export function buildStudioSnapshot(cwd = process.cwd()) {
   const receipts = finalReceipts(cwd);
   const usage = summarizeUsage(run?.usage || []);
   const concepts = conceptRows(cwd, run);
+  const review = reviewSummary(cwd, run);
+  const render = renderSummary(cwd, run);
+  const revisions = run ? revisionRows(run.id, cwd) : [];
+  const learning = run ? readLearningReview(run.id, cwd) : null;
 
   const activity = [
     ...checkpointActivity(run),
@@ -569,11 +767,27 @@ export function buildStudioSnapshot(cwd = process.cwd()) {
       ),
       shots: shotRows(cwd, run),
       concepts,
-      review: run.review ? {
-        status: run.review.status,
-        decision: run.review.decision,
-        summary: run.review.summary
+      review,
+      render,
+      approval: {
+        status: run.state.checkpoints?.approval?.status || "pending",
+        recorded:
+          run.state.checkpoints?.approval?.human_approved === true,
+        human_approved:
+          run.state.checkpoints?.approval?.human_approved === true &&
+          Boolean(review?.can_approve),
+        stale:
+          run.state.checkpoints?.approval?.human_approved === true &&
+          !Boolean(review?.can_approve)
+      },
+      learning: learning ? {
+        status: learning.review?.status || "pending",
+        summary: learning.review?.summary || ""
       } : null,
+      final: finalReceipt(cwd, run),
+      revisions,
+      selected_reference:
+        references.find(item => item.id === run.plan.reference_id) || null,
       preview: previewForRun(cwd, run),
       usage
     } : null,

@@ -38,6 +38,13 @@ import {
   createGenerationRequest,
   generationCapabilityForNeed
 } from "./generation-requests.mjs";
+import { requestRevision } from "./revisions.mjs";
+import {
+  readReviewReport,
+  validateReviewReportFile
+} from "./review-report.mjs";
+import { readLearningReview } from "./learning.mjs";
+import { probeRender } from "./quality.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const UI_ROOT = path.resolve(HERE, "../ui");
@@ -76,8 +83,10 @@ const MIME = {
   ".jpeg": "image/jpeg",
   ".webp": "image/webp",
   ".mp4": "video/mp4",
+  ".m4v": "video/x-m4v",
   ".webm": "video/webm",
-  ".mov": "video/quicktime"
+  ".mov": "video/quicktime",
+  ".mkv": "video/x-matroska"
 };
 
 
@@ -963,6 +972,219 @@ export async function startStudioUiServer({
         } catch (error) {
           return json(res, 400, { error: error.message });
         }
+      }
+
+
+      if (req.method === "POST" && url.pathname === "/api/render-register") {
+        const body = await readBody(req);
+        const runId = String(body.runId || "").trim();
+        const requested = String(body.path || "").trim();
+
+        if (!runId || !requested) {
+          return json(res, 400, {
+            error: "Render registration requires runId and path."
+          });
+        }
+
+        const file = resolveWorkspaceMedia(cwd, requested);
+        if (!file) {
+          return json(res, 400, {
+            error: "Render artifact is missing or outside the workspace."
+          });
+        }
+
+        const ext = path.extname(file).toLowerCase();
+        if (![".mp4", ".mov", ".m4v", ".webm", ".mkv"].includes(ext)) {
+          return json(res, 400, {
+            error: "Render artifact must be a supported video file."
+          });
+        }
+
+        const technical = probeRender(file);
+        if (!technical.ok) {
+          return json(res, 400, {
+            error:
+              "Render artifact failed technical validation: " +
+              (technical.errors || []).join(", "),
+            technical
+          });
+        }
+
+        const relative = path.relative(cwd, file).split(path.sep).join("/");
+        const result = runCli(
+          cliPath,
+          cwd,
+          [
+            "checkpoint",
+            runId,
+            "render",
+            "completed",
+            "--artifact",
+            relative,
+            "--note",
+            "Render artifact registered from AurorA Studio UI."
+          ]
+        );
+
+        return json(res, result.ok ? 200 : 400, {
+          ...result,
+          state: buildStudioSnapshot(cwd)
+        });
+      }
+
+      if (req.method === "POST" && url.pathname === "/api/review-refresh") {
+        const body = await readBody(req);
+        const runId = String(body.runId || "").trim();
+
+        if (!runId) {
+          return json(res, 400, { error: "Review refresh requires runId." });
+        }
+
+        const snapshot = buildStudioSnapshot(cwd);
+        const active = snapshot.active_run;
+        if (!active || active.id !== runId) {
+          return json(res, 400, { error: "Active run not found." });
+        }
+
+        const video =
+          active.review?.video?.path ||
+          active.render?.artifact?.path;
+
+        if (!video) {
+          return json(res, 400, {
+            error: "No registered render exists for review."
+          });
+        }
+
+        const result = runCli(
+          cliPath,
+          cwd,
+          ["review", "create", runId, "--video", video]
+        );
+
+        return json(res, result.ok ? 200 : 400, {
+          ...result,
+          state: buildStudioSnapshot(cwd)
+        });
+      }
+
+      if (req.method === "POST" && url.pathname === "/api/revision") {
+        const body = await readBody(req);
+        const runId = String(body.runId || "").trim();
+        const kind = String(body.kind || "fix").trim();
+        const note = String(body.note || "").trim();
+        const shotId = body.shotId == null
+          ? null
+          : String(body.shotId).trim();
+
+        try {
+          const result = requestRevision(
+            runId,
+            {
+              kind,
+              note,
+              shotId: shotId || null
+            },
+            cwd
+          );
+
+          return json(res, 200, {
+            ok: true,
+            revision: result.revision,
+            state: buildStudioSnapshot(cwd)
+          });
+        } catch (error) {
+          return json(res, 400, { error: error.message });
+        }
+      }
+
+      if (req.method === "POST" && url.pathname === "/api/approve") {
+        const body = await readBody(req);
+        const runId = String(body.runId || "").trim();
+
+        if (!runId || body.confirm !== true) {
+          return json(res, 400, {
+            error: "Final approval requires runId and explicit confirmation."
+          });
+        }
+
+        const validation = validateReviewReportFile(runId, cwd);
+        if (!validation.can_complete_post_review) {
+          return json(res, 400, {
+            error:
+              "The current render has not passed AurorA review. " +
+              (validation.errors || []).join("; "),
+            validation
+          });
+        }
+
+        const postReview = runCli(
+          cliPath,
+          cwd,
+          ["checkpoint", runId, "post_render_review", "completed"]
+        );
+        if (!postReview.ok) {
+          return json(res, 400, {
+            error: postReview.stderr || "Could not complete post-render review."
+          });
+        }
+
+        const approval = runCli(
+          cliPath,
+          cwd,
+          [
+            "checkpoint",
+            runId,
+            "approval",
+            "completed",
+            "--approved",
+            "--note",
+            "Owner approved the reviewed render in AurorA Studio."
+          ]
+        );
+        if (!approval.ok) {
+          return json(res, 400, {
+            error: approval.stderr || "Could not record owner approval."
+          });
+        }
+
+        const review = readReviewReport(runId, cwd);
+        const learning = readLearningReview(runId, cwd);
+        let finalization = null;
+
+        if (learning?.review?.status === "completed" && review?.report?.video) {
+          const finalized = runCli(
+            cliPath,
+            cwd,
+            [
+              "finalize",
+              runId,
+              "--video",
+              review.report.video
+            ]
+          );
+
+          finalization = {
+            ok: finalized.ok,
+            result: parseCliJson(finalized.stdout),
+            error: finalized.ok
+              ? null
+              : finalized.stderr || "Finalization needs attention."
+          };
+        }
+
+        const state = buildStudioSnapshot(cwd);
+
+        return json(res, 200, {
+          ok: true,
+          approved: true,
+          finalized: Boolean(finalization?.ok),
+          finalization,
+          needs_learning:
+            !learning || learning.review?.status !== "completed",
+          handoff: state.agent?.handoff || null,
+          state
+        });
       }
 
 

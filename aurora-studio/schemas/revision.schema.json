@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AurorA Studio Revision Request",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "id",
+    "timestamp",
+    "run_id",
+    "kind",
+    "note",
+    "shot_id",
+    "reopened_stage"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "id": { "type": "string", "minLength": 1 },
+    "timestamp": { "type": "string", "minLength": 1 },
+    "run_id": { "type": "string", "minLength": 1 },
+    "kind": { "enum": ["fix", "rebuild", "change_direction"] },
+    "note": { "type": "string", "minLength": 1 },
+    "shot_id": { "type": ["string", "null"] },
+    "shot_purpose": { "type": ["string", "null"] },
+    "reopened_stage": {
+      "enum": ["build", "build_plan", "concept"]
+    },
+    "archived": { "type": "object" }
+  },
+  "additionalProperties": true
+}

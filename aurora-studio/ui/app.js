@@ -7,6 +7,7 @@ import { createIntentWorkflow } from "./app/workflows/create-intent.js";
 import { createConceptWorkflow } from "./app/workflows/concepts.js";
 import { createStoryboardWorkflow } from "./app/workflows/storyboard.js";
 import { createAssetWorkflow } from "./app/workflows/assets.js";
+import { createReviewWorkflow } from "./app/workflows/review.js";
 import {
   renderActivity,
   renderBoard,
@@ -94,6 +95,14 @@ const assetWorkflow = createAssetWorkflow({
   toast
 });
 
+const reviewWorkflow = createReviewWorkflow({
+  api,
+  mediaUrl,
+  getState: () => state,
+  onState: next => render(next),
+  toast
+});
+
 function render(next) {
   state = next;
   const configured = Boolean(next.configured);
@@ -145,6 +154,7 @@ function render(next) {
   conceptWorkflow.sync(next);
   storyboardWorkflow.sync(next);
   assetWorkflow.sync(next);
+  reviewWorkflow.sync(next);
   renderActivity(next.activity || []);
   renderUsage(run);
   renderLibraryShelf(next.library || [], mediaUrl);

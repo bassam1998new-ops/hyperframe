@@ -49,7 +49,11 @@ function writeReport(cwd, run, decision) {
     };
   });
 
-  const videoSha = "b".repeat(64);
+  const videoFile = path.join(cwd, "renders", "final.mp4");
+  fs.mkdirSync(path.dirname(videoFile), { recursive: true });
+  fs.writeFileSync(videoFile, "review-gate-video");
+  const videoSha = sha256File(videoFile);
+
   const report = {
     schema_version: 1,
     run_id: run.id,

@@ -7,6 +7,82 @@ import { extractReviewFrames } from "./review-frames.mjs";
 
 const DECISIONS = new Set(["PENDING", "PASS", "FIX", "REBUILD"]);
 
+function insideRoot(root, target) {
+  const relative = path.relative(path.resolve(root), path.resolve(target));
+  return (
+    relative === "" ||
+    (!relative.startsWith("..") && !path.isAbsolute(relative))
+  );
+}
+
+function invalidateStaleApproval(run, reviewFile, cwd, note) {
+  const checkpoints = run.state.checkpoints || {};
+  const downstream = [
+    "post_render_review",
+    "approval",
+    "finalize"
+  ];
+
+  const hadDownstream = downstream.some(stage =>
+    Boolean(checkpoints[stage])
+  );
+
+  if (!hadDownstream) return false;
+
+  const history = path.join(
+    run.dir,
+    "history",
+    `${Date.now()}-review-video-changed.json`
+  );
+
+  fs.mkdirSync(path.dirname(history), { recursive: true });
+  fs.writeFileSync(
+    history,
+    JSON.stringify({
+      state: run.state,
+      plan: run.plan,
+      captured_at: new Date().toISOString(),
+      reason: note
+    }, null, 2) + "\n"
+  );
+
+  for (const stage of downstream) {
+    delete run.state.checkpoints[stage];
+    const planStage = (run.plan.stages || []).find(
+      item => item.id === stage
+    );
+    if (planStage) planStage.status = "pending";
+  }
+
+  const timestamp = new Date().toISOString();
+  run.state.checkpoints.post_render_review = {
+    status: "in_progress",
+    updated_at: timestamp,
+    artifact: reviewFile,
+    note,
+    human_approved: false
+  };
+  run.state.current_stage = "post_render_review";
+  run.state.status = "in_progress";
+  run.state.updated_at = timestamp;
+
+  const postStage = (run.plan.stages || []).find(
+    item => item.id === "post_render_review"
+  );
+  if (postStage) postStage.status = "in_progress";
+
+  fs.writeFileSync(
+    path.join(run.dir, "state.json"),
+    JSON.stringify(run.state, null, 2) + "\n"
+  );
+  fs.writeFileSync(
+    path.join(run.dir, "plan.json"),
+    JSON.stringify(run.plan, null, 2) + "\n"
+  );
+
+  return true;
+}
+
 export function reviewReportPath(runId, cwd = process.cwd()) {
   const run = loadRun(cwd, runId);
   return path.join(run.dir, "review.json");
@@ -104,6 +180,16 @@ export function createReviewReport(runId, video, cwd = process.cwd()) {
   };
 
   fs.writeFileSync(file, JSON.stringify(report, null, 2) + "\n");
+
+  if (existing && !sameVideo) {
+    invalidateStaleApproval(
+      run,
+      file,
+      cwd,
+      "Reviewed video changed; previous review and owner approval were invalidated."
+    );
+  }
+
   return { report, file };
 }
 
@@ -269,6 +355,32 @@ export function validateReviewReportFile(runId, cwd = process.cwd()) {
 
   if (value.report.status === "completed") {
     const run = loadRun(cwd, runId);
+
+    const reviewedVideo = path.resolve(
+      cwd,
+      String(value.report.video || "")
+    );
+
+    if (
+      !value.report.video ||
+      !insideRoot(cwd, reviewedVideo)
+    ) {
+      errors.push("Reviewed video is outside the current workspace.");
+    } else if (
+      !fs.existsSync(reviewedVideo) ||
+      !fs.statSync(reviewedVideo).isFile()
+    ) {
+      errors.push("Reviewed video file is missing: " + value.report.video);
+    } else {
+      const currentVideoHash = sha256File(reviewedVideo);
+      if (currentVideoHash !== value.report.video_sha256) {
+        errors.push(
+          "Reviewed video SHA-256 changed after review: " +
+          value.report.video
+        );
+      }
+    }
+
     const frames = Array.isArray(value.report.visual_evidence?.frames)
       ? value.report.visual_evidence.frames
       : [];
