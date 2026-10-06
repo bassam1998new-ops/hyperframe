@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AurorA Studio</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <svg class="svg-sprite" aria-hidden="true">
+    <symbol id="i-create" viewBox="0 0 24 24"><path d="M12 3l1.7 4.7L18 9.4l-4.3 1.7L12 16l-1.7-4.9L6 9.4l4.3-1.7L12 3Z"/><path d="M18.5 15l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z"/></symbol>
+    <symbol id="i-library" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5V5.5Z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20"/><path d="M8 7h8M8 11h6"/></symbol>
+    <symbol id="i-project" viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M8 9h8M8 13h5"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/><path d="M19 13.5v-3l-2-.7-.6-1.4.9-1.9-2.1-2.1-1.9.9-1.4-.6L11.2 3h-3l-.7 2-1.4.6-1.9-.9-2.1 2.1.9 1.9-.6 1.4-2 .7v3l2 .7.6 1.4-.9 1.9 2.1 2.1 1.9-.9 1.4.6.7 2h3l.7-2 1.4-.6 1.9.9 2.1-2.1-.9-1.9.6-1.4 2-.7Z"/></symbol>
+    <symbol id="i-update" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 5v6h-6"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="m9 7 8 5-8 5V7Z"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 5v6h-6"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+  </svg>
+
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+
+  <div class="studio-shell">
+    <aside class="nav-rail" aria-label="Studio navigation">
+      <button class="brand-orb nav-orb" aria-label="AurorA Studio"></button>
+      <nav class="nav-stack">
+        <button class="nav-item active" title="Create" data-scroll="create">
+          <svg><use href="#i-create"/></svg><span>Create</span>
+        </button>
+        <button class="nav-item" title="Library" data-scroll="library">
+          <svg><use href="#i-library"/></svg><span>Library</span>
+        </button>
+        <button class="nav-item muted" title="Project UI comes next" disabled>
+          <svg><use href="#i-project"/></svg><span>Project</span>
+        </button>
+        <button class="nav-item muted" title="Settings UI comes next" disabled>
+          <svg><use href="#i-settings"/></svg><span>Settings</span>
+        </button>
+        <button class="nav-item muted nav-bottom" title="Updates UI comes next" disabled>
+          <svg><use href="#i-update"/></svg><span>Updates</span>
+        </button>
+      </nav>
+    </aside>
+
+    <main class="studio-main" id="create">
+      <header class="topbar">
+        <div class="studio-identity">
+          <div class="crumb">AurorA <span>›</span> Studio</div>
+          <div class="studio-mark">
+            <div class="brand-orb"></div>
+            <div>
+              <strong>Studio</strong>
+              <div class="status-line"><i id="studio-dot"></i><span id="tool-summary">Reading workspace…</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="run-pill" id="run-pill">
+          <span class="pulse-bars"><b></b><b></b><b></b></span>
+          <span class="run-label">READY</span>
+          <span id="run-pill-text">No active run</span>
+        </div>
+
+        <form class="prompt-bar" id="prompt-form">
+          <input id="prompt-input" autocomplete="off" placeholder="What are we making?" />
+          <button class="prompt-send" type="submit" aria-label="Start production">
+            <svg><use href="#i-arrow"/></svg>
+          </button>
+        </form>
+      </header>
+
+      <section class="hero-strip">
+        <div class="hero-copy">
+          <div class="brand-orb hero-orb"></div>
+          <div>
+            <h1><span id="daypart">Ready</span>. <strong id="hero-title">AurorA is standing by.</strong></h1>
+            <p id="hero-subtitle">Give your agent a request or start here.</p>
+          </div>
+        </div>
+
+        <div class="hero-actions">
+          <div class="metric"><span>FINALS</span><strong id="stat-finals">0</strong></div>
+          <div class="metric"><span>SPENT</span><strong id="stat-spend">$0.00</strong></div>
+          <div class="metric"><span>LIBRARY</span><strong id="stat-library">0</strong></div>
+          <div class="mode-switch" aria-label="Production mode">
+            <button type="button" data-mode="direct">Direct</button>
+            <button type="button" data-mode="director">Director</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="workspace-grid">
+        <article class="panel preview-panel">
+          <div class="panel-head">
+            <div>
+              <span class="eyebrow">LIVE PREVIEW</span>
+              <span class="state-badge" id="preview-status"><i></i> Ready</span>
+            </div>
+            <div class="preview-meta" id="preview-meta">No render yet</div>
+          </div>
+
+          <div class="preview-stage" id="preview-stage">
+            <div class="preview-empty">
+              <div class="aurora-scene">
+                <div class="scene-orbit orbit-one"></div>
+                <div class="scene-orbit orbit-two"></div>
+                <div class="scene-glow"></div>
+                <div class="scene-word">AURORA</div>
+              </div>
+              <div class="preview-empty-copy">
+                <strong>Nothing rendering yet</strong>
+                <span>Start a run and AurorA will show the current render here.</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="preview-caption">
+            <div>
+              <h2 id="preview-title">AurorA Studio</h2>
+              <p id="preview-detail">Waiting for a production run</p>
+            </div>
+            <div class="route-chips" id="route-chips"></div>
+          </div>
+        </article>
+
+        <section class="panel board-panel">
+          <div class="panel-head board-head">
+            <div>
+              <span class="eyebrow" id="board-eyebrow">PRODUCTION</span>
+              <strong id="board-title">No active run</strong>
+            </div>
+            <span class="board-count" id="board-count">0</span>
+          </div>
+          <div class="board-list" id="board-list">
+            <div class="empty-card">Start a run to see the real production board.</div>
+          </div>
+          <div class="board-footer">
+            <span id="board-footer-text">AurorA keeps routing and checkpoints behind the scenes.</span>
+          </div>
+        </section>
+
+        <aside class="panel activity-panel">
+          <div class="panel-head">
+            <span class="eyebrow">ACTIVITY</span>
+            <button class="icon-button" id="refresh-button" type="button" title="Refresh">
+              <svg><use href="#i-refresh"/></svg>
+            </button>
+          </div>
+
+          <section class="tool-health">
+            <div class="section-label">TOOLS</div>
+            <div id="tool-chips" class="tool-chips"></div>
+          </section>
+
+          <div class="activity-list" id="activity-list">
+            <div class="empty-card compact">No run activity yet.</div>
+          </div>
+
+          <section class="usage-card">
+            <div class="section-label">CURRENT USAGE</div>
+            <div id="usage-content" class="usage-content">No paid usage recorded.</div>
+          </section>
+        </aside>
+      </section>
+
+      <section class="panel library-panel" id="library">
+        <div class="panel-head">
+          <div>
+            <span class="eyebrow">LIBRARY</span>
+            <strong>Reusable things AurorA knows</strong>
+          </div>
+          <span class="library-note" id="library-note">Approved assets and styles first</span>
+        </div>
+        <div class="library-grid" id="library-grid">
+          <div class="empty-card">Your approved assets, styles and media will appear here.</div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
