@@ -13,9 +13,9 @@
     <symbol id="i-project" viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M8 9h8M8 13h5"/></symbol>
     <symbol id="i-settings" viewBox="0 0 24 24"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/><path d="M19 13.5v-3l-2-.7-.6-1.4.9-1.9-2.1-2.1-1.9.9-1.4-.6L11.2 3h-3l-.7 2-1.4.6-1.9-.9-2.1 2.1.9 1.9-.6 1.4-2 .7v3l2 .7.6 1.4-.9 1.9 2.1 2.1 1.9-.9 1.4.6.7 2h3l.7-2 1.4-.6 1.9.9 2.1-2.1-.9-1.9.6-1.4 2-.7Z"/></symbol>
     <symbol id="i-update" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 5v6h-6"/></symbol>
-    <symbol id="i-play" viewBox="0 0 24 24"><path d="m9 7 8 5-8 5V7Z"/></symbol>
     <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 5v6h-6"/></symbol>
     <symbol id="i-arrow" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></symbol>
   </svg>
 
   <div class="ambient ambient-one"></div>
@@ -23,30 +23,30 @@
 
   <div class="studio-shell">
     <aside class="nav-rail" aria-label="Studio navigation">
-      <button class="brand-orb nav-orb" aria-label="AurorA Studio"></button>
+      <button class="brand-orb nav-orb" aria-label="AurorA Studio" data-view="create"></button>
       <nav class="nav-stack">
-        <button class="nav-item active" title="Create" data-scroll="create">
+        <button class="nav-item active" title="Create" data-view="create">
           <svg><use href="#i-create"/></svg><span>Create</span>
         </button>
-        <button class="nav-item" title="Library" data-scroll="library">
+        <button class="nav-item" title="Library" data-view="library">
           <svg><use href="#i-library"/></svg><span>Library</span>
         </button>
-        <button class="nav-item muted" title="Project UI comes next" disabled>
+        <button class="nav-item" title="Project" data-view="project">
           <svg><use href="#i-project"/></svg><span>Project</span>
         </button>
-        <button class="nav-item muted" title="Settings UI comes next" disabled>
+        <button class="nav-item" title="Settings" data-view="settings">
           <svg><use href="#i-settings"/></svg><span>Settings</span>
         </button>
-        <button class="nav-item muted nav-bottom" title="Updates UI comes next" disabled>
+        <button class="nav-item nav-bottom" title="Updates" data-view="updates">
           <svg><use href="#i-update"/></svg><span>Updates</span>
         </button>
       </nav>
     </aside>
 
-    <main class="studio-main" id="create">
+    <main class="studio-main">
       <header class="topbar">
         <div class="studio-identity">
-          <div class="crumb">AurorA <span>›</span> Studio</div>
+          <div class="crumb">AurorA <span>›</span> <b id="crumb-view">Create</b></div>
           <div class="studio-mark">
             <div class="brand-orb"></div>
             <div>
@@ -70,110 +70,286 @@
         </form>
       </header>
 
-      <section class="hero-strip">
-        <div class="hero-copy">
-          <div class="brand-orb hero-orb"></div>
-          <div>
-            <h1><span id="daypart">Ready</span>. <strong id="hero-title">AurorA is standing by.</strong></h1>
-            <p id="hero-subtitle">Give your agent a request or start here.</p>
-          </div>
-        </div>
-
-        <div class="hero-actions">
-          <div class="metric"><span>FINALS</span><strong id="stat-finals">0</strong></div>
-          <div class="metric"><span>SPENT</span><strong id="stat-spend">$0.00</strong></div>
-          <div class="metric"><span>LIBRARY</span><strong id="stat-library">0</strong></div>
-          <div class="mode-switch" aria-label="Production mode">
-            <button type="button" data-mode="direct">Direct</button>
-            <button type="button" data-mode="director">Director</button>
-          </div>
-        </div>
-      </section>
-
-      <section class="workspace-grid">
-        <article class="panel preview-panel">
-          <div class="panel-head">
+      <section class="view active" data-view-panel="create">
+        <section class="hero-strip">
+          <div class="hero-copy">
+            <div class="brand-orb hero-orb"></div>
             <div>
-              <span class="eyebrow">LIVE PREVIEW</span>
-              <span class="state-badge" id="preview-status"><i></i> Ready</span>
-            </div>
-            <div class="preview-meta" id="preview-meta">No render yet</div>
-          </div>
-
-          <div class="preview-stage" id="preview-stage">
-            <div class="preview-empty">
-              <div class="aurora-scene">
-                <div class="scene-orbit orbit-one"></div>
-                <div class="scene-orbit orbit-two"></div>
-                <div class="scene-glow"></div>
-                <div class="scene-word">AURORA</div>
-              </div>
-              <div class="preview-empty-copy">
-                <strong>Nothing rendering yet</strong>
-                <span>Start a run and AurorA will show the current render here.</span>
-              </div>
+              <h1><span id="daypart">Ready</span>. <strong id="hero-title">AurorA is standing by.</strong></h1>
+              <p id="hero-subtitle">Give your agent a request or start here.</p>
             </div>
           </div>
 
-          <div class="preview-caption">
-            <div>
-              <h2 id="preview-title">AurorA Studio</h2>
-              <p id="preview-detail">Waiting for a production run</p>
+          <div class="hero-actions">
+            <div class="metric"><span>FINALS</span><strong id="stat-finals">0</strong></div>
+            <div class="metric"><span>RUN SPEND</span><strong id="stat-spend">$0.00</strong></div>
+            <div class="metric"><span>LIBRARY</span><strong id="stat-library">0</strong></div>
+            <div class="mode-switch" aria-label="Production mode">
+              <button type="button" data-mode="direct">Direct</button>
+              <button type="button" data-mode="director">Director</button>
             </div>
-            <div class="route-chips" id="route-chips"></div>
-          </div>
-        </article>
-
-        <section class="panel board-panel">
-          <div class="panel-head board-head">
-            <div>
-              <span class="eyebrow" id="board-eyebrow">PRODUCTION</span>
-              <strong id="board-title">No active run</strong>
-            </div>
-            <span class="board-count" id="board-count">0</span>
-          </div>
-          <div class="board-list" id="board-list">
-            <div class="empty-card">Start a run to see the real production board.</div>
-          </div>
-          <div class="board-footer">
-            <span id="board-footer-text">AurorA keeps routing and checkpoints behind the scenes.</span>
           </div>
         </section>
 
-        <aside class="panel activity-panel">
+        <section class="workspace-grid">
+          <article class="panel preview-panel">
+            <div class="panel-head">
+              <div>
+                <span class="eyebrow">LIVE PREVIEW</span>
+                <span class="state-badge" id="preview-status"><i></i> Ready</span>
+              </div>
+              <div class="preview-meta" id="preview-meta">No render yet</div>
+            </div>
+
+            <div class="preview-stage" id="preview-stage">
+              <div class="preview-empty">
+                <div class="aurora-scene">
+                  <div class="scene-orbit orbit-one"></div>
+                  <div class="scene-orbit orbit-two"></div>
+                  <div class="scene-glow"></div>
+                  <div class="scene-word">AURORA</div>
+                </div>
+                <div class="preview-empty-copy">
+                  <strong>Nothing rendering yet</strong>
+                  <span>Start a run and AurorA will show the current render here.</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="preview-caption">
+              <div>
+                <h2 id="preview-title">AurorA Studio</h2>
+                <p id="preview-detail">Waiting for a production run</p>
+              </div>
+              <div class="route-chips" id="route-chips"></div>
+            </div>
+          </article>
+
+          <section class="panel board-panel">
+            <div class="panel-head board-head">
+              <div>
+                <span class="eyebrow" id="board-eyebrow">PRODUCTION</span>
+                <strong id="board-title">No active run</strong>
+              </div>
+              <span class="board-count" id="board-count">0</span>
+            </div>
+            <div class="board-list" id="board-list">
+              <div class="empty-card">Start a run to see the real production board.</div>
+            </div>
+            <div class="board-footer">
+              <span id="board-footer-text">AurorA keeps routing and checkpoints behind the scenes.</span>
+            </div>
+          </section>
+
+          <aside class="panel activity-panel">
+            <div class="panel-head">
+              <span class="eyebrow">ACTIVITY</span>
+              <button class="icon-button" id="refresh-button" type="button" title="Refresh">
+                <svg><use href="#i-refresh"/></svg>
+              </button>
+            </div>
+
+            <section class="tool-health">
+              <div class="section-label">TOOLS</div>
+              <div id="tool-chips" class="tool-chips"></div>
+            </section>
+
+            <div class="activity-list" id="activity-list">
+              <div class="empty-card compact">No run activity yet.</div>
+            </div>
+
+            <section class="usage-card">
+              <div class="section-label">CURRENT USAGE</div>
+              <div id="usage-content" class="usage-content">No paid usage recorded.</div>
+            </section>
+          </aside>
+        </section>
+
+        <section class="panel library-panel">
           <div class="panel-head">
-            <span class="eyebrow">ACTIVITY</span>
-            <button class="icon-button" id="refresh-button" type="button" title="Refresh">
-              <svg><use href="#i-refresh"/></svg>
-            </button>
+            <div>
+              <span class="eyebrow">LIBRARY</span>
+              <strong>Reusable things AurorA knows</strong>
+            </div>
+            <button class="text-button" type="button" data-view="library">See all</button>
           </div>
-
-          <section class="tool-health">
-            <div class="section-label">TOOLS</div>
-            <div id="tool-chips" class="tool-chips"></div>
-          </section>
-
-          <div class="activity-list" id="activity-list">
-            <div class="empty-card compact">No run activity yet.</div>
+          <div class="library-grid" id="library-grid">
+            <div class="empty-card">Your approved assets, styles and media will appear here.</div>
           </div>
-
-          <section class="usage-card">
-            <div class="section-label">CURRENT USAGE</div>
-            <div id="usage-content" class="usage-content">No paid usage recorded.</div>
-          </section>
-        </aside>
+        </section>
       </section>
 
-      <section class="panel library-panel" id="library">
-        <div class="panel-head">
+      <section class="view" data-view-panel="library">
+        <div class="view-header">
           <div>
             <span class="eyebrow">LIBRARY</span>
-            <strong>Reusable things AurorA knows</strong>
+            <h1>Your reusable creative memory.</h1>
+            <p>One searchable shelf across HyperFrames, Blender, audio, fonts and styles.</p>
           </div>
-          <span class="library-note" id="library-note">Approved assets and styles first</span>
+          <div class="search-field">
+            <svg><use href="#i-search"/></svg>
+            <input id="library-search" placeholder="Search your library" />
+          </div>
         </div>
-        <div class="library-grid" id="library-grid">
-          <div class="empty-card">Your approved assets, styles and media will appear here.</div>
+
+        <div class="filter-row" id="library-filters">
+          <button class="filter-button active" data-filter="all">All</button>
+          <button class="filter-button" data-filter="asset">Assets</button>
+          <button class="filter-button" data-filter="style">Styles</button>
+          <button class="filter-button" data-filter="model">3D</button>
+          <button class="filter-button" data-filter="audio">Audio</button>
+          <button class="filter-button" data-filter="font">Fonts</button>
+        </div>
+
+        <section class="panel page-panel">
+          <div class="panel-head">
+            <div><span class="eyebrow">TRACKED ITEMS</span><strong id="library-full-count">0 items</strong></div>
+            <span class="library-note">Only tracked assets count as reusable AurorA memory</span>
+          </div>
+          <div class="full-library-grid" id="library-full-grid"></div>
+        </section>
+      </section>
+
+      <section class="view" data-view-panel="project">
+        <div class="view-header">
+          <div>
+            <span class="eyebrow">PROJECT BRAIN</span>
+            <h1>Teach AurorA once.</h1>
+            <p>Stable product truth, audience and creative preferences reused across future videos.</p>
+          </div>
+          <button class="primary-button" id="project-save" type="button">Save project</button>
+        </div>
+
+        <form class="project-grid" id="project-form">
+          <section class="panel form-panel">
+            <div class="panel-head"><span class="eyebrow">PRODUCT</span></div>
+            <div class="form-body">
+              <label>Product / service<input name="product" /></label>
+              <label>Website<input name="website" /></label>
+              <label>Main video purpose<textarea name="purpose" rows="3"></textarea></label>
+              <label>Audience<input name="audience" placeholder="Founders, marketers, HR leaders…" /></label>
+              <label>Offer<input name="offer" /></label>
+              <label>Positioning<textarea name="positioning" rows="3"></textarea></label>
+            </div>
+          </section>
+
+          <section class="panel form-panel">
+            <div class="panel-head"><span class="eyebrow">BRAND</span></div>
+            <div class="form-body">
+              <label>Personality<input name="brand.personality" placeholder="premium, intelligent, calm" /></label>
+              <label>Colors<input name="brand.colors" placeholder="#0B2D4A, #6FC1C8" /></label>
+              <label>Fonts<input name="brand.fonts" /></label>
+              <label>Logo paths<input name="brand.logo_paths" /></label>
+              <label>Avoid<textarea name="brand.avoid" rows="3" placeholder="no stock look, no noisy motion…"></textarea></label>
+            </div>
+          </section>
+
+          <section class="panel form-panel">
+            <div class="panel-head"><span class="eyebrow">CONTENT & CREATIVE</span></div>
+            <div class="form-body">
+              <label>Languages<input name="content.languages" placeholder="English, Arabic" /></label>
+              <label>Channels<input name="content.channels" placeholder="Instagram, TikTok, YouTube" /></label>
+              <label>Preferred moods<input name="creative.preferred_moods" /></label>
+              <label>Avoid moods<input name="creative.avoid_moods" /></label>
+              <label>Recurring constraints<textarea name="creative.recurring_constraints" rows="3"></textarea></label>
+            </div>
+          </section>
+        </form>
+      </section>
+
+      <section class="view" data-view-panel="settings">
+        <div class="view-header">
+          <div>
+            <span class="eyebrow">SETTINGS</span>
+            <h1>Capabilities, not complexity.</h1>
+            <p>AurorA works with the tools you have. Blender, After Effects and browser resources stay optional.</p>
+          </div>
+          <button class="primary-button" id="settings-save" type="button">Save resources</button>
+        </div>
+
+        <section class="settings-grid">
+          <div class="panel form-panel">
+            <div class="panel-head"><span class="eyebrow">PRODUCTION TOOLS</span></div>
+            <div class="status-list" id="settings-tools"></div>
+          </div>
+
+          <div class="panel form-panel">
+            <div class="panel-head"><span class="eyebrow">MEDIA RUNTIME</span></div>
+            <div class="status-list" id="runtime-status"></div>
+          </div>
+
+          <div class="panel form-panel settings-resources">
+            <div class="panel-head"><span class="eyebrow">OPTIONAL RESOURCES</span></div>
+            <div class="toggle-list">
+              <label class="toggle-row"><span><b>Browser control</b><small>Allow your agent to use configured creative sites</small></span><input type="checkbox" name="browser_control" /></label>
+              <label class="toggle-row"><span><b>ChatGPT</b><small>Images / editing through your browser account</small></span><input type="checkbox" name="chatgpt_browser" /></label>
+              <label class="toggle-row"><span><b>Google Flow</b><small>Optional generated video assets</small></span><input type="checkbox" name="google_flow" /></label>
+              <label class="toggle-row"><span><b>Meta AI</b><small>Optional generated/editable images</small></span><input type="checkbox" name="meta_ai" /></label>
+              <label class="toggle-row"><span><b>ElevenLabs</b><small>Optional voice/audio provider</small></span><input type="checkbox" name="elevenlabs" /></label>
+              <label class="wide-label">Approved extra local folders<input name="local_paths" placeholder="D:\Assets, E:\Brand Library" /></label>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section class="view" data-view-panel="updates">
+        <div class="view-header">
+          <div>
+            <span class="eyebrow">UPDATES</span>
+            <h1>Small updates. Clear changes.</h1>
+            <p>AurorA never silently upgrades HyperFrames or rewrites project memory mid-production.</p>
+          </div>
+          <button class="primary-button" id="update-check" type="button">Check for update</button>
+        </div>
+
+        <section class="update-layout">
+          <div class="panel update-hero">
+            <div class="update-logo brand-orb"></div>
+            <div>
+              <span class="eyebrow">AURORA STUDIO</span>
+              <h2 id="update-version">Version —</h2>
+              <p id="update-state">Current local release information.</p>
+            </div>
+          </div>
+
+          <div class="panel update-notes">
+            <div class="note-column">
+              <span class="section-label">NEW</span>
+              <ul id="update-new"></ul>
+            </div>
+            <div class="note-column">
+              <span class="section-label">FIXED</span>
+              <ul id="update-fixed"></ul>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section class="view" data-view-panel="setup">
+        <div class="setup-shell">
+          <div class="brand-orb setup-orb"></div>
+          <span class="eyebrow">FIRST RUN</span>
+          <h1>Set up AurorA Studio.</h1>
+          <p>Short setup only. No passwords, cookies or API secrets.</p>
+
+          <form class="panel setup-panel" id="setup-form">
+            <div class="form-body setup-form-grid">
+              <label>Product / service<input name="product" required /></label>
+              <label>Website (optional)<input name="website" /></label>
+              <label class="span-two">What do you mainly make videos for?<textarea name="purpose" rows="3"></textarea></label>
+              <label>Default mode
+                <select name="mode">
+                  <option value="direct">Direct — fast</option>
+                  <option value="director">Director — concepts first</option>
+                </select>
+              </label>
+              <label class="toggle-inline"><input type="checkbox" name="install_hyperframes" checked /><span>Install tested HyperFrames core if missing</span></label>
+              <label class="toggle-inline"><input type="checkbox" name="install_agents" checked /><span>Install Claude/Codex AurorA integration</span></label>
+            </div>
+            <div class="setup-actions">
+              <button class="primary-button" type="submit">Set up Studio</button>
+            </div>
+          </form>
         </div>
       </section>
     </main>
