@@ -21,6 +21,7 @@ import {
 import { createMood } from "../src/mood.mjs";
 import { createAssetPlan } from "../src/asset-plan.mjs";
 import { createBuildPlan } from "../src/build-plan.mjs";
+import { writeRunCheckpoint } from "../src/studio.mjs";
 
 function temp() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "aurora-concepts-"));
@@ -240,4 +241,61 @@ test("refinement request resets selection and derived planning before build", ()
 
   const reread = readConceptSet(run.id, cwd);
   assert.equal(reread.concept_set.refinement_requests[0].status, "open");
+});
+
+
+test("generic checkpoint cannot complete Director concept gate without selected concepts", async () => {
+  const cwd = temp();
+  const run = directorRun(cwd);
+
+  const state = await writeRunCheckpoint(
+    run.id,
+    "concept",
+    "completed",
+    { humanApproved: true },
+    cwd
+  );
+
+  assert.equal(state, null);
+  assert.equal(process.exitCode, 2);
+
+  const saved = loadRun(cwd, run.id);
+  assert.notEqual(
+    saved.state.checkpoints?.concept?.status,
+    "completed"
+  );
+
+  process.exitCode = 0;
+});
+
+test("generic checkpoint still requires explicit owner approval after concept is selected in artifact", async () => {
+  const cwd = temp();
+  const run = directorRun(cwd);
+  const record = readyConcepts(run.id, cwd);
+
+  record.concept_set.status = "selected";
+  record.concept_set.selected_id = "a";
+  fs.writeFileSync(
+    record.file,
+    JSON.stringify(record.concept_set, null, 2) + "\n"
+  );
+
+  const state = await writeRunCheckpoint(
+    run.id,
+    "concept",
+    "completed",
+    {},
+    cwd
+  );
+
+  assert.equal(state, null);
+  assert.equal(process.exitCode, 2);
+
+  const saved = loadRun(cwd, run.id);
+  assert.notEqual(
+    saved.state.checkpoints?.concept?.status,
+    "completed"
+  );
+
+  process.exitCode = 0;
 });
