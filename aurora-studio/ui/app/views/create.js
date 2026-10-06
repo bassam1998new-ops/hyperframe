@@ -1,4 +1,5 @@
 import { escapeHtml, money, titleCase } from "../format.js";
+import { mountMediaPlayer } from "../components/media-player.js";
 
 const $ = selector => document.querySelector(selector);
 
@@ -73,13 +74,24 @@ export function renderPreview(run, mediaUrl) {
       ? "Live workspace render"
       : "No render yet";
 
-  chips.innerHTML = (run?.route || [])
-    .map(route =>
-      '<span class="route-chip">' +
-      escapeHtml(titleCase(route)) +
-      "</span>"
-    )
-    .join("");
+  const intentChips = run
+    ? [
+        run.intent?.quality
+          ? '<span class="quality-chip">' + escapeHtml(titleCase(run.intent.quality)) + "</span>"
+          : "",
+        run.intent?.aspect
+          ? '<span class="route-chip">' + escapeHtml(run.intent.aspect) + "</span>"
+          : ""
+      ].filter(Boolean)
+    : [];
+
+  const routeChips = (run?.route || []).map(route =>
+    '<span class="route-chip">' +
+    escapeHtml(titleCase(route)) +
+    "</span>"
+  );
+
+  chips.innerHTML = [...intentChips, ...routeChips].join("");
 
   if (!run?.preview) {
     stage.innerHTML = `
@@ -104,8 +116,10 @@ export function renderPreview(run, mediaUrl) {
 
   const src = mediaUrl(run.preview);
   if (run.preview.type === "video") {
-    stage.innerHTML =
-      '<video controls playsinline src="' + escapeHtml(src) + '"></video>';
+    mountMediaPlayer(stage, {
+      src,
+      label: run.task || "AurorA Studio preview"
+    });
   } else {
     stage.innerHTML =
       '<img alt="Current AurorA render" src="' + escapeHtml(src) + '" />';
