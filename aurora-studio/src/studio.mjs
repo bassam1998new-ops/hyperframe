@@ -592,7 +592,8 @@ export async function planProduction(taskText = "", options = {}, cwd = process.
     intent: {
       quality: options.quality || "normal",
       aspect: options.aspect || "project"
-    }
+    },
+    referenceId: referenceRecord?.reference?.id || null
   });
 
   let moodRecord = null;
