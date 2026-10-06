@@ -270,7 +270,7 @@ function trackedLocalAvailability(cwd, item) {
   }
 }
 
-function libraryCards(cwd, items, limit = 7) {
+function libraryCards(cwd, items, limit = 7, usageMap = new Map()) {
   return items
     .slice()
     .sort((a, b) => String(b.updated_at || b.created_at || "").localeCompare(String(a.updated_at || a.created_at || "")))
@@ -284,6 +284,7 @@ function libraryCards(cwd, items, limit = 7) {
         type: item.type,
         approved: Boolean(item.approved),
         quality_tier: item.quality_tier,
+        use_count: (usageMap.get(item.id) || []).length,
         tools: item.tools || [],
         license: item.license?.id || "unknown",
         preview: preview && ["image", "video"].includes(preview.type) ? preview : null
@@ -872,7 +873,7 @@ export function buildStudioSnapshot(cwd = process.cwd()) {
       preview: previewForRun(cwd, run),
       usage
     } : null,
-    library: libraryCards(cwd, library),
+    library: libraryCards(cwd, library, 7, libraryUsage),
     library_all: library.map(item =>
       libraryItemSummary(cwd, item, libraryUsage.get(item.id) || [])
     ),
