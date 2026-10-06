@@ -5,6 +5,7 @@ import { initTooltips } from "./app/tooltip.js";
 import { createReferenceWorkflow } from "./app/workflows/reference.js";
 import { createIntentWorkflow } from "./app/workflows/create-intent.js";
 import { createConceptWorkflow } from "./app/workflows/concepts.js";
+import { createStoryboardWorkflow } from "./app/workflows/storyboard.js";
 import {
   renderActivity,
   renderBoard,
@@ -77,6 +78,13 @@ const conceptWorkflow = createConceptWorkflow({
   toast
 });
 
+const storyboardWorkflow = createStoryboardWorkflow({
+  api,
+  getState: () => state,
+  onState: next => render(next),
+  toast
+});
+
 function render(next) {
   state = next;
   const configured = Boolean(next.configured);
@@ -124,8 +132,9 @@ function render(next) {
 
   renderTools(next.tools || []);
   renderPreview(run, mediaUrl);
-  renderBoard(run);
+  renderBoard(run, mediaUrl);
   conceptWorkflow.sync(next);
+  storyboardWorkflow.sync(next);
   renderActivity(next.activity || []);
   renderUsage(run);
   renderLibraryShelf(next.library || [], mediaUrl);

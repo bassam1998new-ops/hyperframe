@@ -5,6 +5,8 @@ AurorA Studio follows a simple **New / Fixed** release summary so community user
 ## Unreleased
 
 ### New
+- Editable Storyboard/build board with drag reorder, shot inspector, add/edit/duplicate/remove, and keyboard-safe move controls.
+- SortableJS 1.15.7 is pinned and self-hosted for storyboard reordering.
 - Director concepts now use a structured 2–3 direction workflow with owner selection and refinement.
 - Direction changes safely invalidate derived planning before build; direction locks once build starts.
 - Create now supports durable reference selection, quality tier and aspect intent.

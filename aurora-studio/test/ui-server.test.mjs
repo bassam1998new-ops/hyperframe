@@ -10,8 +10,13 @@ import { hyperframesBin } from "../src/tool-install.mjs";
 import {
   checkpoint,
   createRun,
-  loadRun
+  loadRun,
+  setRunRoute
 } from "../src/governance.mjs";
+import {
+  createBuildPlan,
+  readBuildPlan
+} from "../src/build-plan.mjs";
 import {
   createConceptSet,
   readConceptSet
@@ -645,6 +650,220 @@ test("Director concept UI endpoints select and refine real run artifacts", async
 
     saved = loadRun(cwd, run.id);
     assert.equal(saved.state.checkpoints.concept.status, "in_progress");
+  } finally {
+    await ui.close();
+  }
+});
+
+
+test("Storyboard UI endpoints mutate the real build plan safely", async () => {
+  const cwd = temp();
+
+  fs.mkdirSync(path.join(cwd, ".aurora"), { recursive: true });
+  fs.writeFileSync(path.join(cwd, ".aurora", "workspace.json"), JSON.stringify({
+    schema_version: 1,
+    studio: "AurorA Studio",
+    default_mode: "direct",
+    project: {
+      product: "Storyboard Product",
+      purpose: "social video",
+      website: ""
+    },
+    tools: [],
+    integrations: [],
+    resources: {},
+    learning: {
+      decision_log: ".aurora/decisions.jsonl",
+      lesson_log: ".aurora/lessons.jsonl",
+      approved_only: true
+    }
+  }));
+  fs.writeFileSync(path.join(cwd, ".aurora", "project.json"), JSON.stringify({
+    schema_version: 1,
+    project_id: "storyboard-product",
+    product: "Storyboard Product",
+    purpose: "social video",
+    website: "",
+    audience: [],
+    offer: "",
+    positioning: "",
+    brand: {
+      personality: [],
+      colors: [],
+      fonts: [],
+      logo_paths: [],
+      avoid: []
+    },
+    content: {
+      channels: [],
+      default_formats: [],
+      languages: [],
+      recurring_series: []
+    },
+    creative: {
+      preferred_moods: [],
+      avoid_moods: [],
+      recurring_constraints: []
+    },
+    claims_to_protect: [],
+    sources: [],
+    notes: []
+  }));
+
+  const run = createRun({
+    cwd,
+    task: "Storyboard UI test",
+    mode: "direct",
+    routeDecision: null,
+    intent: {
+      quality: "premium",
+      aspect: "16:9"
+    }
+  });
+
+  checkpoint({ cwd, runId: run.id, stage: "understand", status: "completed" });
+  checkpoint({ cwd, runId: run.id, stage: "concept", status: "skipped" });
+  checkpoint({ cwd, runId: run.id, stage: "mood", status: "skipped" });
+  checkpoint({ cwd, runId: run.id, stage: "assets", status: "completed" });
+
+  setRunRoute({
+    cwd,
+    runId: run.id,
+    routeDecision: {
+      selected: {
+        route: ["hyperframe", "blender"],
+        score: 9
+      },
+      confidence: 0.9,
+      candidates: [{
+        route: ["hyperframe", "blender"],
+        score: 9
+      }]
+    }
+  });
+
+  createBuildPlan(run.id, cwd);
+
+  const ui = await startStudioUiServer({
+    cwd,
+    port: 0,
+    open: false,
+    cliPath: CLI
+  });
+
+  const post = async (pathName, body) => {
+    const response = await fetch(
+      `http://127.0.0.1:${ui.port}${pathName}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Aurora-Token": ui.token
+        },
+        body: JSON.stringify(body)
+      }
+    );
+    return {
+      response,
+      payload: await response.json()
+    };
+  };
+
+  try {
+    const a = await post("/api/storyboard-add", {
+      runId: run.id,
+      purpose: "Open with product",
+      duration_seconds: 2.5,
+      engine: "hyperframe",
+      quality: "premium",
+      output: "renders/open.mp4"
+    });
+    assert.equal(a.response.status, 200);
+
+    const b = await post("/api/storyboard-add", {
+      runId: run.id,
+      purpose: "3D hero",
+      duration_seconds: 4,
+      engine: "blender",
+      quality: "hero",
+      output: ""
+    });
+    assert.equal(b.response.status, 200);
+
+    assert.equal(b.payload.state.active_run.shots.length, 2);
+    assert.equal(b.payload.state.active_run.storyboard_editable, true);
+    assert.equal(
+      b.payload.state.active_run.build_plan_status,
+      "pending"
+    );
+
+    const updated = await post("/api/storyboard-update", {
+      runId: run.id,
+      shotId: b.payload.shot_id,
+      changes: {
+        purpose: "3D hero revised",
+        duration_seconds: 5,
+        quality: "premium"
+      }
+    });
+    assert.equal(updated.response.status, 200);
+
+    const reordered = await post("/api/storyboard-reorder", {
+      runId: run.id,
+      order: [b.payload.shot_id, a.payload.shot_id]
+    });
+    assert.equal(reordered.response.status, 200);
+    assert.deepEqual(
+      reordered.payload.state.active_run.shots.map(shot => shot.id),
+      [b.payload.shot_id, a.payload.shot_id]
+    );
+
+    const duplicated = await post("/api/storyboard-duplicate", {
+      runId: run.id,
+      shotId: a.payload.shot_id
+    });
+    assert.equal(duplicated.response.status, 200);
+    assert.ok(duplicated.payload.shot_id);
+    assert.equal(duplicated.payload.state.active_run.shots.length, 3);
+
+    const moved = await post("/api/storyboard-move", {
+      runId: run.id,
+      shotId: duplicated.payload.shot_id,
+      direction: "up"
+    });
+    assert.equal(moved.response.status, 200);
+
+    const removed = await post("/api/storyboard-remove", {
+      runId: run.id,
+      shotId: duplicated.payload.shot_id
+    });
+    assert.equal(removed.response.status, 200);
+    assert.equal(removed.payload.state.active_run.shots.length, 2);
+
+    const invalidEngine = await post("/api/storyboard-update", {
+      runId: run.id,
+      shotId: a.payload.shot_id,
+      changes: {
+        engine: "after_effects"
+      }
+    });
+    assert.equal(invalidEngine.response.status, 400);
+    assert.match(
+      invalidEngine.payload.error,
+      /selected production route/
+    );
+
+    const plan = readBuildPlan(run.id, cwd).plan;
+    assert.equal(plan.status, "pending");
+    assert.equal(plan.shots.length, 2);
+    assert.equal(plan.shots[0].purpose, "3D hero revised");
+
+    const saved = loadRun(cwd, run.id);
+    assert.equal(saved.state.current_stage, "build_plan");
+    assert.equal(
+      saved.state.checkpoints.build_plan.status,
+      "in_progress"
+    );
   } finally {
     await ui.close();
   }

@@ -139,7 +139,37 @@ export function renderPreview(run, mediaUrl) {
   }
 }
 
-export function renderBoard(run) {
+function shotPreview(shot, mediaUrl) {
+  const preview = shot.output_preview;
+
+  if (preview?.type === "image") {
+    return `
+      <span class="shot-thumb">
+        <img src="${escapeHtml(mediaUrl(preview))}" alt="" />
+      </span>
+    `;
+  }
+
+  if (preview?.type === "video") {
+    return `
+      <span class="shot-thumb">
+        <video
+          muted
+          preload="metadata"
+          src="${escapeHtml(mediaUrl(preview))}"
+        ></video>
+      </span>
+    `;
+  }
+
+  return `
+    <span class="shot-thumb shot-thumb-empty">
+      <span>${String(shot.number || "").padStart(2, "0")}</span>
+    </span>
+  `;
+}
+
+export function renderBoard(run, mediaUrl) {
   const eyebrow = $("#board-eyebrow");
   const title = $("#board-title");
   const list = $("#board-list");
@@ -159,26 +189,79 @@ export function renderBoard(run) {
 
   const shots = run.shots || [];
   const director = run.mode === "director";
-  eyebrow.textContent = director ? "DIRECTOR BOARD" : "PRODUCTION";
+  eyebrow.textContent = shots.length
+    ? "STORYBOARD"
+    : director
+      ? "DIRECTOR BOARD"
+      : "PRODUCTION";
   title.textContent = run.task;
 
   if (shots.length) {
     count.textContent = String(shots.length);
-    footer.textContent =
-      "Each shot uses the engine selected by the real build plan.";
-    list.innerHTML = shots.map(shot => `
-      <div class="board-row">
-        <div class="board-number">${shot.number}</div>
-        <div class="board-copy">
-          <strong>${escapeHtml(shot.purpose || shot.id)}</strong>
-          <p>${escapeHtml(shot.output || "Output not set")}</p>
+    footer.textContent = run.storyboard_editable
+      ? "Drag shots to reorder, or open a shot for keyboard-safe move controls."
+      : "Storyboard is read-only at this stage.";
+
+    list.innerHTML = shots.map(shot => {
+      const duration =
+        shot.duration_seconds == null
+          ? "Auto duration"
+          : `${shot.duration_seconds}s`;
+
+      return `
+        <div
+          class="board-row storyboard-row ${shot.status === "complete" ? "complete" : ""}"
+          data-shot-id="${escapeHtml(shot.id)}"
+          tabindex="${run.storyboard_editable ? "0" : "-1"}"
+          aria-label="Shot ${shot.number}: ${escapeHtml(shot.purpose || shot.id)}"
+        >
+          <button
+            class="shot-drag-handle"
+            type="button"
+            aria-label="Drag shot ${shot.number}"
+            ${run.storyboard_editable ? "" : "disabled"}
+          >
+            <svg><use href="#i-grip"/></svg>
+          </button>
+
+          ${shotPreview(shot, mediaUrl)}
+
+          <div class="board-copy storyboard-copy">
+            <div class="storyboard-title-line">
+              <span>SHOT ${String(shot.number).padStart(2, "0")}</span>
+              <strong>${escapeHtml(shot.purpose || shot.id)}</strong>
+            </div>
+            <div class="storyboard-meta">
+              <span>${escapeHtml(duration)}</span>
+              <span class="shot-status ${escapeHtml(shot.status)}">${escapeHtml(titleCase(shot.status))}</span>
+            </div>
+          </div>
+
+          <div class="board-side storyboard-side">
+            <span class="engine-chip">${escapeHtml(titleCase(shot.engine))}</span>
+            <span class="quality-chip">${escapeHtml(titleCase(shot.quality || "normal"))}</span>
+            ${
+              run.storyboard_editable
+                ? `
+                  <button
+                    class="shot-open"
+                    type="button"
+                    data-shot-open
+                    aria-label="Edit shot ${shot.number}"
+                    title="Edit shot"
+                    data-tooltip="Edit shot"
+                    data-tooltip-placement="left"
+                  >
+                    <svg><use href="#i-edit"/></svg>
+                  </button>
+                `
+                : ""
+            }
+          </div>
         </div>
-        <div class="board-side">
-          <span class="engine-chip">${escapeHtml(titleCase(shot.engine))}</span>
-          <span class="quality-chip">${escapeHtml(titleCase(shot.quality || "normal"))}</span>
-        </div>
-      </div>
-    `).join("");
+      `;
+    }).join("");
+
     return;
   }
 
