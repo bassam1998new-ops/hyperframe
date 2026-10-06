@@ -104,6 +104,12 @@
         }
       },
       "additionalProperties": false
+    },
+    "reference_id": {
+      "type": [
+        "string",
+        "null"
+      ]
     }
   },
   "additionalProperties": true
