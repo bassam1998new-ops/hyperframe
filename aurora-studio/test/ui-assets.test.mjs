@@ -316,3 +316,48 @@ test("generation endpoint requires owner cost approval then creates pending-agen
     await ui.close();
   }
 });
+
+
+test("Library approval endpoint rejects unknown commercial rights", async () => {
+  const cwd = temp();
+  writeWorkspace(cwd);
+
+  addLibraryItem({
+    id: "unknown-rights",
+    name: "Unknown rights asset",
+    kind: "image",
+    source_url: "https://example.test/asset",
+    source_name: "Example",
+    license_id: "unknown",
+    commercial_allowed: null,
+    redistribution_allowed: null,
+    attribution_required: null,
+    approved: false
+  }, cwd);
+
+  const ui = await startStudioUiServer({
+    cwd,
+    port: 0,
+    open: false,
+    cliPath: CLI
+  });
+
+  try {
+    const result = await post(ui, "/api/library-update", {
+      id: "unknown-rights",
+      changes: {
+        approved: true
+      }
+    });
+
+    assert.equal(result.response.status, 400);
+    assert.match(result.payload.error, /license is verified/);
+
+    const saved = readLibrary(cwd).find(
+      item => item.id === "unknown-rights"
+    );
+    assert.equal(saved.approved, false);
+  } finally {
+    await ui.close();
+  }
+});
