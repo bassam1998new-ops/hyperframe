@@ -26,6 +26,7 @@ test("browser UI JavaScript modules have valid syntax", () => {
     "ui/app/workflows/create-intent.js",
     "ui/app/workflows/concepts.js",
     "ui/app/workflows/storyboard.js",
+    "ui/app/workflows/assets.js",
     "ui/app/views/create.js",
     "ui/app/views/library.js",
     "ui/app/views/project.js",
@@ -271,4 +272,39 @@ test("Storyboard UI is SortableJS-backed with keyboard-safe fallback controls", 
   assert.match(server, /SORTABLE_VENDOR/);
   assert.match(notice, /SortableJS 1\.15\.7/);
   assert.match(notice, /MIT License/);
+});
+
+
+test("Asset workflow exposes real Library Open and provider handoff actions", () => {
+  const html = read("ui/index.html");
+  const app = read("ui/app.js");
+  const workflow = read("ui/app/workflows/assets.js");
+  const css = read("ui/styles/assets.css");
+  const server = read("src/ui-server.mjs");
+
+  assert.match(html, /id="asset-drawer"/);
+  assert.match(html, /data-asset-tab="needs"/);
+  assert.match(html, /data-asset-tab="library"/);
+  assert.match(html, /data-asset-tab="open"/);
+  assert.match(html, /data-asset-tab="generate"/);
+  assert.match(html, /id="cost-approval-dialog"/);
+
+  assert.match(app, /createAssetWorkflow/);
+  assert.match(app, /assetWorkflow\.sync/);
+
+  assert.match(workflow, /\/api\/asset-plan-update/);
+  assert.match(workflow, /\/api\/asset-plan-complete/);
+  assert.match(workflow, /\/api\/open-assets\/search/);
+  assert.match(workflow, /\/api\/open-assets\/track/);
+  assert.match(workflow, /\/api\/generation-request/);
+  assert.match(workflow, /Generation request queued for your agent/);
+
+  assert.match(server, /\/api\/asset-plan-update/);
+  assert.match(server, /\/api\/library-remove/);
+  assert.match(server, /CC0-1\.0/);
+  assert.match(server, /ownerApproved/);
+
+  assert.match(css, /\.asset-drawer/);
+  assert.match(css, /\.provider-card/);
+  assert.match(css, /\.cost-approval-metrics/);
 });
