@@ -102,6 +102,7 @@ const required = [
   "ui/app/router.js",
   "ui/app/toast.js",
   "ui/app/dialog.js",
+  "ui/app/tooltip.js",
   "ui/app/views/create.js",
   "ui/app/views/library.js",
   "ui/app/views/project.js",
