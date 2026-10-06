@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
+  <a class="skip-link" href="#studio-main">Skip to Studio content</a>
   <svg class="svg-sprite" aria-hidden="true">
     <symbol id="i-create" viewBox="0 0 24 24"><path d="M12 3l1.7 4.7L18 9.4l-4.3 1.7L12 16l-1.7-4.9L6 9.4l4.3-1.7L12 3Z"/><path d="M18.5 15l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z"/></symbol>
     <symbol id="i-library" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5V5.5Z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20"/><path d="M8 7h8M8 11h6"/></symbol>
@@ -43,7 +44,7 @@
       </nav>
     </aside>
 
-    <main class="studio-main">
+    <main class="studio-main" id="studio-main">
       <header class="topbar">
         <div class="studio-identity">
           <div class="crumb">AurorA <span>›</span> <b id="crumb-view">Create</b></div>
@@ -366,7 +367,7 @@
     </main>
   </div>
 
-  <div class="toast" id="toast" role="status"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
   <script type="module" src="/app.js"></script>
 </body>
 </html>
