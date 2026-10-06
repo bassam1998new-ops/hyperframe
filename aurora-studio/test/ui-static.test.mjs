@@ -24,6 +24,7 @@ test("browser UI JavaScript modules have valid syntax", () => {
     "ui/app/components/media-player.js",
     "ui/app/workflows/reference.js",
     "ui/app/workflows/create-intent.js",
+    "ui/app/workflows/concepts.js",
     "ui/app/views/create.js",
     "ui/app/views/library.js",
     "ui/app/views/project.js",
@@ -208,4 +209,23 @@ test("Create UI exposes reference quality aspect and honest agent handoff surfac
   assert.match(app, /referenceId: referenceWorkflow\.selectedReferenceId/);
   assert.match(app, /quality: intentWorkflow\.quality/);
   assert.match(app, /aspect: intentWorkflow\.aspect/);
+});
+
+
+test("Director concept UI is structured, selectable, refinable, and lock-aware", () => {
+  const html = read("ui/index.html");
+  const app = read("ui/app.js");
+  const workflow = read("ui/app/workflows/concepts.js");
+  const css = read("ui/styles/create.css");
+
+  assert.match(html, /id="concepts-panel"/);
+  assert.match(html, /id="concept-refine-dialog"/);
+  assert.match(html, /id="direction-open"/);
+  assert.match(app, /createConceptWorkflow/);
+  assert.match(workflow, /\/api\/concept-select/);
+  assert.match(workflow, /\/api\/concept-refine/);
+  assert.match(workflow, /direction_locked/);
+  assert.match(workflow, /Select direction/);
+  assert.match(css, /\.concept-card/);
+  assert.match(css, /\.concept-status\.locked/);
 });
