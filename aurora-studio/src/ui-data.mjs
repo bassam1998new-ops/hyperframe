@@ -6,6 +6,7 @@ import { findAfterEffects } from "./adapters/after-effects.mjs";
 import { runtimeStatus } from "./runtime.mjs";
 import { localRelease } from "./update.mjs";
 import { systemStatus } from "./system-install.mjs";
+import { obsidianInfo } from "./integrations/obsidian.mjs";
 
 const VIDEO_EXT = new Set([".mp4", ".mov", ".m4v", ".webm", ".mkv"]);
 const IMAGE_EXT = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif", ".svg"]);
@@ -284,6 +285,7 @@ export function buildStudioSnapshot(cwd = process.cwd()) {
   const runtime = runtimeStatus();
   const release = localRelease();
   const system = systemStatus(cwd);
+  const obsidian = obsidianInfo();
 
   return {
     schema_version: 1,
@@ -297,6 +299,12 @@ export function buildStudioSnapshot(cwd = process.cwd()) {
     tools,
     runtime,
     system,
+    integrations: {
+      obsidian: {
+        available: Boolean(obsidian.available),
+        note: obsidian.note || null
+      }
+    },
     release: {
       version: release.latest_version,
       channel: release.channel,
