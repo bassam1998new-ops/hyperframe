@@ -32,3 +32,27 @@ export function createMediaUrl(token) {
       encodeURIComponent(token);
   };
 }
+
+export function createRawApi(token) {
+  return async function rawApi(path, options = {}) {
+    const headers = new Headers(options.headers || {});
+    headers.set("X-Aurora-Token", token);
+
+    const response = await fetch(path, {
+      ...options,
+      headers
+    });
+
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(
+        payload.error ||
+        payload.stderr ||
+        "AurorA request failed."
+      );
+    }
+
+    return payload;
+  };
+}
