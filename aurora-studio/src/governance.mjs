@@ -39,7 +39,14 @@ export function makeRunId(taskText = "video", now = new Date()) {
   return `${stamp}-${sanitize(taskText)}`;
 }
 
-export function buildPlan({ task, mode, routeDecision, budget, intent = {} }) {
+export function buildPlan({
+  task,
+  mode,
+  routeDecision,
+  budget,
+  intent = {},
+  referenceId = null
+}) {
   const quality = ["draft", "normal", "premium", "hero"].includes(intent.quality)
     ? intent.quality
     : "normal";
@@ -65,6 +72,7 @@ export function buildPlan({ task, mode, routeDecision, budget, intent = {} }) {
       quality,
       aspect
     },
+    reference_id: referenceId || null,
     created_at: new Date().toISOString(),
     route: routeDecision?.selected?.route || [],
     route_score: routeDecision?.selected?.score ?? null,
@@ -115,14 +123,22 @@ export function createRun({
   mode,
   routeDecision,
   budget,
-  intent = {}
+  intent = {},
+  referenceId = null
 }) {
   const id = makeRunId(task);
   const dir = path.join(runsDir(cwd), id);
   fs.mkdirSync(path.join(dir, "history"), { recursive: true });
   fs.mkdirSync(path.join(dir, "temp"), { recursive: true });
 
-  const plan = buildPlan({ task, mode, routeDecision, budget, intent });
+  const plan = buildPlan({
+    task,
+    mode,
+    routeDecision,
+    budget,
+    intent,
+    referenceId
+  });
   fs.writeFileSync(path.join(dir, "plan.json"), JSON.stringify(plan, null, 2) + "\n");
   fs.writeFileSync(path.join(dir, "state.json"), JSON.stringify({
     schema_version: 1,
