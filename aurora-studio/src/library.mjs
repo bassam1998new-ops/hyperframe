@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
+import { spawn } from "node:child_process";
 
 function auroraDir(cwd = process.cwd()) {
   return path.join(cwd, ".aurora");
@@ -237,4 +238,66 @@ export function updateLibraryItem(
     id,
     ...safe
   }, cwd);
+}
+
+
+function resolveTrackedPath(item, cwd) {
+  if (!item?.path) return null;
+
+  const resolved = path.isAbsolute(item.path)
+    ? path.resolve(item.path)
+    : path.resolve(cwd, item.path);
+
+  if (!fs.existsSync(resolved)) return null;
+  return resolved;
+}
+
+export function revealLibraryItem(
+  id,
+  cwd = process.cwd(),
+  {
+    platform = process.platform,
+    spawnImpl = spawn
+  } = {}
+) {
+  const item = readLibrary(cwd).find(entry => entry.id === id);
+  if (!item) throw new Error(`Library item not found: ${id}`);
+
+  const target = resolveTrackedPath(item, cwd);
+  if (!target) {
+    throw new Error("Tracked Library item has no available local file/folder.");
+  }
+
+  const stat = fs.statSync(target);
+  let command;
+  let args;
+
+  if (platform === "win32") {
+    command = "explorer.exe";
+    args = stat.isDirectory()
+      ? [target]
+      : [`/select,${target}`];
+  } else if (platform === "darwin") {
+    command = "open";
+    args = stat.isDirectory()
+      ? [target]
+      : ["-R", target];
+  } else {
+    command = "xdg-open";
+    args = [stat.isDirectory() ? target : path.dirname(target)];
+  }
+
+  const child = spawnImpl(command, args, {
+    detached: true,
+    stdio: "ignore"
+  });
+
+  child?.unref?.();
+
+  return {
+    id,
+    path: target,
+    opened: true,
+    source_file_deleted: false
+  };
 }

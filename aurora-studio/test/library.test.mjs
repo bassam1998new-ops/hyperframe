@@ -9,7 +9,8 @@ import {
   searchLibrary,
   summarizeLibrary,
   updateLibraryItem,
-  removeLibraryItem
+  removeLibraryItem,
+  revealLibraryItem
 } from "../src/library.mjs";
 
 function temp() {
@@ -140,4 +141,70 @@ test("library removal never deletes the original source file", () => {
   assert.equal(result.source_file_deleted, false);
   assert.equal(fs.existsSync(source), true);
   assert.equal(readLibrary(cwd).length, 0);
+});
+
+
+test("tracked Library reveal uses only the stored item path", () => {
+  const cwd = temp();
+  const source = path.join(cwd, "assets", "hero.png");
+  fs.mkdirSync(path.dirname(source), { recursive: true });
+  fs.writeFileSync(source, "source");
+
+  addLibraryItem({
+    id: "reveal-me",
+    name: "Reveal me",
+    kind: "image",
+    type: "png",
+    path: source,
+    approved: true
+  }, cwd);
+
+  let call = null;
+  let unrefCalled = false;
+  const result = revealLibraryItem(
+    "reveal-me",
+    cwd,
+    {
+      platform: "linux",
+      spawnImpl(command, args, options) {
+        call = { command, args, options };
+        return {
+          unref() {
+            unrefCalled = true;
+          }
+        };
+      }
+    }
+  );
+
+  assert.equal(result.opened, true);
+  assert.equal(result.path, source);
+  assert.equal(result.source_file_deleted, false);
+  assert.equal(call.command, "xdg-open");
+  assert.deepEqual(call.args, [path.dirname(source)]);
+  assert.equal(call.options.detached, true);
+  assert.equal(unrefCalled, true);
+  assert.equal(fs.existsSync(source), true);
+});
+
+test("tracked Library reveal fails when item has no available local path", () => {
+  const cwd = temp();
+
+  addLibraryItem({
+    id: "remote-only",
+    name: "Remote only",
+    kind: "image",
+    source_url: "https://example.test/asset",
+    approved: true
+  }, cwd);
+
+  assert.throws(
+    () => revealLibraryItem("remote-only", cwd, {
+      platform: "linux",
+      spawnImpl() {
+        throw new Error("must not spawn");
+      }
+    }),
+    /no available local file\/folder/
+  );
 });

@@ -27,6 +27,7 @@ test("browser UI JavaScript modules have valid syntax", () => {
     "ui/app/workflows/concepts.js",
     "ui/app/workflows/storyboard.js",
     "ui/app/workflows/assets.js",
+    "ui/app/workflows/library.js",
     "ui/app/workflows/review.js",
     "ui/app/views/create.js",
     "ui/app/views/library.js",
@@ -351,4 +352,39 @@ test("Render and Review UI uses real backend gates without fake progress or canc
 
   assert.doesNotMatch(html, /Render 42%|Cancel render/i);
   assert.doesNotMatch(workflow, /fake.*percent|Math\.random/);
+});
+
+
+test("Full Library UI exposes tracked detail approval history and safe actions", () => {
+  const html = read("ui/index.html");
+  const app = read("ui/app.js");
+  const view = read("ui/app/views/library.js");
+  const workflow = read("ui/app/workflows/library.js");
+  const assets = read("ui/app/workflows/assets.js");
+  const css = read("ui/styles/library.css");
+  const server = read("src/ui-server.mjs");
+
+  assert.match(html, /id="library-detail-drawer"/);
+  assert.match(html, /id="library-remove-dialog"/);
+  assert.match(html, /data-filter="approved"/);
+  assert.match(html, /data-filter="pending"/);
+  assert.match(html, /data-filter="template"/);
+  assert.match(html, /id="library-use-history"/);
+  assert.match(html, /id="library-use-current"/);
+
+  assert.match(app, /createLibraryWorkflow/);
+  assert.match(app, /libraryWorkflow\.sync/);
+  assert.match(view, /data-library-id/);
+  assert.match(view, /library-card-status/);
+  assert.match(view, /use_count/);
+
+  assert.match(workflow, /\/api\/library-update/);
+  assert.match(workflow, /\/api\/library-remove/);
+  assert.match(workflow, /\/api\/library-reveal/);
+  assert.match(workflow, /assetWorkflow\?\.openLibraryItem/);
+
+  assert.match(assets, /openLibraryItem/);
+  assert.match(server, /\/api\/library-reveal/);
+  assert.match(css, /\.library-detail-drawer/);
+  assert.match(css, /\.library-use-history/);
 });

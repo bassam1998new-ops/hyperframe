@@ -5,6 +5,8 @@ AurorA Studio follows a simple **New / Fixed** release summary so community user
 ## Unreleased
 
 ### New
+- Full Library detail workflow with approval, tags, quality, source/license metadata and use history.
+- Approved/Pending/Templates filters and safe tracked-item Reveal / Use in run actions.
 - Focused final Review workspace with Result / Reference / Side-by-side comparison.
 - Real sampled visual evidence, technical metadata, quality checks, issues and exact reviewed-file approval.
 - Durable Fix / Rebuild / Director Change direction revision requests with safe downstream invalidation.
