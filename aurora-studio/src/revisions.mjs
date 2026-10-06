@@ -117,12 +117,12 @@ function resetStages(run, stages, currentStage, note) {
   if (currentPlanStage) currentPlanStage.status = "in_progress";
 }
 
-function resetDirection(run, note) {
+function resetDirection(run, runId, cwd, note) {
   for (const file of ["mood.json", "asset-plan.json", "build-plan.json"]) {
     archiveFile(run, file, `${file.replace(".json", "")}-direction-revised`);
   }
 
-  const concepts = readConceptSet(run.plan.run_id || run.state.run_id, path.dirname(path.dirname(run.dir)));
+  const concepts = readConceptSet(runId, cwd);
   if (concepts) {
     const conceptArchive = historyName(run, "concepts-direction-revised");
     writeJson(conceptArchive, concepts.concept_set);
@@ -216,7 +216,7 @@ export function requestRevision(runId, {
   const archived = archiveRevisionState(run);
 
   if (kind === "change_direction") {
-    resetDirection(run, cleanNote);
+    resetDirection(run, runId, cwd, cleanNote);
   } else if (kind === "rebuild") {
     resetStages(
       run,
