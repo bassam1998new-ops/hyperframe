@@ -5,12 +5,28 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { startStudioUiServer } from "../src/ui-server.mjs";
+import { writeConfiguredWorkspace } from "../src/configured-setup.mjs";
+import { hyperframesBin } from "../src/tool-install.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const CLI = path.resolve(HERE, "../bin/aurora-studio.mjs");
 
 function temp() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "aurora-ui-server-"));
+}
+
+function fakeRuntime(cwd) {
+  const hf = hyperframesBin(cwd);
+  fs.mkdirSync(path.dirname(hf), { recursive: true });
+  fs.writeFileSync(hf, "");
+
+  const ffmpeg = path.join(
+    cwd,
+    process.platform === "win32" ? "ffmpeg.exe" : "ffmpeg"
+  );
+  fs.writeFileSync(ffmpeg, "");
+
+  return { hf, ffmpeg };
 }
 
 test("Studio API requires its local session token and mode action uses real CLI", async () => {
@@ -272,5 +288,167 @@ test("Settings UI persists resource availability without installing tools", asyn
     assert.deepEqual(workspace.resources.local_paths, ["D:/Assets"]);
   } finally {
     await ui.close();
+  }
+});
+
+
+test("reference endpoints create real tracked references and reject unsafe input", async () => {
+  const cwd = temp();
+  const ui = await startStudioUiServer({
+    cwd,
+    port: 0,
+    open: false,
+    cliPath: CLI
+  });
+
+  try {
+    const linkResponse = await fetch(
+      `http://127.0.0.1:${ui.port}/api/reference-link`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Aurora-Token": ui.token
+        },
+        body: JSON.stringify({
+          name: "Launch Reference",
+          url: "https://example.com/reference",
+          role: "visual"
+        })
+      }
+    );
+
+    assert.equal(linkResponse.status, 200);
+    const linkPayload = await linkResponse.json();
+    assert.equal(linkPayload.reference.source.type, "url");
+    assert.equal(linkPayload.reference.source.role, "visual");
+
+    const uploadResponse = await fetch(
+      `http://127.0.0.1:${ui.port}/api/reference-upload`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "image/png",
+          "Content-Length": "10",
+          "X-Aurora-Token": ui.token,
+          "X-Aurora-Filename": encodeURIComponent("hero.png"),
+          "X-Aurora-Reference-Role": "source_material"
+        },
+        body: Buffer.from("0123456789")
+      }
+    );
+
+    assert.equal(uploadResponse.status, 200);
+    const uploadPayload = await uploadResponse.json();
+    assert.equal(uploadPayload.reference.source.type, "file");
+    assert.equal(uploadPayload.reference.source.role, "source_material");
+    assert.match(uploadPayload.reference.source.value, /^\.aurora\/references\/files\//);
+
+    const badLink = await fetch(
+      `http://127.0.0.1:${ui.port}/api/reference-link`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Aurora-Token": ui.token
+        },
+        body: JSON.stringify({
+          name: "Unsafe",
+          url: "file:///etc/passwd"
+        })
+      }
+    );
+    assert.equal(badLink.status, 400);
+  } finally {
+    await ui.close();
+  }
+});
+
+test("Create API persists selected reference quality and aspect into the real run plan", async () => {
+  const cwd = temp();
+  const { ffmpeg } = fakeRuntime(cwd);
+  const previousFfmpeg = process.env.AURORA_FFMPEG_PATH;
+  process.env.AURORA_FFMPEG_PATH = ffmpeg;
+
+  try {
+    writeConfiguredWorkspace({
+      product: "UI-11 Product",
+      purpose: "launch videos",
+      mode: "direct",
+      agents: "none",
+      install_hyperframes: false,
+      resources: {}
+    }, { cwd });
+
+    const ui = await startStudioUiServer({
+      cwd,
+      port: 0,
+      open: false,
+      cliPath: CLI
+    });
+
+    try {
+      const refResponse = await fetch(
+        `http://127.0.0.1:${ui.port}/api/reference-link`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Aurora-Token": ui.token
+          },
+          body: JSON.stringify({
+            name: "Premium Reference",
+            url: "https://example.com/premium-reference",
+            role: "visual"
+          })
+        }
+      );
+      assert.equal(refResponse.status, 200);
+      const reference = (await refResponse.json()).reference;
+
+      const planResponse = await fetch(
+        `http://127.0.0.1:${ui.port}/api/plan`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Aurora-Token": ui.token
+          },
+          body: JSON.stringify({
+            task: "Make a premium vertical launch film",
+            referenceId: reference.id,
+            quality: "hero",
+            aspect: "9:16"
+          })
+        }
+      );
+
+      assert.equal(planResponse.status, 200);
+      const payload = await planResponse.json();
+      assert.equal(payload.state.active_run.reference_id, reference.id);
+      assert.deepEqual(payload.state.active_run.intent, {
+        quality: "hero",
+        aspect: "9:16"
+      });
+
+      const runId = payload.state.active_run.id;
+      const plan = JSON.parse(
+        fs.readFileSync(
+          path.join(cwd, ".aurora", "runs", runId, "plan.json"),
+          "utf8"
+        )
+      );
+
+      assert.equal(plan.reference_id, reference.id);
+      assert.deepEqual(plan.intent, {
+        quality: "hero",
+        aspect: "9:16"
+      });
+    } finally {
+      await ui.close();
+    }
+  } finally {
+    if (previousFfmpeg === undefined) delete process.env.AURORA_FFMPEG_PATH;
+    else process.env.AURORA_FFMPEG_PATH = previousFfmpeg;
   }
 });
