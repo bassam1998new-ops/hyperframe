@@ -7,6 +7,10 @@ import { runtimeStatus } from "./runtime.mjs";
 import { localRelease } from "./update.mjs";
 import { systemStatus } from "./system-install.mjs";
 import { listReferences } from "./brain.mjs";
+import {
+  conceptDirectionLocked,
+  readConceptSet
+} from "./concepts.mjs";
 
 const VIDEO_EXT = new Set([".mp4", ".mov", ".m4v", ".webm", ".mkv"]);
 const IMAGE_EXT = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif", ".svg"]);
@@ -218,6 +222,58 @@ function stageRows(run) {
   });
 }
 
+function conceptRows(cwd, run) {
+  if (!run || run.plan.mode !== "director") return null;
+
+  const record = readConceptSet(run.id, cwd);
+  if (!record) return null;
+
+  const lock = conceptDirectionLocked(run.id, cwd);
+  const set = record.concept_set;
+
+  const items = (set.concepts || []).map(concept => {
+    const previewPath = concept.preview?.path || null;
+    const preview = previewPath
+      ? mediaDescriptor(cwd, previewPath)
+      : null;
+
+    return {
+      id: concept.id,
+      name: concept.name,
+      core_idea: concept.core_idea,
+      project_fit: concept.project_fit,
+      emotional_arc: concept.emotional_arc,
+      visual_motion_grammar: concept.visual_motion_grammar || [],
+      complexity: concept.complexity,
+      cost_class: concept.cost_class,
+      biggest_risk: concept.biggest_risk,
+      preview:
+        preview && ["image", "video"].includes(preview.type)
+          ? preview
+          : null,
+      selected: concept.id === set.selected_id
+    };
+  });
+
+  return {
+    status: set.status,
+    selected_id: set.selected_id,
+    selected:
+      items.find(item => item.id === set.selected_id) || null,
+    items,
+    refinement_requests: (set.refinement_requests || [])
+      .filter(item => item.status === "open")
+      .map(item => ({
+        id: item.id,
+        concept_id: item.concept_id,
+        note: item.note,
+        created_at: item.created_at
+      })),
+    direction_locked: lock.locked,
+    locked_by: lock.locked_by
+  };
+}
+
 function shotRows(run) {
   return (run?.build_plan?.shots || []).map((shot, index) => ({
     id: shot.id,
@@ -335,6 +391,7 @@ export function buildStudioSnapshot(cwd = process.cwd()) {
   const references = referenceRows(cwd);
   const receipts = finalReceipts(cwd);
   const usage = summarizeUsage(run?.usage || []);
+  const concepts = conceptRows(cwd, run);
 
   const activity = [
     ...checkpointActivity(run),
@@ -397,6 +454,7 @@ export function buildStudioSnapshot(cwd = process.cwd()) {
       route_confidence: run.plan.route_confidence || 0,
       stages: stageRows(run),
       shots: shotRows(run),
+      concepts,
       review: run.review ? {
         status: run.review.status,
         decision: run.review.decision,
