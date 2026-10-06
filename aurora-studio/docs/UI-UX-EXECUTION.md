@@ -7,8 +7,8 @@ Do not start a later wave before the current wave passes its package/Windows/Ubu
 | Wave | Scope | Status |
 | --- | --- | --- |
 | UI-10 | Design system + component foundation | **Complete ✅** |
-| UI-11 | Create core + Media Chrome | **Implemented — CI pending** |
-| UI-12 | Director concepts | Planned |
+| UI-11 | Create core + Media Chrome | **Complete ✅** |
+| UI-12 | Director concepts | **Implemented — CI pending** |
 | UI-13 | Storyboard / build board | Planned |
 | UI-14 | Asset workflow | Planned |
 | UI-15 | Render + review | Planned |
@@ -73,3 +73,32 @@ Do not start a later wave before the current wave passes its package/Windows/Ubu
 - local Media Chrome vendor route works from installed package
 - Windows + Ubuntu full suite green
 - package audit 0 findings
+
+
+## UI-12 delivered
+
+- structured `concepts.json` per Director run
+- 2–3 concept validation contract
+- concept name / core idea / project fit / emotional arc / visual-motion grammar
+- complexity / cost class / biggest risk
+- explicit owner concept selection
+- concept checkpoint cannot complete without a valid selected concept
+- explicit owner approval remains mandatory
+- concept refinement requests are durable
+- changing direction before build safely resets derived mood/assets/routing/build-plan
+- direction locks once actual build work starts
+- Director concept cards replace the production board when owner choice is needed
+- selected direction stays visible in preview
+- selected direction can be reopened before/after choice
+- refinement modal writes real concept requests
+- no chat-text scraping for concepts
+
+## Gate before UI-13
+
+- concept lifecycle/reset/lock tests green
+- Director E2E uses structured concept selection
+- Studio snapshot concept state test green
+- UI select/refine endpoint tests green
+- Windows + Ubuntu full suite green
+- package audit 0 findings
+- installed-package smoke green
