@@ -274,17 +274,33 @@ function conceptRows(cwd, run) {
   };
 }
 
-function shotRows(run) {
-  return (run?.build_plan?.shots || []).map((shot, index) => ({
-    id: shot.id,
-    number: index + 1,
-    purpose: shot.purpose,
-    engine: shot.engine,
-    quality: shot.quality,
-    output: shot.output,
-    handoff: shot.handoff || null,
-    duration_seconds: shot.duration_seconds ?? null
-  }));
+function shotRows(cwd, run) {
+  return (run?.build_plan?.shots || []).map((shot, index) => {
+    const outputPreview = shot.output
+      ? mediaDescriptor(cwd, shot.output)
+      : null;
+
+    return {
+      id: shot.id,
+      number: index + 1,
+      purpose: shot.purpose,
+      engine: shot.engine,
+      quality: shot.quality,
+      output: shot.output,
+      output_preview:
+        outputPreview &&
+        ["image", "video"].includes(outputPreview.type)
+          ? outputPreview
+          : null,
+      status: outputPreview ? "complete" : "planned",
+      handoff: shot.handoff || null,
+      duration_seconds: shot.duration_seconds ?? null,
+      inputs: shot.inputs || [],
+      asset_ids: shot.asset_ids || [],
+      success_criteria: shot.success_criteria || [],
+      notes: shot.notes || []
+    };
+  });
 }
 
 function referenceSourceDisplay(source) {
@@ -453,7 +469,13 @@ export function buildStudioSnapshot(cwd = process.cwd()) {
       route: run.plan.route || [],
       route_confidence: run.plan.route_confidence || 0,
       stages: stageRows(run),
-      shots: shotRows(run),
+      build_plan_status: run.build_plan?.status || null,
+      storyboard_editable: Boolean(
+        run.build_plan &&
+        run.plan.route?.length &&
+        run.state.checkpoints?.finalize?.status !== "completed"
+      ),
+      shots: shotRows(cwd, run),
       concepts,
       review: run.review ? {
         status: run.review.status,
