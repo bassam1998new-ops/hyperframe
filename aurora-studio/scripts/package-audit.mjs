@@ -109,6 +109,7 @@ const required = [
   "ui/app/views/settings.js",
   "ui/app/views/updates.js",
   "ui/vendor/LUCIDE-LICENSE.txt",
+  "ui/vendor/FLOATING-UI-LICENSE.txt",
   "release.json",
   "studio.manifest.json",
   "knowledge/tools/registry.json",
