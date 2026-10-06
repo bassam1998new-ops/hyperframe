@@ -27,6 +27,7 @@ test("browser UI JavaScript modules have valid syntax", () => {
     "ui/app/workflows/concepts.js",
     "ui/app/workflows/storyboard.js",
     "ui/app/workflows/assets.js",
+    "ui/app/workflows/review.js",
     "ui/app/views/create.js",
     "ui/app/views/library.js",
     "ui/app/views/project.js",
@@ -78,6 +79,7 @@ test("UI styling uses canonical tokens and accessibility foundation", () => {
   const create = read("ui/styles/create.css");
   const views = read("ui/styles/views.css");
   const responsive = read("ui/styles/responsive.css");
+  const review = read("ui/styles/review.css");
 
   assert.match(css, /tokens\.css/);
   assert.match(css, /base\.css/);
@@ -88,7 +90,8 @@ test("UI styling uses canonical tokens and accessibility foundation", () => {
     "shell.css",
     "create.css",
     "views.css",
-    "responsive.css"
+    "responsive.css",
+    "review.css"
   ]) {
     assert.match(css, new RegExp(file.replace(".", "\\.")));
   }
@@ -114,6 +117,9 @@ test("UI styling uses canonical tokens and accessibility foundation", () => {
   assert.match(create, /\.preview-stage/);
   assert.match(views, /\.project-grid/);
   assert.match(responsive, /@media/);
+  assert.match(review, /\.review-workspace/);
+  assert.match(review, /\.review-evidence/);
+  assert.match(review, /\.revision-kind-row/);
   assert.ok(css.length < 1000, "styles.css should remain an import-only aggregator");
 });
 
@@ -307,4 +313,42 @@ test("Asset workflow exposes real Library Open and provider handoff actions", ()
   assert.match(css, /\.asset-drawer/);
   assert.match(css, /\.provider-card/);
   assert.match(css, /\.cost-approval-metrics/);
+});
+
+
+test("Render and Review UI uses real backend gates without fake progress or cancel", () => {
+  const html = read("ui/index.html");
+  const app = read("ui/app.js");
+  const workflow = read("ui/app/workflows/review.js");
+  const server = read("src/ui-server.mjs");
+  const revisions = read("src/revisions.mjs");
+
+  assert.match(html, /id="render-ready"/);
+  assert.match(html, /id="review-workspace"/);
+  assert.match(html, /id="review-evidence"/);
+  assert.match(html, /id="review-approve"/);
+  assert.match(html, /id="revision-dialog"/);
+  assert.match(html, /data-revision-kind="fix"/);
+  assert.match(html, /data-revision-kind="rebuild"/);
+  assert.match(html, /data-revision-kind="change_direction"/);
+
+  assert.match(app, /createReviewWorkflow/);
+  assert.match(app, /reviewWorkflow\.sync/);
+
+  assert.match(workflow, /\/api\/render-register/);
+  assert.match(workflow, /\/api\/review-refresh/);
+  assert.match(workflow, /\/api\/approve/);
+  assert.match(workflow, /\/api\/revision/);
+  assert.match(workflow, /can_approve/);
+  assert.match(workflow, /mountMediaPlayer/);
+  assert.match(workflow, /Side by side|data-review-view/);
+
+  assert.match(server, /probeRender/);
+  assert.match(server, /validateReviewReportFile/);
+  assert.match(server, /confirm !== true/);
+  assert.match(revisions, /Finalized runs are read-only/);
+  assert.match(revisions, /owner_revision_requested/);
+
+  assert.doesNotMatch(html, /Render 42%|Cancel render/i);
+  assert.doesNotMatch(workflow, /fake.*percent|Math\.random/);
 });
