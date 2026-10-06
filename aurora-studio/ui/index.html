@@ -26,19 +26,19 @@
     <aside class="nav-rail" aria-label="Studio navigation">
       <button class="brand-orb nav-orb" aria-label="AurorA Studio" data-view="create"></button>
       <nav class="nav-stack">
-        <button class="nav-item active" title="Create" data-view="create">
+        <button class="nav-item active" title="Create" data-tooltip="Create" data-view="create">
           <svg><use href="#i-create"/></svg><span>Create</span>
         </button>
-        <button class="nav-item" title="Library" data-view="library">
+        <button class="nav-item" title="Library" data-tooltip="Library" data-view="library">
           <svg><use href="#i-library"/></svg><span>Library</span>
         </button>
-        <button class="nav-item" title="Project" data-view="project">
+        <button class="nav-item" title="Project" data-tooltip="Project" data-view="project">
           <svg><use href="#i-project"/></svg><span>Project</span>
         </button>
-        <button class="nav-item" title="Settings" data-view="settings">
+        <button class="nav-item" title="Settings" data-tooltip="Settings" data-view="settings">
           <svg><use href="#i-settings"/></svg><span>Settings</span>
         </button>
-        <button class="nav-item nav-bottom" title="Updates" data-view="updates">
+        <button class="nav-item nav-bottom" title="Updates" data-tooltip="Updates" data-view="updates">
           <svg><use href="#i-update"/></svg><span>Updates</span>
         </button>
       </nav>
@@ -145,7 +145,7 @@
           <aside class="panel activity-panel">
             <div class="panel-head">
               <span class="eyebrow">ACTIVITY</span>
-              <button class="icon-button" id="refresh-button" type="button" title="Refresh">
+              <button class="icon-button" id="refresh-button" type="button" title="Refresh" data-tooltip="Refresh Studio state" data-tooltip-placement="left">
                 <svg><use href="#i-refresh"/></svg>
               </button>
             </div>
