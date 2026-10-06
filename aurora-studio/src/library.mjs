@@ -189,3 +189,52 @@ export function upsertLibraryItem(input, cwd = process.cwd()) {
   fs.writeFileSync(file, items.map(item => JSON.stringify(item)).join("\n") + (items.length ? "\n" : ""));
   return { item: merged, created: existingIndex < 0 };
 }
+
+
+export function removeLibraryItem(id, cwd = process.cwd()) {
+  const file = ensureIndex(cwd);
+  const items = readLibrary(cwd);
+  const index = items.findIndex(item => item.id === id);
+
+  if (index < 0) throw new Error(`Library item not found: ${id}`);
+
+  const [removed] = items.splice(index, 1);
+  fs.writeFileSync(
+    file,
+    items.map(item => JSON.stringify(item)).join("\n") +
+      (items.length ? "\n" : "")
+  );
+
+  return {
+    removed,
+    source_file_deleted: false
+  };
+}
+
+export function updateLibraryItem(
+  id,
+  changes = {},
+  cwd = process.cwd()
+) {
+  const existing = readLibrary(cwd).find(item => item.id === id);
+  if (!existing) throw new Error(`Library item not found: ${id}`);
+
+  const safe = {};
+  for (const key of [
+    "name",
+    "description",
+    "tags",
+    "tools",
+    "approved",
+    "quality_tier"
+  ]) {
+    if (Object.prototype.hasOwnProperty.call(changes, key)) {
+      safe[key] = changes[key];
+    }
+  }
+
+  return upsertLibraryItem({
+    id,
+    ...safe
+  }, cwd);
+}

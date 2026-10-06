@@ -7,7 +7,9 @@ import {
   addLibraryItem,
   readLibrary,
   searchLibrary,
-  summarizeLibrary
+  summarizeLibrary,
+  updateLibraryItem,
+  removeLibraryItem
 } from "../src/library.mjs";
 
 function temp() {
@@ -89,4 +91,53 @@ test("library summary counts kinds", () => {
   assert.equal(summary.approved, 1);
   assert.equal(summary.by_kind.model, 1);
   assert.equal(summary.by_kind.material, 1);
+});
+
+
+test("library metadata update preserves source and license", () => {
+  const cwd = temp();
+  addLibraryItem({
+    id: "tracked",
+    name: "Tracked asset",
+    kind: "image",
+    source_url: "https://example.test/asset",
+    source_name: "Example",
+    license_id: "CC0-1.0",
+    commercial_allowed: true,
+    redistribution_allowed: true,
+    attribution_required: false,
+    approved: false,
+    tags: ["old"]
+  }, cwd);
+
+  const result = updateLibraryItem("tracked", {
+    approved: true,
+    tags: ["hero", "product"],
+    quality_tier: "premium"
+  }, cwd);
+
+  assert.equal(result.item.approved, true);
+  assert.deepEqual(result.item.tags, ["hero", "product"]);
+  assert.equal(result.item.source_url, "https://example.test/asset");
+  assert.equal(result.item.license.id, "CC0-1.0");
+});
+
+test("library removal never deletes the original source file", () => {
+  const cwd = temp();
+  const source = path.join(cwd, "asset.png");
+  fs.writeFileSync(source, "source");
+
+  addLibraryItem({
+    id: "local",
+    name: "Local asset",
+    kind: "image",
+    path: source,
+    approved: true
+  }, cwd);
+
+  const result = removeLibraryItem("local", cwd);
+
+  assert.equal(result.source_file_deleted, false);
+  assert.equal(fs.existsSync(source), true);
+  assert.equal(readLibrary(cwd).length, 0);
 });
