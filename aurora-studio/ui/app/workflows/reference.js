@@ -65,7 +65,7 @@ export function createReferenceWorkflow({
   let pendingFile = null;
   let uploading = false;
 
-  function referenceById(id) {
+  function getReference(id) {
     return (getState()?.references || [])
       .find(item => item.id === id) || null;
   }
@@ -77,7 +77,7 @@ export function createReferenceWorkflow({
     renderRecent();
     onSelectionChange?.(
       selectedReferenceId,
-      referenceById(selectedReferenceId)
+      getReference(selectedReferenceId)
     );
   }
 
@@ -94,7 +94,7 @@ export function createReferenceWorkflow({
 
   function renderSelection() {
     const chip = $("#selected-reference");
-    const reference = referenceById(selectedReferenceId);
+    const reference = getReference(selectedReferenceId);
 
     chip.classList.toggle("empty", !reference);
     chip.querySelector("span").textContent =
@@ -255,6 +255,28 @@ export function createReferenceWorkflow({
     }
   }
 
+  let locked = false;
+
+  function sync(next) {
+    locked = Boolean(
+      next?.active_run &&
+      next.active_run.status !== "completed"
+    );
+
+    const openButton = $("#reference-open");
+    const selectedChip = $("#selected-reference");
+    if (openButton) openButton.disabled = locked;
+    if (selectedChip) selectedChip.disabled = locked;
+
+    if (
+      selectedReferenceId &&
+      !getReference(selectedReferenceId)
+    ) {
+      selectedReferenceId = null;
+      selectionTouched = false;
+    }
+  }
+
   $("#reference-open").addEventListener("click", () => {
     renderRecent();
     dialog.open();
@@ -314,12 +336,20 @@ export function createReferenceWorkflow({
 
   return {
     dialog,
+    get locked() {
+      return locked;
+    },
+    get selectedReferenceId() {
+      return selectedReferenceId;
+    },
+    getReference,
     getSelectedId,
     render() {
       renderSelection();
       renderRecent();
     },
     setFromRun,
-    setSelected
+    setSelected,
+    sync
   };
 }
