@@ -111,6 +111,7 @@ try {
     path.join(workspace, ".aurora", "workspace.json"),
     path.join(workspace, ".aurora", "project.json"),
     path.join(workspace, ".aurora", "system", "bin", "aurora-studio.mjs"),
+    path.join(workspace, ".aurora", "system", "src", "reference-files.mjs"),
     path.join(workspace, ".aurora", "system", "skills", "DIRECTOR.md"),
     path.join(workspace, ".aurora", "system", "knowledge", "tools", "registry.json"),
     path.join(workspace, ".aurora", "system", "ui", "index.html"),
