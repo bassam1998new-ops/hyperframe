@@ -588,7 +588,11 @@ export async function planProduction(taskText = "", options = {}, cwd = process.
     task: taskText,
     mode: ws.default_mode,
     routeDecision: null,
-    budget
+    budget,
+    intent: {
+      quality: options.quality || "normal",
+      aspect: options.aspect || "project"
+    }
   });
 
   let moodRecord = null;
@@ -622,12 +626,14 @@ export async function planProduction(taskText = "", options = {}, cwd = process.
     type: "run_created",
     routing: "deferred",
     mode: ws.default_mode,
-    reference: referenceRecord?.reference?.id || null
+    reference: referenceRecord?.reference?.id || null,
+    intent: run.plan.intent
   }) + "\n");
 
   console.log(JSON.stringify({
     run_id: run.id,
     mode: ws.default_mode,
+    intent: run.plan.intent,
     route: null,
     routing: "deferred_until_after_mood_and_assets",
     first_stage: "understand",
