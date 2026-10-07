@@ -35,14 +35,13 @@
 
 .aurora-media-controller media-play-button,
 .aurora-media-controller media-mute-button,
-.aurora-media-controller media-playback-rate-button,
 .aurora-media-controller media-fullscreen-button {
   min-width: 38px;
   padding: 0 9px;
 }
 
-.aurora-media-controller media-time-display,
-.aurora-media-controller media-duration-display {
+.aurora-media-controller media-duration-display,
+.aurora-media-clock {
   min-width: auto;
   padding-inline: 5px;
   color: rgba(232, 230, 244, 0.84);
@@ -74,7 +73,7 @@ media-controller:not(:defined) {
 @media (max-width: 620px) {
   .aurora-media-controller media-volume-range,
   .aurora-media-controller media-duration-display,
-  .aurora-media-controller media-playback-rate-button {
+  .aurora-media-speed {
     display: none;
   }
 }
