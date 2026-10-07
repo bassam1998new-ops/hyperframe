@@ -13,8 +13,8 @@ Do not start a later wave before the current wave passes its package/Windows/Ubu
 | UI-14 | Asset workflow | **Complete ✅** |
 | UI-15 | Render + review | **Complete ✅** |
 | UI-16 | Library full | **Complete ✅** |
-| UI-17 | Project Brain | **Implemented — CI pending** |
-| UI-18 | Settings | Planned |
+| UI-17 | Project Brain | **Complete ✅** |
+| UI-18 | Settings | **Implemented — CI pending** |
 | UI-19 | Updates | Planned |
 | UI-20 | Mobile + accessibility + visual regression | Planned |
 
@@ -268,6 +268,44 @@ Do not start a later wave before the current wave passes its package/Windows/Ubu
 - invalid website provenance test green
 - first-run setup provenance test green
 - Project styles included in portable package
+- Windows + Ubuntu full suite green
+- package audit 0 findings
+- installed-package smoke green
+
+
+## UI-18 delivered
+
+- full Production Tools status from real detection
+- exact HyperFrames installed/tested compatibility state
+- tested-core install action when HyperFrames is missing
+- separate HyperFrames update check
+- Blender / After Effects doctor actions
+- saved Blender / After Effects / FFmpeg path overrides
+- saved overrides drive real execution, preflight, review and UI detection
+- Node / FFmpeg / ffprobe / managed-system runtime health
+- Claude and Codex project-local integration status
+- pointer / native-skill / SessionStart hook health
+- install / reinstall / remove per agent
+- optional browser / ChatGPT / Flow / Meta AI / ElevenLabs availability
+- approved extra local asset folders
+- persistent budget behavior: observe / warn / hard cap
+- explicit USD owner-approval threshold
+- provider credits remain separate from USD
+- Advanced system sync and factual local paths
+- local-only developer diagnostics preference
+- no arbitrary command execution endpoint
+- configured and interactive setup preserve budget/tool-path settings
+
+## Gate before UI-19
+
+- workspace Settings normalization/persistence tests green
+- configured setup preservation test green
+- saved Blender / AE / FFmpeg override tests green
+- browser full Settings save test green
+- invalid path rejects before changing budget
+- Claude/Codex install/remove/status tests green
+- Settings tool actions are allowlisted
+- Settings workflow/styles included in portable package
 - Windows + Ubuntu full suite green
 - package audit 0 findings
 - installed-package smoke green
