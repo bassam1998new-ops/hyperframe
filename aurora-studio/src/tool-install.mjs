@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { configuredToolPath } from "./workspace-settings.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const RELEASE_FILE = path.resolve(HERE, "../release.json");
@@ -291,10 +292,15 @@ export function runWorkspaceHyperframes(args = [], {
   }
 
   const env = { ...process.env };
-  const configuredFfmpeg = process.env.AURORA_FFMPEG_PATH;
+  const configuredFfmpeg =
+    process.env.AURORA_FFMPEG_PATH ||
+    configuredToolPath("ffmpeg", cwd);
   if (configuredFfmpeg && fs.existsSync(configuredFfmpeg)) {
+    const ffmpegDir = fs.statSync(configuredFfmpeg).isDirectory()
+      ? configuredFfmpeg
+      : path.dirname(configuredFfmpeg);
     env.PATH = [
-      path.dirname(configuredFfmpeg),
+      ffmpegDir,
       env.PATH || env.Path || ""
     ].filter(Boolean).join(path.delimiter);
   }
