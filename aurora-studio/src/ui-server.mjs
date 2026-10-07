@@ -96,6 +96,8 @@ const PROJECT_FIELDS = new Set([
   "website",
   "purpose",
   "audience",
+  "audience_context.knowledge_level",
+  "audience_context.priorities",
   "offer",
   "positioning",
   "brand.personality",
@@ -105,9 +107,13 @@ const PROJECT_FIELDS = new Set([
   "brand.avoid",
   "content.languages",
   "content.channels",
+  "content.default_formats",
+  "content.recurring_series",
   "creative.preferred_moods",
   "creative.avoid_moods",
-  "creative.recurring_constraints"
+  "creative.recurring_constraints",
+  "claims_to_protect",
+  "notes"
 ]);
 
 const RESOURCE_FIELDS = new Set([
