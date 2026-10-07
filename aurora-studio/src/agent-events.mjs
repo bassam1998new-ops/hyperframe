@@ -150,8 +150,16 @@ export function summarizeAgentPresence(
 }
 
 export function agentEventActivity(events, runId = null) {
+  const hiddenFromHistory = new Set([
+    "PreToolUse",
+    "UserPromptSubmit"
+  ]);
+
   return (events || [])
-    .filter(item => !runId || !item.run_id || item.run_id === runId)
+    .filter(item =>
+      (!runId || !item.run_id || item.run_id === runId) &&
+      !hiddenFromHistory.has(item.event)
+    )
     .slice()
     .reverse()
     .slice(0, 20)
