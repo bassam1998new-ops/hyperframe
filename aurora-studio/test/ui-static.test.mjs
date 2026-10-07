@@ -216,7 +216,9 @@ test("Create UI exposes reference quality aspect and honest agent handoff surfac
   assert.match(html, /id="agent-handoff"/);
   assert.match(reference, /\/api\/reference-upload/);
   assert.match(reference, /\/api\/reference-link/);
-  assert.match(intent, /bridge_connected/);
+  assert.match(intent, /agent\?\.handoff\?\.message/);
+  assert.match(intent, /handoff\?\.title/);
+  assert.doesNotMatch(intent, /!state\?\.agent\?\.bridge_connected/);
   assert.match(app, /referenceId: referenceWorkflow\.selectedReferenceId/);
   assert.match(app, /quality: intentWorkflow\.quality/);
   assert.match(app, /aspect: intentWorkflow\.aspect/);
