@@ -124,7 +124,7 @@ The V1 Studio uses real workspace state across five simple views:
 - **Create** — prompt, Direct/Director, reference upload/link, Draft/Normal/Premium/Hero intent, aspect intent, Media Chrome preview, build board, activity, usage and recent library
 - **Library** — searchable tracked assets/styles across engines
 - **Project** — editable product brain, audience, brand and creative preferences
-- **Settings** — live production/runtime health plus optional resource toggles
+- **Settings** — live tool/runtime health, Claude/Codex integration, optional resources, budget guardrails and advanced path overrides
 - **Updates** — local release notes and real update check
 
 A short first-run setup screen appears only when the workspace is not configured.
