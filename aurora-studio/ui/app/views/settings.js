@@ -64,7 +64,11 @@ function agentCard(name, label, value) {
             '<b>' + escapeHtml(label) + '</b>' +
             '<small>' +
               (ready
-                ? "AurorA pointer, skills, context hook and live activity hooks are ready."
+                ? (
+                    name === "codex"
+                      ? "AurorA integration is ready. For reliable live activity, launch Codex from the project root."
+                      : "AurorA pointer, skills, context hook and live activity hooks are ready."
+                  )
                 : hasAnything
                   ? "AurorA integration is partial; reinstall to repair it."
                   : "AurorA integration is not installed for this agent.") +
