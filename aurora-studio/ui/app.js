@@ -311,6 +311,30 @@ $$("[data-view]").forEach(button => {
 
 $("#refresh-button").addEventListener("click", () => refresh(true));
 
+$("#agent-attention-action").addEventListener("click", () => {
+  const action = state?.agent?.attention?.action;
+  if (!action) return;
+
+  switchView("create");
+
+  if (action === "concepts") {
+    conceptWorkflow.openSelectedDirection();
+    return;
+  }
+
+  if (action === "review") {
+    document.querySelector("#review-workspace")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
+
+  if (action === "approval") {
+    document.querySelector("#review-workspace")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    reviewWorkflow.openApproval();
+  }
+});
+
 $("#library-search").addEventListener("input", event => {
   libraryQuery = event.target.value;
   renderFullLibrary(state?.library_all || [], {
