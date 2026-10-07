@@ -157,7 +157,7 @@ function detectTool(tool, cwd = process.cwd()) {
   }
 
   if (tool.id === "blender") {
-    const executable = findBlender();
+    const executable = findBlender({ cwd });
     if (executable) {
       return {
         id: tool.id,
@@ -170,7 +170,7 @@ function detectTool(tool, cwd = process.cwd()) {
   }
 
   if (tool.id === "after_effects") {
-    const executables = findAfterEffects();
+    const executables = findAfterEffects({ cwd });
     const executable = executables.aerender || executables.afterfx;
     if (executable) {
       return {
@@ -399,7 +399,7 @@ export async function runDoctor(cwd = process.cwd()) {
   const integrations = detectIntegrations(cwd);
   const ws = readWorkspace(cwd);
   const system = systemStatus(cwd);
-  const runtime = runtimeStatus();
+  const runtime = runtimeStatus(cwd);
 
   console.log("\nAurorA Studio doctor\n");
   console.log("Runtime");
@@ -496,7 +496,7 @@ export function runPreflight(cwd = process.cwd()) {
   const tools = detectTools(cwd);
   const integrations = detectIntegrations(cwd);
   const missingRequired = tools.filter(t => t.required && !t.available);
-  const runtime = runtimeStatus();
+  const runtime = runtimeStatus(cwd);
   const knowledge = validateKnowledge(cwd);
 
   ws.tools = tools;
