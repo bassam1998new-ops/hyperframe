@@ -35,6 +35,10 @@ export function ensureProjectProfile(seed = {}, cwd = process.cwd()) {
     purpose: seed.purpose || "",
     website: seed.website || "",
     audience: [],
+    audience_context: {
+      knowledge_level: "",
+      priorities: []
+    },
     offer: "",
     positioning: "",
     brand: {
