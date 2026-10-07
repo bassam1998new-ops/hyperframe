@@ -107,3 +107,35 @@ test("configured Blender directory resolves its executable", () => {
 
   assert.equal(resolved, executable);
 });
+
+
+test("saved workspace Blender override is used", () => {
+  const cwd = temp();
+  const installDir = path.join(cwd, "Custom Blender");
+  const executable = path.join(
+    installDir,
+    process.platform === "win32" ? "blender.exe" : "blender"
+  );
+  fs.mkdirSync(path.join(cwd, ".aurora"), { recursive: true });
+  fs.mkdirSync(installDir, { recursive: true });
+  fs.writeFileSync(executable, "");
+  fs.writeFileSync(
+    path.join(cwd, ".aurora", "workspace.json"),
+    JSON.stringify({
+      tool_paths: {
+        blender: installDir,
+        after_effects: null,
+        ffmpeg: null
+      }
+    })
+  );
+
+  const resolved = findBlender({
+    cwd,
+    platform: process.platform,
+    env: {},
+    skipPathLookup: true
+  });
+
+  assert.equal(resolved, executable);
+});
