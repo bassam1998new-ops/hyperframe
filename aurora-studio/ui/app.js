@@ -217,7 +217,16 @@ async function refresh(showError = false) {
   try {
     const next = await api("/api/state");
     render(next);
+    window.__AURORA_STUDIO_READY__ = true;
+    window.__AURORA_STUDIO_ERROR__ = null;
+    document.documentElement.dataset.studioReady = "true";
+    document.documentElement.removeAttribute("data-studio-error");
   } catch (error) {
+    window.__AURORA_STUDIO_READY__ = false;
+    window.__AURORA_STUDIO_ERROR__ = error?.message || String(error);
+    document.documentElement.dataset.studioReady = "error";
+    document.documentElement.dataset.studioError =
+      error?.message || String(error);
     if (showError) toast(error.message, true);
   }
 }
@@ -427,8 +436,16 @@ $("#setup-form").addEventListener("submit", async event => {
 });
 
 async function start() {
+  window.__AURORA_STUDIO_READY__ = false;
+  window.__AURORA_STUDIO_ERROR__ = null;
+  document.documentElement.dataset.studioReady = "loading";
+
   if (!token) {
-    toast("Open Studio using the URL printed by aurora-studio ui.", true);
+    const message = "Open Studio using the URL printed by aurora-studio ui.";
+    window.__AURORA_STUDIO_ERROR__ = message;
+    document.documentElement.dataset.studioReady = "error";
+    document.documentElement.dataset.studioError = message;
+    toast(message, true);
     return;
   }
 
