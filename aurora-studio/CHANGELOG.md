@@ -5,6 +5,10 @@ AurorA Studio follows a simple **New / Fixed** release summary so community user
 ## Unreleased
 
 ### New
+- Near-real-time Claude/Codex activity appears inside the Studio Activity rail.
+- Project-local async agent hooks record sanitized lifecycle/tool metadata only during active AurorA production work.
+- Studio shows agent Working / Waiting for you / Idle / bridge-ready states with graceful fallback when hooks are unavailable.
+- Live-agent visual QA is permanently covered by a canonical desktop screenshot.
 - Safety-first Updates workspace with real release checks, migration/active-run blockers, workspace backup and separate HyperFrames status.
 - Update backup history and managed-system downgrade protection.
 - Full Settings workspace with factual tools, runtime, agents, resources, budget and advanced diagnostics.
