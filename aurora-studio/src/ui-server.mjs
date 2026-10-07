@@ -47,6 +47,11 @@ import {
 } from "./review-report.mjs";
 import { readLearningReview } from "./learning.mjs";
 import { probeRender } from "./quality.mjs";
+import {
+  normalizeBudgetPolicy,
+  normalizeToolPaths,
+  updateStudioSettings
+} from "./workspace-settings.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const UI_ROOT = path.resolve(HERE, "../ui");
@@ -1263,6 +1268,156 @@ export async function startStudioUiServer({
 
         return json(res, 200, {
           ok: true,
+          state: buildStudioSnapshot(cwd)
+        });
+      }
+
+      if (req.method === "POST" && url.pathname === "/api/settings") {
+        const body = await readBody(req);
+        const snapshot = buildStudioSnapshot(cwd);
+
+        if (!snapshot.configured) {
+          return json(res, 400, { error: "Set up the AurorA workspace first." });
+        }
+
+        let budget;
+        let toolPaths;
+
+        try {
+          budget = normalizeBudgetPolicy(
+            body.budget || snapshot.settings?.budget || {}
+          );
+          toolPaths = normalizeToolPaths(
+            body.tool_paths || {},
+            cwd,
+            snapshot.settings?.tool_paths || {}
+          );
+        } catch (error) {
+          return json(res, 400, { error: error.message });
+        }
+
+        const incoming = body.resources && typeof body.resources === "object"
+          ? body.resources
+          : {};
+        const mergedResources = {
+          ...(snapshot.workspace?.resources || {})
+        };
+
+        for (const [key, value] of Object.entries(incoming)) {
+          if (!RESOURCE_FIELDS.has(key)) {
+            return json(res, 400, {
+              error: `Resource setting is not editable: ${key}`
+            });
+          }
+
+          mergedResources[key] = key === "local_paths"
+            ? (Array.isArray(value) ? value.map(String) : [])
+            : Boolean(value);
+        }
+
+        const { local_paths = [], ...providerResources } = mergedResources;
+        const setupResult = runConfiguredSetup(cliPath, cwd, {
+          product: snapshot.project?.product || "",
+          purpose: snapshot.project?.purpose || "",
+          website: snapshot.project?.website || "",
+          mode: snapshot.workspace?.mode || "direct",
+          resources: providerResources,
+          local_paths,
+          agents: "none",
+          install_hyperframes: false
+        });
+
+        if (!setupResult.ok) {
+          return json(res, 400, {
+            error:
+              setupResult.stderr ||
+              "Could not update Studio resource settings."
+          });
+        }
+
+        try {
+          updateStudioSettings({
+            budget,
+            tool_paths: toolPaths
+          }, cwd);
+        } catch (error) {
+          return json(res, 400, { error: error.message });
+        }
+
+        return json(res, 200, {
+          ok: true,
+          state: buildStudioSnapshot(cwd)
+        });
+      }
+
+      if (req.method === "POST" && url.pathname === "/api/tool-action") {
+        const body = await readBody(req);
+        const tool = String(body.tool || "");
+        const action = String(body.action || "");
+
+        const commands = {
+          hyperframe: {
+            doctor: ["hyperframe", "doctor"],
+            install: ["hyperframe", "install"],
+            upgrade_check: ["hyperframe", "upgrade-check"]
+          },
+          blender: {
+            doctor: ["blender", "doctor"]
+          },
+          after_effects: {
+            doctor: ["ae", "doctor"]
+          },
+          obsidian: {
+            doctor: ["obsidian", "doctor"]
+          }
+        };
+
+        const args = commands[tool]?.[action];
+        if (!args) {
+          return json(res, 400, {
+            error: "Unsupported Studio tool action."
+          });
+        }
+
+        const result = runCli(cliPath, cwd, args);
+        return json(res, result.ok ? 200 : 400, {
+          ...result,
+          detail: parseCliJson(result.stdout),
+          state: buildStudioSnapshot(cwd)
+        });
+      }
+
+      if (req.method === "POST" && url.pathname === "/api/agent-action") {
+        const body = await readBody(req);
+        const action = String(body.action || "");
+        const target = String(body.target || "");
+
+        if (!["install", "remove"].includes(action)) {
+          return json(res, 400, { error: "Unsupported agent action." });
+        }
+
+        if (!["all", "claude", "codex"].includes(target)) {
+          return json(res, 400, { error: "Unsupported agent target." });
+        }
+
+        const result = runCli(
+          cliPath,
+          cwd,
+          ["agent", action, target]
+        );
+
+        return json(res, result.ok ? 200 : 400, {
+          ...result,
+          state: buildStudioSnapshot(cwd)
+        });
+      }
+
+      if (req.method === "POST" && url.pathname === "/api/system-sync") {
+        const result = runCli(cliPath, cwd, ["system", "sync"]);
+
+        return json(res, result.ok ? 200 : 400, {
+          ...result,
+          detail: parseCliJson(result.stdout),
           state: buildStudioSnapshot(cwd)
         });
       }
