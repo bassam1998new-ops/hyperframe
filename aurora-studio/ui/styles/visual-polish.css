@@ -1350,3 +1350,59 @@ body[data-run-active="true"] .create-intent-bar {
     padding: 8px;
   }
 }
+
+
+.activity-count {
+  display: inline-grid;
+  min-width: 22px;
+  height: 16px;
+  place-items: center;
+  margin-left: auto;
+  padding: 0 5px;
+  border: 1px solid rgba(151, 140, 205, .12);
+  border-radius: 999px;
+  color: #787b91;
+  background: rgba(255,255,255,.018);
+  font-size: 6.7px;
+  font-weight: 800;
+}
+
+.agent-attention {
+  grid-template-columns: 7px minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.agent-attention-copy {
+  min-width: 0;
+}
+
+.agent-attention-action {
+  min-height: 26px;
+  padding: 0 8px;
+  border: 1px solid rgba(241, 189, 56, .23);
+  border-radius: 7px;
+  color: #e0c98c;
+  background: rgba(241, 189, 56, .055);
+  font-size: 7px;
+  font-weight: 760;
+  cursor: pointer;
+}
+
+.agent-attention-action:hover,
+.agent-attention-action:focus-visible {
+  border-color: rgba(241, 189, 56, .46);
+  background: rgba(241, 189, 56, .10);
+  outline: none;
+}
+
+@media (max-width: 620px) {
+  .agent-attention {
+    grid-template-columns: 7px minmax(0, 1fr);
+  }
+
+  .agent-attention-action {
+    grid-column: 2;
+    justify-self: start;
+    margin-top: 3px;
+  }
+}
