@@ -996,3 +996,45 @@ body[data-run-active="true"] .create-intent-bar {
     height: 88px;
   }
 }
+
+
+/* Final desktop geometry pass after side-by-side screenshot inspection. */
+@media (min-width: 1321px) {
+  .workspace-grid {
+    align-items: stretch;
+  }
+
+  .preview-panel,
+  .board-panel,
+  .concepts-panel,
+  .activity-panel {
+    height: 520px;
+    min-height: 520px;
+  }
+
+  .preview-panel {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .preview-panel .panel-head,
+  .preview-caption {
+    flex: 0 0 auto;
+  }
+
+  .preview-stage {
+    flex: 1 1 auto;
+    min-height: 0;
+    aspect-ratio: auto;
+  }
+
+  .board-list,
+  .concepts-list,
+  .activity-list {
+    min-height: 0;
+  }
+
+  .library-panel {
+    min-height: 222px;
+  }
+}
