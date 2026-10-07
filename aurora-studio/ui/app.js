@@ -11,6 +11,7 @@ import { createLibraryWorkflow } from "./app/workflows/library.js";
 import { createReviewWorkflow } from "./app/workflows/review.js";
 import {
   renderActivity,
+  renderAgentPresence,
   renderBoard,
   renderPreview,
   renderTools,
@@ -189,6 +190,7 @@ function render(next) {
   assetWorkflow.sync(next);
   libraryWorkflow.sync(next);
   reviewWorkflow.sync(next);
+  renderAgentPresence(next.agent || null);
   renderActivity(next.activity || []);
   renderUsage(run);
   renderLibraryShelf(
