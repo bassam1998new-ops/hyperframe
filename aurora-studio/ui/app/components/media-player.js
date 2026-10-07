@@ -67,16 +67,72 @@ function enhancedMarkup(src, label) {
       ></media-loading-indicator>
       <media-control-bar class="aurora-media-controls">
         <media-play-button></media-play-button>
-        <media-time-display></media-time-display>
+        <span class="aurora-media-clock" data-aurora-clock aria-hidden="true">0:00</span>
         <media-time-range></media-time-range>
-        <media-duration-display></media-duration-display>
+        <span
+          class="aurora-media-duration"
+          data-aurora-duration
+          aria-hidden="true"
+        >0:00</span>
         <media-mute-button></media-mute-button>
         <media-volume-range></media-volume-range>
-        <media-playback-rate-button></media-playback-rate-button>
+        <button
+          class="aurora-media-speed"
+          type="button"
+          data-aurora-speed
+          aria-label="1× playback speed"
+        >1×</button>
         <media-fullscreen-button></media-fullscreen-button>
       </media-control-bar>
     </media-controller>
   `;
+}
+
+function formatMediaTime(value) {
+  const seconds = Number.isFinite(Number(value))
+    ? Math.max(0, Math.floor(Number(value)))
+    : 0;
+  const minutes = Math.floor(seconds / 60);
+  const rest = seconds % 60;
+  return minutes + ":" + String(rest).padStart(2, "0");
+}
+
+function bindAuroraControls(container) {
+  const video = container.querySelector("video");
+  const clock = container.querySelector("[data-aurora-clock]");
+  const duration = container.querySelector("[data-aurora-duration]");
+  const speed = container.querySelector("[data-aurora-speed]");
+  if (!video) return;
+
+  const updateClock = () => {
+    if (clock) clock.textContent = formatMediaTime(video.currentTime);
+  };
+
+  const updateDuration = () => {
+    if (duration) duration.textContent = formatMediaTime(video.duration);
+  };
+
+  video.addEventListener("timeupdate", updateClock);
+  video.addEventListener("loadedmetadata", () => {
+    updateClock();
+    updateDuration();
+  });
+  video.addEventListener("durationchange", updateDuration);
+  updateClock();
+  updateDuration();
+
+  if (speed) {
+    const rates = [1, 1.25, 1.5, 2, 0.75];
+    speed.addEventListener("click", () => {
+      const current = Number(video.playbackRate || 1);
+      const index = rates.findIndex(rate => Math.abs(rate - current) < 0.001);
+      const next = rates[(index + 1 + rates.length) % rates.length];
+      video.playbackRate = next;
+      const visible = String(next).replace(/\.0$/, "") + "×";
+      speed.textContent = visible;
+      speed.setAttribute("aria-label", visible + " playback speed");
+    });
+  }
 }
 
 function fallbackMarkup(src, label) {
@@ -113,5 +169,6 @@ export function mountMediaPlayer(container, {
     if (!ready) return;
     if (container.dataset.mediaKey !== key) return;
     container.innerHTML = enhancedMarkup(src, label);
+    bindAuroraControls(container);
   });
 }

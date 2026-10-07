@@ -201,10 +201,10 @@ export function createReviewWorkflow({
     }
 
     $$("[data-review-view]").forEach(button => {
-      button.classList.toggle(
-        "active",
-        button.dataset.reviewView === compareMode
-      );
+      const selected = button.dataset.reviewView === compareMode;
+      button.classList.toggle("active", selected);
+      button.setAttribute("aria-selected", selected ? "true" : "false");
+      button.tabIndex = selected ? 0 : -1;
     });
 
     if (compareMode === "side" && reference) {
@@ -721,11 +721,35 @@ export function createReviewWorkflow({
     }
   }
 
-  $$("[data-review-view]").forEach(button => {
+  const reviewTabs = $$("[data-review-view]");
+
+  reviewTabs.forEach((button, index) => {
     button.addEventListener("click", () => {
       if (button.disabled) return;
       compareMode = button.dataset.reviewView;
       renderCompare(currentRun());
+    });
+
+    button.addEventListener("keydown", event => {
+      if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) {
+        return;
+      }
+
+      event.preventDefault();
+      const enabled = reviewTabs.filter(tab => !tab.disabled);
+      const current = enabled.indexOf(button);
+      if (current < 0) return;
+
+      let target = current;
+      if (event.key === "ArrowLeft") target = (current - 1 + enabled.length) % enabled.length;
+      if (event.key === "ArrowRight") target = (current + 1) % enabled.length;
+      if (event.key === "Home") target = 0;
+      if (event.key === "End") target = enabled.length - 1;
+
+      const next = enabled[target];
+      compareMode = next.dataset.reviewView;
+      renderCompare(currentRun());
+      next.focus();
     });
   });
 

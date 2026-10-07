@@ -15,8 +15,8 @@ Do not start a later wave before the current wave passes its package/Windows/Ubu
 | UI-16 | Library full | **Complete ✅** |
 | UI-17 | Project Brain | **Complete ✅** |
 | UI-18 | Settings | **Complete ✅** |
-| UI-19 | Updates | **Implemented — CI pending** |
-| UI-20 | Mobile + accessibility + visual regression | Planned |
+| UI-19 | Updates | **Complete ✅** |
+| UI-20 | Mobile + accessibility + visual regression | **Implemented — browser QA pending** |
 
 ## UI-10 delivered
 
@@ -344,3 +344,29 @@ Do not start a later wave before the current wave passes its package/Windows/Ubu
 - Windows + Ubuntu full suite green
 - package audit 0 findings
 - installed-package smoke green
+
+
+## UI-20 implementation
+
+- canonical headless-Chrome QA on Ubuntu
+- Playwright Core 1.63.0 — dev-only
+- axe-core 4.14.0 — dev-only
+- deterministic real Studio fixture data
+- real FFmpeg-generated review media
+- desktop 1600×1000 screenshots
+- laptop 1280×800 screenshots
+- mobile 430×932 screenshots
+- Setup / Create / Director concepts / Storyboard / Review / Library / Project / Settings / Updates coverage
+- WCAG 2.x AA axe scan on every captured state
+- whole-document horizontal overflow gate
+- reduced-motion rendering for deterministic screenshots
+- screenshots uploaded as CI artifact for human visual review
+
+### UI-20 final gate
+
+- Windows functional/package suite green
+- Ubuntu functional/package suite green
+- browser QA green
+- axe violations = 0
+- horizontal overflow = 0
+- screenshots manually inspected against the approved reference before baselines are locked

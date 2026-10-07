@@ -194,16 +194,24 @@ function decisionActivity(run) {
 
 function previewForRun(cwd, run) {
   if (!run) return null;
+
+  const shotOutputs = (run.build_plan?.shots || [])
+    .map(shot => shot.output)
+    .filter(Boolean)
+    .reverse();
+
   const candidates = [
     run.review?.video,
+    run.state.checkpoints?.post_render_review?.artifact,
     run.state.checkpoints?.render?.artifact,
-    run.state.checkpoints?.post_render_review?.artifact
+    ...shotOutputs
   ].filter(Boolean);
 
   for (const item of candidates) {
     const media = mediaDescriptor(cwd, item);
     if (media && media.type !== "file") return media;
   }
+
   return null;
 }
 

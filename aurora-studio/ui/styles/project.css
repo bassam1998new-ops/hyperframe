@@ -175,8 +175,11 @@
 }
 
 .field-label-row button {
-  padding: 0;
+  min-width: 30px;
+  min-height: 26px;
+  padding: 0 5px;
   border: 0;
+  border-radius: 6px;
   color: #595d70;
   background: transparent;
   font-size: 7px;
@@ -187,6 +190,7 @@
 .field-label-row button:hover,
 .field-label-row button:focus-visible {
   color: #b2adcf;
+  background: rgba(139, 92, 255, .07);
 }
 
 .claims-field {

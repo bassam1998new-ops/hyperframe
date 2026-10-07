@@ -520,3 +520,50 @@ test("Updates UI is safety-first and deliberately has no apply endpoint", () => 
   assert.match(updater, /update_apply_not_implemented/);
   assert.match(system, /newer_system_snapshot_preserved/);
 });
+
+
+test("UI browser QA dependencies are pinned and dev-only", () => {
+  const pkg = JSON.parse(read("package.json"));
+  const qa = read("scripts/ui-browser-qa.mjs");
+
+  assert.equal(pkg.devDependencies?.["playwright-core"], "1.63.0");
+  assert.equal(pkg.devDependencies?.["axe-core"], "4.14.0");
+  assert.equal(pkg.dependencies?.["playwright-core"], undefined);
+  assert.equal(pkg.dependencies?.["axe-core"], undefined);
+  assert.equal(pkg.scripts?.["ui:qa"], "node ./scripts/ui-browser-qa.mjs");
+
+  assert.match(qa, /chromium/);
+  assert.match(qa, /axe\.run/);
+  assert.match(qa, /1600/);
+  assert.match(qa, /1280/);
+  assert.match(qa, /430/);
+  assert.match(qa, /overflow_x/);
+});
+
+
+test("UI-20 accessibility contracts remain present", () => {
+  const html = read("ui/index.html");
+  const projectCss = read("ui/styles/project.css");
+  const settingsCss = read("ui/styles/settings.css");
+  const libraryView = read("ui/app/views/library.js");
+  const review = read("ui/app/workflows/review.js");
+
+  assert.ok(html.includes('aria-label="Create"'));
+  assert.ok(html.includes('aria-label="Library"'));
+  assert.ok(html.includes('aria-label="Project"'));
+  assert.ok(html.includes('aria-label="Settings"'));
+  assert.ok(html.includes('aria-label="Updates"'));
+  assert.ok(html.includes('aria-label="Refresh Studio state"'));
+  assert.ok(html.includes('role="tablist"'));
+  assert.ok(html.includes('role="tab"'));
+  assert.ok(html.includes('review-summary-scroll" tabindex="0"'));
+
+  assert.equal(libraryView.includes('aria-label="Open '), false);
+  assert.ok(review.includes("aria-selected"));
+  assert.ok(review.includes("ArrowLeft"));
+  assert.ok(review.includes("ArrowRight"));
+
+  assert.ok(projectCss.includes("min-height: 26px"));
+  assert.ok(settingsCss.includes(".settings-tool-copy .status-main b"));
+  assert.ok(settingsCss.includes(".settings-tool-copy .status-main small"));
+});

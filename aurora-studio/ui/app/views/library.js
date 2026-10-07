@@ -32,7 +32,7 @@ function card(item, mediaUrl) {
       class="library-card"
       type="button"
       data-library-id="${escapeHtml(item.id)}"
-      aria-label="Open ${escapeHtml(item.name)} details"
+      title="Open ${escapeHtml(item.name)} details"
     >
       <div class="library-thumb">
         ${media}

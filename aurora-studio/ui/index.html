@@ -39,19 +39,19 @@
     <aside class="nav-rail" aria-label="Studio navigation">
       <button class="brand-orb nav-orb" aria-label="AurorA Studio" data-view="create"></button>
       <nav class="nav-stack">
-        <button class="nav-item active" title="Create" data-tooltip="Create" data-view="create">
+        <button class="nav-item active" title="Create" aria-label="Create" data-tooltip="Create" data-view="create">
           <svg><use href="#i-create"/></svg><span>Create</span>
         </button>
-        <button class="nav-item" title="Library" data-tooltip="Library" data-view="library">
+        <button class="nav-item" title="Library" aria-label="Library" data-tooltip="Library" data-view="library">
           <svg><use href="#i-library"/></svg><span>Library</span>
         </button>
-        <button class="nav-item" title="Project" data-tooltip="Project" data-view="project">
+        <button class="nav-item" title="Project" aria-label="Project" data-tooltip="Project" data-view="project">
           <svg><use href="#i-project"/></svg><span>Project</span>
         </button>
-        <button class="nav-item" title="Settings" data-tooltip="Settings" data-view="settings">
+        <button class="nav-item" title="Settings" aria-label="Settings" data-tooltip="Settings" data-view="settings">
           <svg><use href="#i-settings"/></svg><span>Settings</span>
         </button>
-        <button class="nav-item nav-bottom" title="Updates" data-tooltip="Updates" data-view="updates">
+        <button class="nav-item nav-bottom" title="Updates" aria-label="Updates" data-tooltip="Updates" data-view="updates">
           <svg><use href="#i-update"/></svg><span>Updates</span>
         </button>
       </nav>
@@ -191,9 +191,9 @@
                 <span class="review-decision" id="review-decision">Pending</span>
               </div>
               <div class="review-compare-tabs" id="review-compare-tabs" role="tablist" aria-label="Review comparison">
-                <button class="active" type="button" data-review-view="result">Result</button>
-                <button type="button" data-review-view="reference" id="review-reference-tab">Reference</button>
-                <button type="button" data-review-view="side" id="review-side-tab">Side by side</button>
+                <button class="active" type="button" role="tab" aria-selected="true" tabindex="0" data-review-view="result">Result</button>
+                <button type="button" role="tab" aria-selected="false" tabindex="-1" data-review-view="reference" id="review-reference-tab">Reference</button>
+                <button type="button" role="tab" aria-selected="false" tabindex="-1" data-review-view="side" id="review-side-tab">Side by side</button>
               </div>
             </div>
 
@@ -220,7 +220,7 @@
               <span class="review-state-pill" id="review-state-pill">Pending</span>
             </div>
 
-            <div class="review-summary-scroll">
+            <div class="review-summary-scroll" tabindex="0" aria-label="AurorA review details">
               <p class="review-summary-copy" id="review-summary-copy"></p>
 
               <section class="review-block">
@@ -383,7 +383,7 @@
           <aside class="panel activity-panel">
             <div class="panel-head">
               <span class="eyebrow">ACTIVITY</span>
-              <button class="icon-button" id="refresh-button" type="button" title="Refresh" data-tooltip="Refresh Studio state" data-tooltip-placement="left">
+              <button class="icon-button" id="refresh-button" type="button" title="Refresh" aria-label="Refresh Studio state" data-tooltip="Refresh Studio state" data-tooltip-placement="left">
                 <svg><use href="#i-refresh"/></svg>
               </button>
             </div>
@@ -393,7 +393,7 @@
               <div id="tool-chips" class="tool-chips"></div>
             </section>
 
-            <div class="activity-list" id="activity-list">
+            <div class="activity-list" id="activity-list" tabindex="0" aria-label="Recent Studio activity">
               <div class="empty-card compact">No run activity yet.</div>
             </div>
 
