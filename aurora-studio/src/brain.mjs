@@ -76,6 +76,43 @@ export function writeProject(profile, cwd = process.cwd()) {
   return profile;
 }
 
+
+export function upsertProjectSource(source, cwd = process.cwd()) {
+  const project = readProject(cwd);
+  if (!project) throw new Error("Project profile not found.");
+
+  const type = ["owner", "website", "local_file", "other"].includes(source?.type)
+    ? source.type
+    : "other";
+  const value = String(source?.value || "").trim();
+
+  if (!value) throw new Error("Project source value is required.");
+
+  project.sources ||= [];
+  const existing = project.sources.find(
+    item => item.type === type && item.value === value
+  );
+
+  const next = {
+    type,
+    value,
+    checked_at:
+      source.checked_at === undefined
+        ? existing?.checked_at ?? null
+        : source.checked_at,
+    note:
+      source.note === undefined
+        ? existing?.note ?? null
+        : source.note
+  };
+
+  if (existing) Object.assign(existing, next);
+  else project.sources.push(next);
+
+  writeProject(project, cwd);
+  return next;
+}
+
 export function referencesDir(cwd = process.cwd()) {
   return path.join(auroraDir(cwd), "references");
 }
