@@ -292,3 +292,109 @@ test("UI snapshot exposes multi-agent video work progress and attention", () => 
   assert.equal(workers.get("codex").connected, true);
   assert.equal(workers.get("codex").state, "waiting");
 });
+
+
+test("connected agent does not claim a newly created run until a run event arrives", () => {
+  const cwd = temp();
+  const root = path.join(cwd, ".aurora");
+  const runId = "claim-run";
+  const runDir = path.join(root, "runs", runId);
+  fs.mkdirSync(runDir, { recursive: true });
+  fs.mkdirSync(path.join(root, "library"), { recursive: true });
+
+  fs.writeFileSync(path.join(root, "workspace.json"), JSON.stringify({
+    schema_version: 1,
+    studio: "AurorA Studio",
+    default_mode: "direct",
+    project: { product: "Claim Test", purpose: "video" },
+    tools: [],
+    integrations: [],
+    resources: {},
+    learning: {
+      decision_log: ".aurora/decisions.jsonl",
+      lesson_log: ".aurora/lessons.jsonl",
+      approved_only: true
+    }
+  }));
+
+  fs.writeFileSync(path.join(root, "project.json"), JSON.stringify({
+    schema_version: 1,
+    project_id: "claim-test",
+    product: "Claim Test",
+    purpose: "video",
+    website: "",
+    audience: [],
+    offer: "",
+    positioning: "",
+    brand: { personality: [], colors: [], fonts: [], logo_paths: [], avoid: [] },
+    content: { channels: [], default_formats: [], languages: [], recurring_series: [] },
+    creative: { preferred_moods: [], avoid_moods: [], recurring_constraints: [] },
+    claims_to_protect: [],
+    sources: [],
+    notes: []
+  }));
+
+  const now = Date.now();
+  const createdAt = new Date(now - 1_000).toISOString();
+
+  fs.writeFileSync(path.join(runDir, "plan.json"), JSON.stringify({
+    task: "Build the claim test video",
+    mode: "direct",
+    route: [],
+    route_confidence: 0,
+    created_at: createdAt,
+    stages: [
+      { id: "understand", status: "pending" },
+      { id: "build", status: "pending" }
+    ]
+  }));
+
+  fs.writeFileSync(path.join(runDir, "state.json"), JSON.stringify({
+    status: "in_progress",
+    current_stage: "understand",
+    updated_at: createdAt,
+    checkpoints: {}
+  }));
+
+  const eventsFile = path.join(root, "agent-events.jsonl");
+
+  fs.writeFileSync(eventsFile, JSON.stringify({
+    schema_version: 1,
+    timestamp: new Date(now - 5_000).toISOString(),
+    source: "claude",
+    event: "SessionStart",
+    state: "working",
+    session_id: "before-run",
+    run_id: null,
+    summary: "Claude session started"
+  }) + "\n");
+
+  const unclaimed = buildStudioSnapshot(cwd);
+  assert.equal(unclaimed.agent.bridge_connected, true);
+  assert.equal(unclaimed.agent.run_claimed, false);
+  assert.equal(
+    unclaimed.agent.handoff.reason,
+    "connected_not_claimed"
+  );
+  assert.match(
+    unclaimed.agent.work.detail,
+    /has not been handed off/
+  );
+
+  fs.appendFileSync(eventsFile, JSON.stringify({
+    schema_version: 1,
+    timestamp: new Date(now).toISOString(),
+    source: "claude",
+    event: "PostToolUse",
+    state: "working",
+    session_id: "before-run",
+    run_id: runId,
+    tool_name: "Read",
+    workspace_path: ".aurora/runs/claim-run/plan.json",
+    summary: "Claude finished file read"
+  }) + "\n");
+
+  const claimed = buildStudioSnapshot(cwd);
+  assert.equal(claimed.agent.run_claimed, true);
+  assert.equal(claimed.agent.handoff, null);
+});

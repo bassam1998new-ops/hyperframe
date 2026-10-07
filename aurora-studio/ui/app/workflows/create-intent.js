@@ -110,11 +110,18 @@ export function createIntentWorkflow({
 
     const shouldShow = Boolean(
       locked &&
-      !state?.agent?.bridge_connected &&
       state?.agent?.handoff?.message
     );
 
-    if (handoff) handoff.hidden = !shouldShow;
+    if (handoff) {
+      handoff.hidden = !shouldShow;
+      const title = handoff.querySelector("strong");
+      if (title) {
+        title.textContent =
+          state?.agent?.handoff?.title ||
+          "Run created — continue in Claude or Codex.";
+      }
+    }
     if (message) {
       message.textContent = shouldShow
         ? state.agent.handoff.message

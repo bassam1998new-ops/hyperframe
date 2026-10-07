@@ -94,6 +94,8 @@ Studio creates and tracks the AurorA production run and observes Claude/Codex wo
 
 Studio does not start or own the agent conversation itself.
 
+Studio distinguishes **agent connected** from **agent claimed this run**. A copyable handoff stays visible until a Claude/Codex event is attached to the exact run after its creation.
+
 Agent permission prompts remain inside the agent that owns the permission model.
 
 ### Codex live bridge

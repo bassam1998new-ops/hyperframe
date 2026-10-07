@@ -849,6 +849,20 @@ function agentWorkers(presence) {
     });
 }
 
+function agentClaimedRun(run, presence) {
+  if (!run || !presence?.connected) return false;
+  if (presence.run_id !== run.id) return false;
+
+  const runCreated = Date.parse(run.plan?.created_at || "");
+  const lastEvent = Date.parse(presence.last_event_at || "");
+
+  if (!Number.isFinite(runCreated) || !Number.isFinite(lastEvent)) {
+    return true;
+  }
+
+  return lastEvent >= runCreated;
+}
+
 function agentIntegrationStatus(
   cwd,
   run,
@@ -867,6 +881,7 @@ function agentIntegrationStatus(
     hookStatus?.codex_live
   );
 
+  const claimed = agentClaimedRun(run, presence);
   const work = semanticRunWork(run);
   const progress = runProgress(run);
   const workers = agentWorkers(presence);
@@ -875,6 +890,7 @@ function agentIntegrationStatus(
   return {
     bridge_ready: bridgeReady,
     bridge_connected: Boolean(presence?.connected),
+    run_claimed: claimed,
     state: presence?.state || "offline",
     source: presence?.source || null,
     summary: presence?.summary || null,
@@ -891,17 +907,29 @@ function agentIntegrationStatus(
     workers,
     work: {
       ...work,
+      title:
+        run && presence?.connected && !claimed
+          ? "Run ready for agent"
+          : work.title,
       detail:
-        presence?.connected && presence?.summary
-          ? presence.summary
-          : work.detail
+        run && presence?.connected && !claimed
+          ? "Claude/Codex is connected, but this run has not been handed off yet."
+          : claimed && presence?.summary
+            ? presence.summary
+            : work.detail
     },
     progress,
     attention,
     handoff:
-      run && !presence?.connected
+      run && !claimed
         ? {
             run_id: run.id,
+            reason: presence?.connected
+              ? "connected_not_claimed"
+              : "agent_not_connected",
+            title: presence?.connected
+              ? "New run ready — hand it to your agent."
+              : "Run created — continue in Claude or Codex.",
             message:
               `Continue AurorA Studio run ${run.id}. Read .aurora/AGENT.md and the run artifacts, then continue from stage ${run.state.current_stage}.`
           }
