@@ -69,7 +69,11 @@ function enhancedMarkup(src, label) {
         <media-play-button></media-play-button>
         <span class="aurora-media-clock" data-aurora-clock aria-hidden="true">0:00</span>
         <media-time-range></media-time-range>
-        <media-duration-display></media-duration-display>
+        <span
+          class="aurora-media-duration"
+          data-aurora-duration
+          aria-hidden="true"
+        >0:00</span>
         <media-mute-button></media-mute-button>
         <media-volume-range></media-volume-range>
         <button
@@ -96,6 +100,7 @@ function formatMediaTime(value) {
 function bindAuroraControls(container) {
   const video = container.querySelector("video");
   const clock = container.querySelector("[data-aurora-clock]");
+  const duration = container.querySelector("[data-aurora-duration]");
   const speed = container.querySelector("[data-aurora-speed]");
   if (!video) return;
 
@@ -103,9 +108,18 @@ function bindAuroraControls(container) {
     if (clock) clock.textContent = formatMediaTime(video.currentTime);
   };
 
+  const updateDuration = () => {
+    if (duration) duration.textContent = formatMediaTime(video.duration);
+  };
+
   video.addEventListener("timeupdate", updateClock);
-  video.addEventListener("loadedmetadata", updateClock);
+  video.addEventListener("loadedmetadata", () => {
+    updateClock();
+    updateDuration();
+  });
+  video.addEventListener("durationchange", updateDuration);
   updateClock();
+  updateDuration();
 
   if (speed) {
     const rates = [1, 1.25, 1.5, 2, 0.75];
