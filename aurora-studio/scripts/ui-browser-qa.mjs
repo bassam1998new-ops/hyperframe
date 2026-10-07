@@ -606,6 +606,55 @@ function clearRuns(cwd) {
   });
 }
 
+
+function clearAgentEvents(cwd) {
+  const file = path.join(cwd, ".aurora", "agent-events.jsonl");
+  fs.rmSync(file, { force: true });
+}
+
+function writeLiveAgentFixture(cwd) {
+  const file = path.join(cwd, ".aurora", "agent-events.jsonl");
+  const events = [
+    {
+      schema_version: 1,
+      timestamp: timestamp(20),
+      source: "claude",
+      event: "SessionStart",
+      state: "working",
+      session_id: "qa-claude-live",
+      turn_id: null,
+      agent_id: null,
+      agent_type: null,
+      tool_name: null,
+      workspace_path: null,
+      notification_type: null,
+      run_id: "qa-run",
+      summary: "Claude session started"
+    },
+    {
+      schema_version: 1,
+      timestamp: timestamp(21),
+      source: "claude",
+      event: "PreToolUse",
+      state: "working",
+      session_id: "qa-claude-live",
+      turn_id: "qa-turn-1",
+      agent_id: null,
+      agent_type: null,
+      tool_name: "Edit",
+      workspace_path: "video-projects/hero.js",
+      notification_type: null,
+      run_id: "qa-run",
+      summary: "Claude using file edit · video-projects/hero.js"
+    }
+  ];
+
+  fs.writeFileSync(
+    file,
+    events.map(item => JSON.stringify(item)).join("\n") + "\n"
+  );
+}
+
 function writeRun(cwd, {
   mode,
   currentStage,
@@ -885,6 +934,14 @@ function reviewFixture(media) {
 }
 
 function applyScenario(cwd, scenario, media) {
+  clearAgentEvents(cwd);
+
+  if (scenario === "agent-live") {
+    applyScenario(cwd, "direct", media);
+    writeLiveAgentFixture(cwd);
+    return;
+  }
+
   if (scenario === "idle") {
     clearRuns(cwd);
     return;
@@ -1401,6 +1458,7 @@ async function main() {
     for (const spec of [
       ["desktop-create-idle", "idle", "create", 1600, 1000],
       ["desktop-create-direct", "direct", "create", 1600, 1000],
+      ["desktop-agent-live", "agent-live", "create", 1600, 1000],
       ["desktop-director-concepts", "concepts", "create", 1600, 1000],
       ["desktop-director-storyboard", "storyboard", "create", 1600, 1000],
       ["desktop-review", "review", "create", 1600, 1000],
