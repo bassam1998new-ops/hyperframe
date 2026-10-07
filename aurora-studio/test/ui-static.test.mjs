@@ -414,7 +414,7 @@ test("Complete Project Brain UI exposes stable context provenance and safe reset
 
   assert.match(view, /project\.sources/);
   assert.match(view, /safeHttp/);
-  assert.match(view, /Project source/);
+  assert.match(view, /Source recorded/);
   assert.match(view, /resetProjectField/);
 
   assert.match(server, /audience_context\.knowledge_level/);
