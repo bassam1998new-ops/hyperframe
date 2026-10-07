@@ -302,6 +302,7 @@ export function renderAgentPresence(agent) {
   const attention = $("#agent-attention");
   const attentionTitle = $("#agent-attention-title");
   const attentionDetail = $("#agent-attention-detail");
+  const attentionAction = $("#agent-attention-action");
 
   const source =
     agent?.source === "claude"
@@ -401,10 +402,15 @@ export function renderAgentPresence(agent) {
     attention.hidden = false;
     attentionTitle.textContent = agent.attention.title || "Needs you";
     attentionDetail.textContent = agent.attention.detail || "";
+    attentionAction.dataset.action = agent.attention.action || "";
+    attentionAction.textContent = agent.attention.action_label || "Open";
+    attentionAction.hidden = !agent.attention.action;
   } else {
     attention.hidden = true;
     attentionTitle.textContent = "";
     attentionDetail.textContent = "";
+    attentionAction.dataset.action = "";
+    attentionAction.hidden = true;
   }
 }
 
@@ -418,7 +424,13 @@ export function renderActivity(activity) {
 
   list.innerHTML = activity.map(item => `
     <div class="activity-item ${escapeHtml(item.status || "info")}">
-      <strong><i></i>${escapeHtml(titleCase(item.title))}</strong>
+      <strong>
+        <i></i>
+        ${escapeHtml(titleCase(item.title))}
+        ${Number(item.count || 1) > 1
+          ? '<span class="activity-count">×' + Number(item.count) + '</span>'
+          : ''}
+      </strong>
       <p>${escapeHtml(item.detail || titleCase(item.status || "updated"))}</p>
     </div>
   `).join("");
