@@ -163,10 +163,29 @@ function createFakeHyperframes(cwd) {
 }
 
 function enrichWorkspace(cwd, ffmpeg) {
+  const toolRoot = path.join(cwd, "qa-tools");
+  const blender = path.join(toolRoot, "blender");
+  const afterEffects = path.join(toolRoot, "after-effects");
+  fs.mkdirSync(afterEffects, { recursive: true });
+  fs.writeFileSync(blender, "#!/usr/bin/env sh\necho 'Blender QA fixture'\n");
+  fs.writeFileSync(
+    path.join(afterEffects, "After Effects"),
+    "#!/usr/bin/env sh\necho 'After Effects QA fixture'\n"
+  );
+  fs.writeFileSync(
+    path.join(afterEffects, "aerender"),
+    "#!/usr/bin/env sh\necho 'aerender QA fixture'\n"
+  );
+  fs.chmodSync(blender, 0o755);
+  fs.chmodSync(path.join(afterEffects, "After Effects"), 0o755);
+  fs.chmodSync(path.join(afterEffects, "aerender"), 0o755);
+
   const workspaceFile = path.join(cwd, ".aurora", "workspace.json");
   const workspace = JSON.parse(fs.readFileSync(workspaceFile, "utf8"));
   workspace.tool_paths ||= {};
   workspace.tool_paths.ffmpeg = ffmpeg;
+  workspace.tool_paths.blender = blender;
+  workspace.tool_paths.after_effects = afterEffects;
   workspace.budget = {
     mode: "warn",
     cap_usd: null,
@@ -471,12 +490,23 @@ function generateReviewMedia(cwd, ffmpeg, ffprobe) {
   fs.mkdirSync(runFrames, { recursive: true });
 
   const video = path.join(renders, "aurora-review.mp4");
+  const font = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf";
+  const visualFilter = [
+    "drawbox=x=0:y=0:w=iw:h=ih:color=0x070816:t=fill",
+    "drawbox=x='120+70*sin(t*1.1)':y='80+24*cos(t*.8)':w=470:h=470:color=0x6d42ff@0.16:t=fill",
+    "drawbox=x='840+55*cos(t*.7)':y='230+35*sin(t*.9)':w=300:h=300:color=0x24cfe8@0.11:t=fill",
+    "drawgrid=width=80:height=80:thickness=1:color=white@0.025",
+    `drawtext=fontfile=${font}:text='AURORA':fontcolor=0xe9e6ff:fontsize=72:x=(w-text_w)/2:y=(h-text_h)/2`,
+    `drawtext=fontfile=${font}:text='STUDIO REVIEW':fontcolor=0x9d99b5:fontsize=18:x=(w-text_w)/2:y=(h/2)+72`
+  ].join(",");
+
   run(ffmpeg, [
     "-y",
     "-f", "lavfi",
-    "-i", "testsrc2=size=1280x720:rate=30",
+    "-i", "color=c=0x070816:size=1280x720:rate=30",
     "-f", "lavfi",
     "-i", "sine=frequency=220:sample_rate=48000",
+    "-vf", visualFilter,
     "-t", "3",
     "-c:v", "libx264",
     "-pix_fmt", "yuv420p",
