@@ -539,3 +539,31 @@ test("UI browser QA dependencies are pinned and dev-only", () => {
   assert.match(qa, /430/);
   assert.match(qa, /overflow_x/);
 });
+
+
+test("UI-20 accessibility contracts remain present", () => {
+  const html = read("ui/index.html");
+  const projectCss = read("ui/styles/project.css");
+  const settingsCss = read("ui/styles/settings.css");
+  const libraryView = read("ui/app/views/library.js");
+  const review = read("ui/app/workflows/review.js");
+
+  assert.ok(html.includes('aria-label="Create"'));
+  assert.ok(html.includes('aria-label="Library"'));
+  assert.ok(html.includes('aria-label="Project"'));
+  assert.ok(html.includes('aria-label="Settings"'));
+  assert.ok(html.includes('aria-label="Updates"'));
+  assert.ok(html.includes('aria-label="Refresh Studio state"'));
+  assert.ok(html.includes('role="tablist"'));
+  assert.ok(html.includes('role="tab"'));
+  assert.ok(html.includes('review-summary-scroll" tabindex="0"'));
+
+  assert.equal(libraryView.includes('aria-label="Open '), false);
+  assert.ok(review.includes("aria-selected"));
+  assert.ok(review.includes("ArrowLeft"));
+  assert.ok(review.includes("ArrowRight"));
+
+  assert.ok(projectCss.includes("min-height: 26px"));
+  assert.ok(settingsCss.includes(".settings-tool-copy .status-main b"));
+  assert.ok(settingsCss.includes(".settings-tool-copy .status-main small"));
+});
