@@ -1001,6 +1001,7 @@ body[data-run-active="true"] .create-intent-bar {
 /* Final desktop geometry pass after side-by-side screenshot inspection. */
 @media (min-width: 1321px) {
   .workspace-grid {
+    height: 520px;
     align-items: stretch;
   }
 
@@ -1008,8 +1009,8 @@ body[data-run-active="true"] .create-intent-bar {
   .board-panel,
   .concepts-panel,
   .activity-panel {
-    height: 520px;
-    min-height: 520px;
+    height: 100%;
+    min-height: 0;
   }
 
   .preview-panel {
