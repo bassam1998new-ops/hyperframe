@@ -73,6 +73,7 @@ import {
   completedLearningPayload
 } from "./learning.mjs";
 import { syncSystemKnowledge, systemStatus } from "./system-install.mjs";
+import { defaultBudgetPolicy } from "./workspace-settings.mjs";
 import {
   recordUsage,
   summarizeUsage,
@@ -321,6 +322,12 @@ export async function runSetup(cwd = process.cwd()) {
       local_paths: localPathsAnswer.trim()
         ? [...new Set(localPathsAnswer.split(",").map(value => value.trim()).filter(Boolean))]
         : existingLocalPaths
+    },
+    budget: existing?.budget || defaultBudgetPolicy(),
+    tool_paths: {
+      blender: existing?.tool_paths?.blender || null,
+      after_effects: existing?.tool_paths?.after_effects || null,
+      ffmpeg: existing?.tool_paths?.ffmpeg || null
     },
     learning: {
       decision_log: ".aurora/decisions.jsonl",
