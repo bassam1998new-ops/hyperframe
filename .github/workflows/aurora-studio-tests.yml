@@ -1,6 +1,7 @@
 name: AurorA Studio Tests
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
