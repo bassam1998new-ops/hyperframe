@@ -30,6 +30,7 @@ test("browser UI JavaScript modules have valid syntax", () => {
     "ui/app/workflows/library.js",
     "ui/app/workflows/review.js",
     "ui/app/workflows/settings.js",
+    "ui/app/workflows/updates.js",
     "ui/app/views/create.js",
     "ui/app/views/library.js",
     "ui/app/views/project.js",
@@ -475,4 +476,47 @@ test("Full Settings UI exposes factual tools agents budget and advanced controls
   assert.match(settings, /normalizeBudgetPolicy/);
   assert.match(settings, /normalizeToolPaths/);
   assert.match(settings, /updateStudioSettings/);
+});
+
+
+test("Updates UI is safety-first and deliberately has no apply endpoint", () => {
+  const html = read("ui/index.html");
+  const app = read("ui/app.js");
+  const view = read("ui/app/views/updates.js");
+  const workflow = read("ui/app/workflows/updates.js");
+  const server = read("src/ui-server.mjs");
+  const updater = read("src/update.mjs");
+  const system = read("src/system-install.mjs");
+
+  assert.match(html, /id="update-availability-badge"/);
+  assert.match(html, /id="update-safety-list"/);
+  assert.match(html, /id="update-backup"/);
+  assert.match(html, /id="hyperframes-update-check"/);
+  assert.match(html, /id="update-apply"/);
+  assert.match(html, /id="update-apply"[\s\S]*?disabled/);
+
+  assert.match(app, /createUpdateWorkflow/);
+  assert.match(app, /updateWorkflow\.bind/);
+
+  assert.match(view, /active production/i);
+  assert.match(view, /workspace schema/i);
+  assert.match(view, /workspace backup/i);
+  assert.match(view, /apply_supported/);
+  assert.match(view, /HyperFrames/i);
+
+  assert.match(workflow, /\/api\/update-check/);
+  assert.match(workflow, /\/api\/update-plan/);
+  assert.match(workflow, /\/api\/update-backup/);
+  assert.match(workflow, /upgrade_check/);
+  assert.match(workflow, /aurora:update-dismissed-version/);
+  assert.doesNotMatch(workflow, /\/api\/update-apply/);
+
+  assert.match(server, /\/api\/update-plan/);
+  assert.match(server, /\/api\/update-backup/);
+  assert.doesNotMatch(server, /url\.pathname === "\/api\/update-apply"/);
+
+  assert.match(updater, /activeProductionRuns/);
+  assert.match(updater, /updateSafetyPlan/);
+  assert.match(updater, /update_apply_not_implemented/);
+  assert.match(system, /newer_system_snapshot_preserved/);
 });
