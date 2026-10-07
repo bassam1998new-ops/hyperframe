@@ -582,3 +582,9 @@ test("Create UI includes Agent Canvas semantic status primitives", () => {
     assert.match(html, new RegExp(`id=["']${id}["']`));
   }
 });
+
+
+test("Agent Canvas needs-you CTA is present", () => {
+  const html = fs.readFileSync(path.join(ROOT, "ui", "index.html"), "utf8");
+  assert.match(html, /id=["']agent-attention-action["']/);
+});
