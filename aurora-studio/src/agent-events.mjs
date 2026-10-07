@@ -50,6 +50,8 @@ function summarizeOneAgent(
       source: null,
       summary: null,
       tool_name: null,
+      workspace_path: null,
+      event: null,
       run_id: null,
       session_id: null,
       last_event_at: null
@@ -80,6 +82,8 @@ function summarizeOneAgent(
     source: latest.source || null,
     summary: latest.summary || null,
     tool_name: latest.tool_name || null,
+    workspace_path: latest.workspace_path || null,
+    event: latest.event || null,
     run_id: latest.run_id || null,
     session_id: latest.session_id || null,
     last_event_at: latest.timestamp || null
@@ -149,20 +153,74 @@ export function summarizeAgentPresence(
   };
 }
 
+function semanticAgentDetail(item) {
+  const agent =
+    item.source === "claude"
+      ? "Claude"
+      : item.source === "codex"
+        ? "Codex"
+        : "Agent";
+
+  const workspacePath = String(item.workspace_path || "");
+  const file = workspacePath.split("/").pop() || "";
+
+  const artifactLabels = new Map([
+    ["concepts.json", "creative concepts"],
+    ["mood.json", "creative direction"],
+    ["asset-plan.json", "asset plan"],
+    ["build-plan.json", "storyboard and build plan"],
+    ["review.json", "final review"],
+    ["learning-review.json", "learning review"],
+    ["project.json", "project brain"],
+    ["workspace.json", "Studio settings"]
+  ]);
+
+  if (
+    ["PostToolUse", "PostToolUseFailure"].includes(item.event) &&
+    artifactLabels.has(file)
+  ) {
+    const action =
+      item.event === "PostToolUseFailure"
+        ? "could not update"
+        : "updated";
+    return `${agent} ${action} ${artifactLabels.get(file)}`;
+  }
+
+  if (
+    ["PostToolUse", "PostToolUseFailure"].includes(item.event) &&
+    /^renders\//.test(workspacePath)
+  ) {
+    return item.event === "PostToolUseFailure"
+      ? `${agent} render action failed`
+      : `${agent} updated a render output`;
+  }
+
+  if (
+    ["PostToolUse", "PostToolUseFailure"].includes(item.event) &&
+    /^\.aurora\/blender\//.test(workspacePath)
+  ) {
+    return item.event === "PostToolUseFailure"
+      ? `${agent} Blender action failed`
+      : `${agent} updated Blender production files`;
+  }
+
+  return item.summary || item.event || "Agent activity";
+}
+
 export function agentEventActivity(events, runId = null) {
   const hiddenFromHistory = new Set([
     "PreToolUse",
     "UserPromptSubmit"
   ]);
 
-  return (events || [])
+  const mapped = (events || [])
     .filter(item =>
       (!runId || !item.run_id || item.run_id === runId) &&
       !hiddenFromHistory.has(item.event)
     )
     .slice()
     .reverse()
-    .slice(0, 20)
+    .slice(0, 60)
     .map(item => ({
       type: "agent_event",
       title: item.source === "claude"
@@ -178,11 +236,37 @@ export function agentEventActivity(events, runId = null) {
             : item.state === "offline"
               ? "idle"
               : item.state,
-      detail: item.summary || item.event || "Agent activity",
+      detail: semanticAgentDetail(item),
       at: item.timestamp || null,
       event: item.event || null,
       tool_name: item.tool_name || null,
       source: item.source || null,
-      run_id: item.run_id || null
+      run_id: item.run_id || null,
+      count: 1
     }));
+
+  const coalesced = [];
+  for (const item of mapped) {
+    const previous = coalesced[coalesced.length - 1];
+    const same =
+      previous &&
+      previous.source === item.source &&
+      previous.status === item.status &&
+      previous.detail === item.detail;
+
+    const withinWindow =
+      same &&
+      Number.isFinite(Date.parse(previous.at || "")) &&
+      Number.isFinite(Date.parse(item.at || "")) &&
+      Math.abs(Date.parse(previous.at) - Date.parse(item.at)) <= 45_000;
+
+    if (withinWindow) {
+      previous.count += 1;
+      continue;
+    }
+
+    coalesced.push(item);
+  }
+
+  return coalesced.slice(0, 20);
 }

@@ -266,3 +266,105 @@ test("SessionStart presence is recorded even before an AurorA run exists", () =>
   assert.equal(event.run_id, null);
   assert.match(event.summary, /Codex session/);
 });
+
+
+test("agent activity translates run artifacts into human video language", () => {
+  const activity = agentEventActivity([
+    {
+      schema_version: 1,
+      timestamp: "2026-10-07T08:10:00Z",
+      source: "claude",
+      state: "working",
+      summary: "Claude finished file edit · .aurora/runs/run-a/build-plan.json",
+      event: "PostToolUse",
+      tool_name: "Edit",
+      workspace_path: ".aurora/runs/run-a/build-plan.json",
+      run_id: "run-a"
+    },
+    {
+      schema_version: 1,
+      timestamp: "2026-10-07T08:11:00Z",
+      source: "codex",
+      state: "working",
+      summary: "Codex finished file write · .aurora/runs/run-a/review.json",
+      event: "PostToolUse",
+      tool_name: "Write",
+      workspace_path: ".aurora/runs/run-a/review.json",
+      run_id: "run-a"
+    }
+  ], "run-a");
+
+  assert.equal(activity[0].detail, "Codex updated final review");
+  assert.equal(
+    activity[1].detail,
+    "Claude updated storyboard and build plan"
+  );
+});
+
+
+test("Claude task lifecycle appears without storing task description", () => {
+  const cwd = temp();
+  setupWorkspace(cwd);
+  addActiveRun(cwd);
+
+  const result = runHook(cwd, "claude", {
+    cwd,
+    hook_event_name: "TaskCreated",
+    session_id: "session-task",
+    task_id: "task-42",
+    task_subject: "Build premium hero shot",
+    task_description: "This long private description should not be persisted",
+    teammate_name: "motion-worker"
+  });
+
+  assert.equal(result.status, 0);
+
+  const events = readAgentEvents(cwd);
+  assert.equal(events.length, 1);
+  assert.equal(events[0].event, "TaskCreated");
+  assert.equal(events[0].task_id, "task-42");
+  assert.equal(events[0].task_subject, "Build premium hero shot");
+  assert.equal(events[0].teammate_name, "motion-worker");
+  assert.equal("task_description" in events[0], false);
+  assert.match(events[0].summary, /Build premium hero shot/);
+});
+
+
+test("repetitive agent milestones collapse without hiding count", () => {
+  const activity = agentEventActivity([
+    {
+      schema_version: 1,
+      timestamp: "2026-10-07T08:00:00Z",
+      source: "claude",
+      state: "working",
+      summary: "Claude updated storyboard and build plan",
+      event: "PostToolUse",
+      workspace_path: ".aurora/runs/run-a/build-plan.json",
+      run_id: "run-a"
+    },
+    {
+      schema_version: 1,
+      timestamp: "2026-10-07T08:00:10Z",
+      source: "claude",
+      state: "working",
+      summary: "Claude updated storyboard and build plan",
+      event: "PostToolUse",
+      workspace_path: ".aurora/runs/run-a/build-plan.json",
+      run_id: "run-a"
+    },
+    {
+      schema_version: 1,
+      timestamp: "2026-10-07T08:00:20Z",
+      source: "claude",
+      state: "working",
+      summary: "Claude updated storyboard and build plan",
+      event: "PostToolUse",
+      workspace_path: ".aurora/runs/run-a/build-plan.json",
+      run_id: "run-a"
+    }
+  ], "run-a");
+
+  assert.equal(activity.length, 1);
+  assert.equal(activity[0].count, 3);
+  assert.equal(activity[0].detail, "Claude updated storyboard and build plan");
+});

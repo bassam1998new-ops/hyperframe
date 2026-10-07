@@ -245,3 +245,7 @@ That folder can contain project context, local paths, provider availability, run
 If you want to share stable knowledge with a team, review it first and promote the useful parts into normal tracked project documentation or style files.
 
 AurorA does not treat its local memory folder as something that should be committed automatically.
+\n\n## What is actually complete?
+
+See [docs/PRODUCT-STATUS.md](docs/PRODUCT-STATUS.md) for the honest Complete / Partial / Deferred capability map.
+

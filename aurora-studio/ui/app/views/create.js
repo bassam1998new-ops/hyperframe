@@ -293,6 +293,16 @@ export function renderAgentPresence(agent) {
   const title = $("#agent-presence-title");
   const detail = $("#agent-presence-detail");
   const state = $("#agent-presence-state");
+  const workers = $("#agent-worker-chips");
+  const workBlock = $("#agent-work-block");
+  const workTitle = $("#agent-work-title");
+  const workDetail = $("#agent-work-detail");
+  const progressFill = $("#agent-progress-fill");
+  const progressLabel = $("#agent-progress-label");
+  const attention = $("#agent-attention");
+  const attentionTitle = $("#agent-attention-title");
+  const attentionDetail = $("#agent-attention-detail");
+  const attentionAction = $("#agent-attention-action");
 
   const source =
     agent?.source === "claude"
@@ -314,6 +324,33 @@ export function renderAgentPresence(agent) {
         : "offline"
   );
 
+  const workerRows = agent?.workers || [];
+  workers.innerHTML = workerRows
+    .filter(worker => worker.connected)
+    .slice(0, 3)
+    .map(worker => {
+      const label =
+        worker.source === "claude"
+          ? "Claude"
+          : worker.source === "codex"
+            ? "Codex"
+            : "Agent";
+      return `
+        <span
+          class="agent-worker-chip ${escapeHtml(worker.state || "offline")}"
+          title="${escapeHtml(worker.summary || label)}"
+        >
+          <i></i>${escapeHtml(label)}
+        </span>
+      `;
+    })
+    .join("");
+
+  if (!workers.innerHTML && ready) {
+    workers.innerHTML =
+      '<span class="agent-worker-chip ready"><i></i>Ready</span>';
+  }
+
   if (connected) {
     title.textContent =
       source
@@ -332,21 +369,49 @@ export function renderAgentPresence(agent) {
         : status === "working"
           ? "LIVE"
           : titleCase(status).toUpperCase();
-    return;
-  }
-
-  if (ready) {
+  } else if (ready) {
     title.textContent = "Agent bridge ready";
     detail.textContent =
       "Start Claude or Codex in this workspace to see live activity.";
     state.textContent = "READY";
-    return;
+  } else {
+    title.textContent = "Agent bridge not installed";
+    detail.textContent =
+      "Install Claude/Codex integration in Settings.";
+    state.textContent = "OFF";
   }
 
-  title.textContent = "Agent bridge not installed";
-  detail.textContent =
-    "Install Claude/Codex integration in Settings.";
-  state.textContent = "OFF";
+  const work = agent?.work;
+  const progress = agent?.progress;
+
+  if (work && (agent?.run_id || progress?.total > 0)) {
+    workBlock.hidden = false;
+    workTitle.textContent = work.title || "Continuing production";
+    workDetail.textContent = work.detail || "";
+    const percent = Math.max(0, Math.min(100, Number(progress?.percent || 0)));
+    progressFill.style.width = percent + "%";
+    progressLabel.textContent =
+      progress?.label || Math.round(percent) + "%";
+  } else {
+    workBlock.hidden = true;
+    progressFill.style.width = "0%";
+    progressLabel.textContent = "0 of 0 stages";
+  }
+
+  if (agent?.attention) {
+    attention.hidden = false;
+    attentionTitle.textContent = agent.attention.title || "Needs you";
+    attentionDetail.textContent = agent.attention.detail || "";
+    attentionAction.dataset.action = agent.attention.action || "";
+    attentionAction.textContent = agent.attention.action_label || "Open";
+    attentionAction.hidden = !agent.attention.action;
+  } else {
+    attention.hidden = true;
+    attentionTitle.textContent = "";
+    attentionDetail.textContent = "";
+    attentionAction.dataset.action = "";
+    attentionAction.hidden = true;
+  }
 }
 
 export function renderActivity(activity) {
@@ -359,7 +424,13 @@ export function renderActivity(activity) {
 
   list.innerHTML = activity.map(item => `
     <div class="activity-item ${escapeHtml(item.status || "info")}">
-      <strong><i></i>${escapeHtml(titleCase(item.title))}</strong>
+      <strong>
+        <i></i>
+        ${escapeHtml(titleCase(item.title))}
+        ${Number(item.count || 1) > 1
+          ? '<span class="activity-count">×' + Number(item.count) + '</span>'
+          : ''}
+      </strong>
       <p>${escapeHtml(item.detail || titleCase(item.status || "updated"))}</p>
     </div>
   `).join("");

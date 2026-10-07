@@ -790,6 +790,8 @@ export function createReviewWorkflow({
 
   return {
     render: renderAll,
-    sync: renderAll
+    sync: renderAll,
+    openApproval,
+    openRevision
   };
 }

@@ -26,6 +26,8 @@ const CLAUDE_EVENT_HOOKS = [
   "Notification",
   "SubagentStart",
   "SubagentStop",
+  "TaskCreated",
+  "TaskCompleted",
   "Stop",
   "StopFailure",
   "SessionEnd"
