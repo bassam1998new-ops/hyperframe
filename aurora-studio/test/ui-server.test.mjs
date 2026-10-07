@@ -1140,3 +1140,129 @@ test("Settings agent actions are project-local and tool actions are allowlisted"
     await ui.close();
   }
 });
+
+
+test("Updates API exposes safety plan and creates a real workspace backup", async () => {
+  const cwd = temp();
+
+  writeConfiguredWorkspace({
+    product: "Update Product",
+    purpose: "video",
+    mode: "direct",
+    agents: "none",
+    install_hyperframes: false,
+    resources: {}
+  }, { cwd });
+
+  const activeRun = path.join(cwd, ".aurora", "runs", "active-run");
+  fs.mkdirSync(activeRun, { recursive: true });
+  fs.writeFileSync(
+    path.join(activeRun, "state.json"),
+    JSON.stringify({
+      run_id: "active-run",
+      task: "Active production",
+      status: "in_progress",
+      current_stage: "build",
+      updated_at: "2026-10-07T00:00:00Z"
+    })
+  );
+  fs.writeFileSync(
+    path.join(activeRun, "plan.json"),
+    JSON.stringify({
+      task: "Active production",
+      mode: "direct",
+      stages: []
+    })
+  );
+
+  const ui = await startStudioUiServer({
+    cwd,
+    port: 0,
+    open: false,
+    cliPath: CLI
+  });
+
+  try {
+    const headers = {
+      "Content-Type": "application/json",
+      "X-Aurora-Token": ui.token
+    };
+
+    const planResponse = await fetch(
+      "http://127.0.0.1:" + ui.port + "/api/update-plan",
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          target_workspace_schema_version: 1
+        })
+      }
+    );
+
+    assert.equal(planResponse.status, 200);
+    const planPayload = await planResponse.json();
+    assert.equal(planPayload.plan.safe_to_prepare, false);
+    assert.equal(planPayload.plan.apply_supported, false);
+    assert.ok(
+      planPayload.plan.blockers.some(
+        item => item.code === "active_production"
+      )
+    );
+
+    const backupResponse = await fetch(
+      "http://127.0.0.1:" + ui.port + "/api/update-backup",
+      {
+        method: "POST",
+        headers,
+        body: "{}"
+      }
+    );
+
+    assert.equal(backupResponse.status, 200);
+    const backupPayload = await backupResponse.json();
+
+    assert.ok(fs.existsSync(backupPayload.backup.backup_dir));
+    assert.ok(backupPayload.state.updates.latest_backup);
+    assert.equal(backupPayload.state.updates.backup_count, 1);
+  } finally {
+    await ui.close();
+  }
+});
+
+test("Studio intentionally exposes no update-apply endpoint", async () => {
+  const cwd = temp();
+
+  writeConfiguredWorkspace({
+    product: "No Apply",
+    purpose: "video",
+    mode: "direct",
+    agents: "none",
+    install_hyperframes: false,
+    resources: {}
+  }, { cwd });
+
+  const ui = await startStudioUiServer({
+    cwd,
+    port: 0,
+    open: false,
+    cliPath: CLI
+  });
+
+  try {
+    const response = await fetch(
+      "http://127.0.0.1:" + ui.port + "/api/update-apply",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Aurora-Token": ui.token
+        },
+        body: "{}"
+      }
+    );
+
+    assert.equal(response.status, 405);
+  } finally {
+    await ui.close();
+  }
+});
