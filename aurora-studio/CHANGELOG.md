@@ -5,6 +5,8 @@ AurorA Studio follows a simple **New / Fixed** release summary so community user
 ## Unreleased
 
 ### New
+- Safety-first Updates workspace with real release checks, migration/active-run blockers, workspace backup and separate HyperFrames status.
+- Update backup history and managed-system downgrade protection.
 - Full Settings workspace with factual tools, runtime, agents, resources, budget and advanced diagnostics.
 - Persistent Blender / After Effects / FFmpeg overrides that control real production execution.
 - Project-local Claude/Codex install, repair and removal controls with pointer/skill/hook health.
@@ -40,6 +42,8 @@ AurorA Studio follows a simple **New / Fixed** release summary so community user
 - npm trusted-publishing workflow is prepared but remains fail-closed until public release is explicitly enabled.
 
 ### Fixed
+- Older AurorA packages can no longer overwrite a newer managed `.aurora/system` snapshot.
+- Update backups now preserve run evidence/styles while excluding run-scoped temp.
 - Setup reruns now preserve budget policy and explicit production-tool paths.
 - Saved FFmpeg paths now also drive ffprobe review and HyperFrames media execution.
 - Settings path validation fails before persisting budget changes.
