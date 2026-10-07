@@ -868,3 +868,275 @@ test("Storyboard UI endpoints mutate the real build plan safely", async () => {
     await ui.close();
   }
 });
+
+
+test("Settings API persists resources budget and real tool overrides", async () => {
+  const cwd = temp();
+
+  writeConfiguredWorkspace({
+    product: "Settings Product",
+    purpose: "video",
+    mode: "direct",
+    agents: "none",
+    install_hyperframes: false,
+    resources: {}
+  }, { cwd });
+
+  const blenderDir = path.join(cwd, "Blender Override");
+  const aeDir = path.join(cwd, "AE Override");
+  const ffmpegDir = path.join(cwd, "Media Bin");
+
+  fs.mkdirSync(blenderDir, { recursive: true });
+  fs.mkdirSync(aeDir, { recursive: true });
+  fs.mkdirSync(ffmpegDir, { recursive: true });
+
+  fs.writeFileSync(
+    path.join(
+      blenderDir,
+      process.platform === "win32" ? "blender.exe" : "blender"
+    ),
+    ""
+  );
+
+  fs.writeFileSync(
+    path.join(
+      aeDir,
+      process.platform === "win32" ? "AfterFX.exe" : "After Effects"
+    ),
+    ""
+  );
+  fs.writeFileSync(
+    path.join(
+      aeDir,
+      process.platform === "win32" ? "aerender.exe" : "aerender"
+    ),
+    ""
+  );
+
+  fs.writeFileSync(
+    path.join(
+      ffmpegDir,
+      process.platform === "win32" ? "ffmpeg.exe" : "ffmpeg"
+    ),
+    ""
+  );
+  fs.writeFileSync(
+    path.join(
+      ffmpegDir,
+      process.platform === "win32" ? "ffprobe.exe" : "ffprobe"
+    ),
+    ""
+  );
+
+  const ui = await startStudioUiServer({
+    cwd,
+    port: 0,
+    open: false,
+    cliPath: CLI
+  });
+
+  try {
+    const response = await fetch(
+      "http://127.0.0.1:" + ui.port + "/api/settings",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Aurora-Token": ui.token
+        },
+        body: JSON.stringify({
+          resources: {
+            browser_control: true,
+            google_flow: true,
+            elevenlabs: true,
+            local_paths: [path.join(cwd, "Assets")]
+          },
+          budget: {
+            mode: "cap",
+            cap_usd: 25,
+            approval_threshold_usd: 2.5
+          },
+          tool_paths: {
+            blender: blenderDir,
+            after_effects: aeDir,
+            ffmpeg: ffmpegDir
+          }
+        })
+      }
+    );
+
+    assert.equal(response.status, 200);
+    const payload = await response.json();
+
+    assert.equal(payload.state.workspace.resources.browser_control, true);
+    assert.equal(payload.state.workspace.resources.google_flow, true);
+    assert.equal(payload.state.settings.budget.mode, "cap");
+    assert.equal(payload.state.settings.budget.cap_usd, 25);
+    assert.equal(payload.state.settings.tool_paths.blender, blenderDir);
+    assert.equal(payload.state.settings.tool_paths.after_effects, aeDir);
+    assert.equal(payload.state.settings.tool_paths.ffmpeg, ffmpegDir);
+    assert.equal(payload.state.runtime.ffmpeg.available, true);
+    assert.equal(
+      payload.state.tools.find(item => item.id === "blender").available,
+      true
+    );
+    assert.equal(
+      payload.state.tools.find(item => item.id === "after_effects").available,
+      true
+    );
+
+    const workspace = JSON.parse(
+      fs.readFileSync(path.join(cwd, ".aurora", "workspace.json"), "utf8")
+    );
+    assert.deepEqual(workspace.budget, {
+      mode: "cap",
+      cap_usd: 25,
+      approval_threshold_usd: 2.5
+    });
+  } finally {
+    await ui.close();
+  }
+});
+
+test("Settings API rejects invalid tool path before changing budget", async () => {
+  const cwd = temp();
+
+  writeConfiguredWorkspace({
+    product: "Atomic Settings",
+    purpose: "video",
+    mode: "direct",
+    agents: "none",
+    install_hyperframes: false,
+    resources: {}
+  }, { cwd });
+
+  const before = JSON.parse(
+    fs.readFileSync(path.join(cwd, ".aurora", "workspace.json"), "utf8")
+  );
+
+  const ui = await startStudioUiServer({
+    cwd,
+    port: 0,
+    open: false,
+    cliPath: CLI
+  });
+
+  try {
+    const response = await fetch(
+      "http://127.0.0.1:" + ui.port + "/api/settings",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Aurora-Token": ui.token
+        },
+        body: JSON.stringify({
+          resources: {},
+          budget: {
+            mode: "cap",
+            cap_usd: 99,
+            approval_threshold_usd: 10
+          },
+          tool_paths: {
+            blender: path.join(cwd, "missing-blender")
+          }
+        })
+      }
+    );
+
+    assert.equal(response.status, 400);
+
+    const after = JSON.parse(
+      fs.readFileSync(path.join(cwd, ".aurora", "workspace.json"), "utf8")
+    );
+    assert.deepEqual(after.budget, before.budget);
+  } finally {
+    await ui.close();
+  }
+});
+
+test("Settings agent actions are project-local and tool actions are allowlisted", async () => {
+  const cwd = temp();
+
+  writeConfiguredWorkspace({
+    product: "Agent Settings",
+    purpose: "video",
+    mode: "direct",
+    agents: "none",
+    install_hyperframes: false,
+    resources: {}
+  }, { cwd });
+
+  const ui = await startStudioUiServer({
+    cwd,
+    port: 0,
+    open: false,
+    cliPath: CLI
+  });
+
+  try {
+    const install = await fetch(
+      "http://127.0.0.1:" + ui.port + "/api/agent-action",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Aurora-Token": ui.token
+        },
+        body: JSON.stringify({
+          action: "install",
+          target: "claude"
+        })
+      }
+    );
+
+    assert.equal(install.status, 200);
+    const installed = await install.json();
+    assert.equal(installed.state.settings.agents.claude.complete, true);
+    assert.equal(installed.state.settings.agents.claude.hook, true);
+    assert.equal(
+      fs.existsSync(
+        path.join(cwd, ".claude", "skills", "aurora-direct", "SKILL.md")
+      ),
+      true
+    );
+
+    const unsafe = await fetch(
+      "http://127.0.0.1:" + ui.port + "/api/tool-action",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Aurora-Token": ui.token
+        },
+        body: JSON.stringify({
+          tool: "blender",
+          action: "run"
+        })
+      }
+    );
+    assert.equal(unsafe.status, 400);
+
+    const remove = await fetch(
+      "http://127.0.0.1:" + ui.port + "/api/agent-action",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Aurora-Token": ui.token
+        },
+        body: JSON.stringify({
+          action: "remove",
+          target: "claude"
+        })
+      }
+    );
+
+    assert.equal(remove.status, 200);
+    const removed = await remove.json();
+    assert.equal(removed.state.settings.agents.claude.complete, false);
+    assert.equal(removed.state.settings.agents.claude.hook, false);
+  } finally {
+    await ui.close();
+  }
+});

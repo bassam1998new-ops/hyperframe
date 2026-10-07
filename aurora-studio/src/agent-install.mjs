@@ -158,3 +158,53 @@ export function removeAgentInstructions(target = "all", cwd = process.cwd()) {
   }
   return { changed, native_skills_removed };
 }
+
+
+function ownedPointerPresent(file) {
+  if (!fs.existsSync(file)) return false;
+  const text = fs.readFileSync(file, "utf8");
+  return text.includes(START) && text.includes(END);
+}
+
+function installedOwnedSkills(root) {
+  if (!fs.existsSync(root)) return [];
+  const owned = new Set(ownedSkillNames());
+
+  return fs.readdirSync(root, { withFileTypes: true })
+    .filter(entry =>
+      entry.isDirectory() &&
+      owned.has(entry.name) &&
+      fs.existsSync(path.join(root, entry.name, "SKILL.md"))
+    )
+    .map(entry => entry.name)
+    .sort();
+}
+
+export function agentInstructionStatus(cwd = process.cwd()) {
+  const expected = ownedSkillNames();
+
+  const claudeSkills = installedOwnedSkills(
+    path.join(cwd, ".claude", "skills")
+  );
+  const codexSkills = installedOwnedSkills(
+    path.join(cwd, ".agents", "skills")
+  );
+
+  return {
+    expected_skill_count: expected.length,
+    claude: {
+      pointer: ownedPointerPresent(path.join(cwd, "CLAUDE.md")),
+      skills: claudeSkills,
+      complete:
+        ownedPointerPresent(path.join(cwd, "CLAUDE.md")) &&
+        claudeSkills.length === expected.length
+    },
+    codex: {
+      pointer: ownedPointerPresent(path.join(cwd, "AGENTS.md")),
+      skills: codexSkills,
+      complete:
+        ownedPointerPresent(path.join(cwd, "AGENTS.md")) &&
+        codexSkills.length === expected.length
+    }
+  };
+}

@@ -7,6 +7,7 @@ import { saveDiscovery } from "./discovery.mjs";
 import { importHyperframeLibrary } from "./importers/hyperframe.mjs";
 import { installAgentInstructions } from "./agent-install.mjs";
 import { installAgentHooks } from "./hook-install.mjs";
+import { defaultBudgetPolicy } from "./workspace-settings.mjs";
 import { ensureWorkspacePrivacyFiles } from "./workspace-privacy.mjs";
 import {
   installHyperframesCore,
@@ -111,6 +112,12 @@ export function writeConfiguredWorkspace(configInput, {
         return acc;
       }, {}),
       local_paths: config.local_paths ?? existing?.resources?.local_paths ?? []
+    },
+    budget: existing?.budget || defaultBudgetPolicy(),
+    tool_paths: {
+      blender: existing?.tool_paths?.blender || null,
+      after_effects: existing?.tool_paths?.after_effects || null,
+      ffmpeg: existing?.tool_paths?.ffmpeg || null
     },
     learning: {
       decision_log: ".aurora/decisions.jsonl",

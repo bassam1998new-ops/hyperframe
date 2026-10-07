@@ -27,8 +27,10 @@ import {
 } from "./app/views/project.js";
 import {
   renderSettings,
-  resourceChanges
+  settingsChanges,
+  updateBudgetModeUi
 } from "./app/views/settings.js";
+import { createSettingsWorkflow } from "./app/workflows/settings.js";
 import { renderUpdates } from "./app/views/updates.js";
 import {
   daypart,
@@ -115,6 +117,14 @@ const reviewWorkflow = createReviewWorkflow({
   toast
 });
 
+
+const settingsWorkflow = createSettingsWorkflow({
+  api,
+  getState: () => state,
+  onState: next => render(next),
+  toast
+});
+
 function render(next) {
   state = next;
   const configured = Boolean(next.configured);
@@ -182,7 +192,11 @@ function render(next) {
     onOpen: id => libraryWorkflow.open(id)
   });
   renderProjectMeta(next.project || {}, { dirty: projectDirty });
-  renderSettings(next, { dirty: settingsDirty });
+  renderSettings(next, {
+    dirty: settingsDirty,
+    diagnostics: settingsWorkflow.diagnostics,
+    developerMode: settingsWorkflow.developerMode
+  });
   renderUpdates(next, remoteUpdate);
 }
 
@@ -327,21 +341,28 @@ $("#project-save").addEventListener("click", async () => {
 });
 
 const settingsView = $("[data-view-panel='settings']");
-settingsView.addEventListener("input", () => {
+settingsView.addEventListener("input", event => {
+  if (event.target?.dataset?.localPreference) return;
   settingsDirty = true;
+  document.body.dataset.settingsDirty = "true";
+
+  if (event.target?.name === "budget_mode") {
+    updateBudgetModeUi();
+  }
 });
 
 $("#settings-save").addEventListener("click", async () => {
   if (busy || !state?.configured) return;
   busy = true;
   try {
-    const result = await api("/api/resources", {
+    const result = await api("/api/settings", {
       method: "POST",
-      body: JSON.stringify({ resources: resourceChanges() })
+      body: JSON.stringify(settingsChanges())
     });
     settingsDirty = false;
+    document.body.dataset.settingsDirty = "false";
     render(result.state);
-    toast("Studio resources updated.");
+    toast("Studio settings updated.");
   } catch (error) {
     toast(error.message, true);
   } finally {
@@ -420,6 +441,7 @@ async function start() {
 
   router.setInitial(router.initialFromLocation());
   switchView(router.currentView, false);
+  settingsWorkflow.bind();
   await refresh(true);
   initTooltips();
   pollTimer = setInterval(() => refresh(false), 2500);

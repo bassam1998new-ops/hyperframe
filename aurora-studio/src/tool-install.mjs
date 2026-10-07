@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { configuredToolPath } from "./workspace-settings.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const RELEASE_FILE = path.resolve(HERE, "../release.json");
@@ -134,6 +135,40 @@ export function resolveHyperframesCommand(cwd = process.cwd()) {
     source: resolved.source,
     shim: resolved.binary,
     node_cli: null
+  };
+}
+
+export function hyperframesStatus(cwd = process.cwd()) {
+  const resolved = resolveHyperframesBinary(cwd);
+  let version = null;
+
+  if (resolved.available && ["aurora_workspace", "project_node_modules"].includes(resolved.source)) {
+    const root = hyperframesPackageRoot(cwd, resolved.source);
+    const packageFile = root ? path.join(root, "package.json") : null;
+
+    if (packageFile && fs.existsSync(packageFile)) {
+      try {
+        version = String(JSON.parse(fs.readFileSync(packageFile, "utf8")).version || "") || null;
+      } catch {
+        version = null;
+      }
+    }
+  }
+
+  const exactTested = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(HYPERFRAMES_RANGE)
+    ? HYPERFRAMES_RANGE
+    : null;
+
+  return {
+    available: Boolean(resolved.available),
+    source: resolved.source || null,
+    binary: resolved.binary || null,
+    version,
+    tested_version: exactTested,
+    compatible:
+      version && exactTested
+        ? version === exactTested
+        : null
   };
 }
 
@@ -291,10 +326,15 @@ export function runWorkspaceHyperframes(args = [], {
   }
 
   const env = { ...process.env };
-  const configuredFfmpeg = process.env.AURORA_FFMPEG_PATH;
+  const configuredFfmpeg =
+    process.env.AURORA_FFMPEG_PATH ||
+    configuredToolPath("ffmpeg", cwd);
   if (configuredFfmpeg && fs.existsSync(configuredFfmpeg)) {
+    const ffmpegDir = fs.statSync(configuredFfmpeg).isDirectory()
+      ? configuredFfmpeg
+      : path.dirname(configuredFfmpeg);
     env.PATH = [
-      path.dirname(configuredFfmpeg),
+      ffmpegDir,
       env.PATH || env.Path || ""
     ].filter(Boolean).join(path.delimiter);
   }

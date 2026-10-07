@@ -99,7 +99,7 @@ export function createReviewReport(runId, video, cwd = process.cwd()) {
   const videoSha256 = videoExists ? sha256File(resolvedVideo) : null;
 
   const technical = resolvedVideo
-    ? probeRender(resolvedVideo)
+    ? probeRender(resolvedVideo, cwd)
     : {
         ok: false,
         errors: ["video_not_set"],

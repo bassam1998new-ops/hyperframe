@@ -132,3 +132,38 @@ export function removeAgentHooks(target = "all", cwd = process.cwd()) {
 
   return { changed };
 }
+
+
+function hasAuroraHandler(file) {
+  if (!fs.existsSync(file)) return false;
+
+  try {
+    const config = readConfig(file);
+    const groups = Array.isArray(config.hooks?.SessionStart)
+      ? config.hooks.SessionStart
+      : [];
+
+    return groups.some(group =>
+      (Array.isArray(group.hooks) ? group.hooks : [])
+        .some(handler =>
+          handler?.type === "command" &&
+          (
+            String(handler.command || "").includes(HOOK_MARKER) ||
+            String(handler.commandWindows || "").includes(HOOK_MARKER.replaceAll("/", "\\"))
+          )
+        )
+    );
+  } catch {
+    return false;
+  }
+}
+
+export function agentHookStatus(cwd = process.cwd()) {
+  const runtime = path.join(cwd, ".aurora", "hooks", "session-start.mjs");
+
+  return {
+    runtime: fs.existsSync(runtime),
+    claude: hasAuroraHandler(path.join(cwd, ".claude", "settings.json")),
+    codex: hasAuroraHandler(path.join(cwd, ".codex", "hooks.json"))
+  };
+}

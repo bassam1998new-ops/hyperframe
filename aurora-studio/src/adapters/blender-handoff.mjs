@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
+import { configuredToolPath } from "../workspace-settings.mjs";
 
 function findOnPath(command) {
   const finder = process.platform === "win32" ? "where" : "which";
@@ -9,9 +10,19 @@ function findOnPath(command) {
   return result.stdout.split(/\r?\n/).map(x => x.trim()).find(Boolean) || null;
 }
 
-export function findFfmpeg() {
-  const configured = process.env.AURORA_FFMPEG_PATH;
-  if (configured && fs.existsSync(configured)) return configured;
+export function findFfmpeg(cwd = process.cwd()) {
+  const configured =
+    process.env.AURORA_FFMPEG_PATH ||
+    configuredToolPath("ffmpeg", cwd);
+  if (configured && fs.existsSync(configured)) {
+    const resolved = path.resolve(configured);
+    if (fs.statSync(resolved).isFile()) return resolved;
+    const candidate = path.join(
+      resolved,
+      process.platform === "win32" ? "ffmpeg.exe" : "ffmpeg"
+    );
+    if (fs.existsSync(candidate)) return candidate;
+  }
   return findOnPath(process.platform === "win32" ? "ffmpeg.exe" : "ffmpeg") || findOnPath("ffmpeg");
 }
 
@@ -62,7 +73,7 @@ export function packTransparentWebm(options, {
   dryRun = false
 } = {}) {
   const args = buildTransparentWebmArgs(options, cwd);
-  const executable = findFfmpeg();
+  const executable = findFfmpeg(cwd);
 
   if (dryRun) {
     return {

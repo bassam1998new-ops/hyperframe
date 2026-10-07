@@ -632,38 +632,256 @@
       </section>
 
       <section class="view" data-view-panel="settings">
-        <div class="view-header">
+        <div class="view-header settings-header">
           <div>
             <span class="eyebrow">SETTINGS</span>
             <h1>Capabilities, not complexity.</h1>
-            <p>AurorA works with the tools you have. Blender, After Effects and browser resources stay optional.</p>
+            <p>
+              AurorA uses what is actually installed and configured. Optional tools stay optional,
+              budget rules stay explicit, and agent integration remains project-local.
+            </p>
           </div>
-          <button class="primary-button" id="settings-save" type="button">Save resources</button>
+          <div class="settings-save-wrap">
+            <span class="settings-save-status" id="settings-save-status">Saved</span>
+            <button class="primary-button" id="settings-save" type="button">
+              Save settings
+            </button>
+          </div>
         </div>
 
-        <section class="settings-grid">
-          <div class="panel form-panel">
-            <div class="panel-head"><span class="eyebrow">PRODUCTION TOOLS</span></div>
-            <div class="status-list" id="settings-tools"></div>
-          </div>
-
-          <div class="panel form-panel">
-            <div class="panel-head"><span class="eyebrow">MEDIA RUNTIME</span></div>
-            <div class="status-list" id="runtime-status"></div>
-          </div>
-
-          <div class="panel form-panel settings-resources">
-            <div class="panel-head"><span class="eyebrow">OPTIONAL RESOURCES</span></div>
-            <div class="toggle-list">
-              <label class="toggle-row"><span><b>Browser control</b><small>Allow your agent to use configured creative sites</small></span><input type="checkbox" name="browser_control" /></label>
-              <label class="toggle-row"><span><b>ChatGPT</b><small>Images / editing through your browser account</small></span><input type="checkbox" name="chatgpt_browser" /></label>
-              <label class="toggle-row"><span><b>Google Flow</b><small>Optional generated video assets</small></span><input type="checkbox" name="google_flow" /></label>
-              <label class="toggle-row"><span><b>Meta AI</b><small>Optional generated/editable images</small></span><input type="checkbox" name="meta_ai" /></label>
-              <label class="toggle-row"><span><b>ElevenLabs</b><small>Optional voice/audio provider</small></span><input type="checkbox" name="elevenlabs" /></label>
-              <label class="wide-label">Approved extra local folders<input name="local_paths" placeholder="D:\Assets, E:\Brand Library" /></label>
+        <section class="settings-overview-grid">
+          <article class="panel settings-panel">
+            <div class="panel-head">
+              <div>
+                <span class="eyebrow">PRODUCTION TOOLS</span>
+                <strong>Real engine availability</strong>
+              </div>
+              <span class="settings-inline-note">Tested, not assumed</span>
             </div>
-          </div>
+            <div class="settings-tool-list" id="settings-tools"></div>
+          </article>
+
+          <article class="panel settings-panel">
+            <div class="panel-head">
+              <div>
+                <span class="eyebrow">MEDIA RUNTIME</span>
+                <strong>Local production health</strong>
+              </div>
+              <button
+                class="text-button"
+                id="settings-refresh-runtime"
+                type="button"
+                data-tooltip="Refresh runtime and tool detection"
+              >
+                Refresh
+              </button>
+            </div>
+            <div class="status-list" id="runtime-status"></div>
+          </article>
         </section>
+
+        <section class="settings-detail-grid">
+          <article class="panel settings-panel">
+            <div class="panel-head">
+              <div>
+                <span class="eyebrow">AGENT INTEGRATION</span>
+                <strong>Project-local Claude + Codex</strong>
+              </div>
+              <span class="settings-inline-note">No global skill install</span>
+            </div>
+            <div class="agent-settings-grid" id="settings-agents"></div>
+          </article>
+
+          <article class="panel settings-panel">
+            <div class="panel-head">
+              <div>
+                <span class="eyebrow">BUDGET</span>
+                <strong>Real USD guardrails</strong>
+              </div>
+              <span class="settings-inline-note">Provider credits stay separate</span>
+            </div>
+
+            <div class="settings-budget-form">
+              <label>
+                Budget behavior
+                <select name="budget_mode" id="budget-mode">
+                  <option value="observe">Track only</option>
+                  <option value="warn">Warn at soft cap</option>
+                  <option value="cap">Hard cap</option>
+                </select>
+              </label>
+
+              <label>
+                Ask me above
+                <div class="money-input">
+                  <span>$</span>
+                  <input
+                    name="budget_threshold"
+                    id="budget-threshold"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    inputmode="decimal"
+                  />
+                </div>
+              </label>
+
+              <label>
+                USD cap
+                <div class="money-input">
+                  <span>$</span>
+                  <input
+                    name="budget_cap"
+                    id="budget-cap"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    inputmode="decimal"
+                    placeholder="Optional"
+                  />
+                </div>
+              </label>
+
+              <p class="settings-help" id="budget-help">
+                AurorA tracks real USD values only. Provider credits are never converted unless the provider gives a real price.
+              </p>
+            </div>
+          </article>
+        </section>
+
+        <article class="panel settings-panel settings-resources">
+          <div class="panel-head">
+            <div>
+              <span class="eyebrow">OPTIONAL RESOURCES</span>
+              <strong>Availability only</strong>
+            </div>
+            <span class="settings-inline-note" id="settings-obsidian-status">Obsidian optional</span>
+          </div>
+
+          <div class="toggle-list settings-toggle-list">
+            <label class="toggle-row">
+              <span>
+                <b>Browser control</b>
+                <small>Allow your agent to use configured creative websites.</small>
+              </span>
+              <input type="checkbox" name="browser_control" />
+            </label>
+
+            <label class="toggle-row">
+              <span>
+                <b>ChatGPT</b>
+                <small>Image generation/editing through your signed-in browser account.</small>
+              </span>
+              <input type="checkbox" name="chatgpt_browser" />
+            </label>
+
+            <label class="toggle-row">
+              <span>
+                <b>Google Flow</b>
+                <small>Optional generated video assets; live costs remain provider-controlled.</small>
+              </span>
+              <input type="checkbox" name="google_flow" />
+            </label>
+
+            <label class="toggle-row">
+              <span>
+                <b>Meta AI</b>
+                <small>Optional image generation/editing resource.</small>
+              </span>
+              <input type="checkbox" name="meta_ai" />
+            </label>
+
+            <label class="toggle-row">
+              <span>
+                <b>ElevenLabs</b>
+                <small>Optional voice/audio provider; commercial rights remain plan-dependent.</small>
+              </span>
+              <input type="checkbox" name="elevenlabs" />
+            </label>
+
+            <label class="wide-label settings-local-paths">
+              Approved extra local folders
+              <input
+                name="local_paths"
+                placeholder="D:\Assets, E:\Brand Library"
+              />
+              <small>AurorA may discover reusable assets here. It does not move or delete the originals.</small>
+            </label>
+          </div>
+        </article>
+
+        <details class="panel settings-panel settings-advanced" id="settings-advanced">
+          <summary>
+            <div>
+              <span class="eyebrow">ADVANCED</span>
+              <strong>Paths, system sync and diagnostics</strong>
+            </div>
+            <span class="settings-inline-note">Usually leave this alone</span>
+          </summary>
+
+          <div class="settings-advanced-body">
+            <section class="settings-path-section">
+              <div class="section-label">TOOL PATH OVERRIDES</div>
+              <div class="settings-path-grid">
+                <label>
+                  Blender
+                  <input
+                    name="tool_path_blender"
+                    placeholder="Auto-detect"
+                  />
+                </label>
+
+                <label>
+                  After Effects
+                  <input
+                    name="tool_path_after_effects"
+                    placeholder="Auto-detect"
+                  />
+                </label>
+
+                <label>
+                  FFmpeg
+                  <input
+                    name="tool_path_ffmpeg"
+                    placeholder="Auto-detect"
+                  />
+                </label>
+              </div>
+              <p class="settings-help">
+                Empty means auto-detect. A saved override must exist on disk and becomes the real production path.
+              </p>
+            </section>
+
+            <section class="settings-system-section">
+              <div class="section-label">AURORA SYSTEM</div>
+              <div class="settings-system-actions">
+                <button class="aurora-button" id="settings-system-sync" type="button">
+                  Sync managed system
+                </button>
+
+                <label class="developer-toggle">
+                  <input
+                    type="checkbox"
+                    id="settings-developer-mode"
+                    data-local-preference="developer-mode"
+                  />
+                  <span>
+                    <b>Developer diagnostics</b>
+                    <small>Show local paths and raw non-secret Studio status.</small>
+                  </span>
+                </label>
+              </div>
+
+              <div class="settings-path-readout" id="settings-path-readout"></div>
+
+              <pre
+                class="settings-diagnostics"
+                id="settings-raw-diagnostics"
+                hidden
+              ></pre>
+            </section>
+          </div>
+        </details>
       </section>
 
       <section class="view" data-view-panel="updates">

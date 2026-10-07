@@ -73,6 +73,7 @@ import {
   completedLearningPayload
 } from "./learning.mjs";
 import { syncSystemKnowledge, systemStatus } from "./system-install.mjs";
+import { defaultBudgetPolicy } from "./workspace-settings.mjs";
 import {
   recordUsage,
   summarizeUsage,
@@ -157,7 +158,7 @@ function detectTool(tool, cwd = process.cwd()) {
   }
 
   if (tool.id === "blender") {
-    const executable = findBlender();
+    const executable = findBlender({ cwd });
     if (executable) {
       return {
         id: tool.id,
@@ -170,7 +171,7 @@ function detectTool(tool, cwd = process.cwd()) {
   }
 
   if (tool.id === "after_effects") {
-    const executables = findAfterEffects();
+    const executables = findAfterEffects({ cwd });
     const executable = executables.aerender || executables.afterfx;
     if (executable) {
       return {
@@ -322,6 +323,12 @@ export async function runSetup(cwd = process.cwd()) {
         ? [...new Set(localPathsAnswer.split(",").map(value => value.trim()).filter(Boolean))]
         : existingLocalPaths
     },
+    budget: existing?.budget || defaultBudgetPolicy(),
+    tool_paths: {
+      blender: existing?.tool_paths?.blender || null,
+      after_effects: existing?.tool_paths?.after_effects || null,
+      ffmpeg: existing?.tool_paths?.ffmpeg || null
+    },
     learning: {
       decision_log: ".aurora/decisions.jsonl",
       lesson_log: ".aurora/lessons.jsonl",
@@ -399,7 +406,7 @@ export async function runDoctor(cwd = process.cwd()) {
   const integrations = detectIntegrations(cwd);
   const ws = readWorkspace(cwd);
   const system = systemStatus(cwd);
-  const runtime = runtimeStatus();
+  const runtime = runtimeStatus(cwd);
 
   console.log("\nAurorA Studio doctor\n");
   console.log("Runtime");
@@ -496,7 +503,7 @@ export function runPreflight(cwd = process.cwd()) {
   const tools = detectTools(cwd);
   const integrations = detectIntegrations(cwd);
   const missingRequired = tools.filter(t => t.required && !t.available);
-  const runtime = runtimeStatus();
+  const runtime = runtimeStatus(cwd);
   const knowledge = validateKnowledge(cwd);
 
   ws.tools = tools;

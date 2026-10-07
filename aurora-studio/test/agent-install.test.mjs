@@ -5,7 +5,8 @@ import os from "node:os";
 import path from "node:path";
 import {
   installAgentInstructions,
-  removeAgentInstructions
+  removeAgentInstructions,
+  agentInstructionStatus
 } from "../src/agent-install.mjs";
 
 function temp() {
@@ -78,4 +79,36 @@ test("Codex removal deletes only AurorA-owned native skills", () => {
     false
   );
   assert.equal(fs.existsSync(path.join(userSkill, "SKILL.md")), true);
+});
+
+
+test("agent instruction status reports complete project-local installs", () => {
+  const cwd = temp();
+
+  const initial = agentInstructionStatus(cwd);
+  assert.equal(initial.claude.complete, false);
+  assert.equal(initial.codex.complete, false);
+  assert.ok(initial.expected_skill_count >= 1);
+
+  installAgentInstructions("all", cwd);
+
+  const installed = agentInstructionStatus(cwd);
+  assert.equal(installed.claude.pointer, true);
+  assert.equal(installed.codex.pointer, true);
+  assert.equal(installed.claude.complete, true);
+  assert.equal(installed.codex.complete, true);
+  assert.equal(
+    installed.claude.skills.length,
+    installed.expected_skill_count
+  );
+  assert.equal(
+    installed.codex.skills.length,
+    installed.expected_skill_count
+  );
+
+  removeAgentInstructions("claude", cwd);
+
+  const afterRemove = agentInstructionStatus(cwd);
+  assert.equal(afterRemove.claude.complete, false);
+  assert.equal(afterRemove.codex.complete, true);
 });

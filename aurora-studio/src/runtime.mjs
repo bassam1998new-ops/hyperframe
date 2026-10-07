@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
+import { configuredToolPath } from "./workspace-settings.mjs";
 
 function findOnPath(command) {
   const finder = process.platform === "win32" ? "where" : "which";
@@ -9,26 +10,41 @@ function findOnPath(command) {
   return result.stdout.split(/\r?\n/).map(x => x.trim()).find(Boolean) || null;
 }
 
-function configuredFfmpeg() {
-  const value = process.env.AURORA_FFMPEG_PATH;
+function configuredFfmpeg(cwd = process.cwd()) {
+  const value =
+    process.env.AURORA_FFMPEG_PATH ||
+    configuredToolPath("ffmpeg", cwd);
   if (!value || !fs.existsSync(value)) return null;
-  return path.resolve(value);
+
+  const resolved = path.resolve(value);
+  if (fs.statSync(resolved).isFile()) return resolved;
+
+  const candidate = path.join(
+    resolved,
+    process.platform === "win32" ? "ffmpeg.exe" : "ffmpeg"
+  );
+  return fs.existsSync(candidate) ? candidate : null;
 }
 
-export function detectMediaRuntime() {
-  const ffmpeg = configuredFfmpeg()
+export function detectMediaRuntime(cwd = process.cwd()) {
+  const ffmpeg = configuredFfmpeg(cwd)
     || findOnPath(process.platform === "win32" ? "ffmpeg.exe" : "ffmpeg")
     || findOnPath("ffmpeg");
 
-  let ffprobe = findOnPath(process.platform === "win32" ? "ffprobe.exe" : "ffprobe")
-    || findOnPath("ffprobe");
+  let ffprobe = null;
 
-  if (!ffprobe && ffmpeg) {
+  if (ffmpeg) {
     const sibling = path.join(
       path.dirname(ffmpeg),
       process.platform === "win32" ? "ffprobe.exe" : "ffprobe"
     );
     if (fs.existsSync(sibling)) ffprobe = sibling;
+  }
+
+  if (!ffprobe) {
+    ffprobe =
+      findOnPath(process.platform === "win32" ? "ffprobe.exe" : "ffprobe") ||
+      findOnPath("ffprobe");
   }
 
   return {
@@ -96,6 +112,6 @@ export function evaluateRuntime({
   };
 }
 
-export function runtimeStatus() {
-  return evaluateRuntime(detectMediaRuntime());
+export function runtimeStatus(cwd = process.cwd()) {
+  return evaluateRuntime(detectMediaRuntime(cwd));
 }

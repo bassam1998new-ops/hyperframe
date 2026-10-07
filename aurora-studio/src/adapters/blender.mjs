@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
+import { configuredToolPath } from "../workspace-settings.mjs";
 
 function findOnPath(command, platform = process.platform) {
   const finder = platform === "win32" ? "where" : "which";
@@ -73,7 +74,10 @@ export function discoverBlenderInstall({
 export function findBlender(options = {}) {
   const platform = options.platform || process.platform;
   const env = options.env || process.env;
-  const configured = executableFromConfigured(env.AURORA_BLENDER_PATH, platform);
+  const cwd = options.cwd || process.cwd();
+  const configured =
+    executableFromConfigured(env.AURORA_BLENDER_PATH, platform) ||
+    executableFromConfigured(configuredToolPath("blender", cwd), platform);
   if (configured) return configured;
 
   const onPath = options.skipPathLookup ? null : findOnPath("blender", platform);
@@ -82,8 +86,8 @@ export function findBlender(options = {}) {
   return discoverBlenderInstall({ platform, env, applicationsRoot: options.applicationsRoot });
 }
 
-export function blenderInfo() {
-  const executable = findBlender();
+export function blenderInfo(cwd = process.cwd()) {
+  const executable = findBlender({ cwd });
   if (!executable) return { available: false, executable: null, version: null };
 
   const result = spawnSync(executable, ["--version"], { encoding: "utf8" });
@@ -169,7 +173,7 @@ export function runBlenderJob(jobPath, { cwd = process.cwd(), dryRun = false } =
   const job = JSON.parse(fs.readFileSync(resolvedJob, "utf8"));
   const args = buildBlenderArgs(job, cwd);
 
-  const executable = findBlender();
+  const executable = findBlender({ cwd });
   if (dryRun) {
     return {
       dry_run: true,

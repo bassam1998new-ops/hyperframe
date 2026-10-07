@@ -116,3 +116,42 @@ test("configured After Effects directory resolves both executables", () => {
   assert.equal(resolved.afterfx, afterfx);
   assert.equal(resolved.aerender, aerender);
 });
+
+
+test("saved workspace After Effects override is used", () => {
+  const cwd = temp();
+  const support = path.join(cwd, "Custom AE");
+  const afterfx = path.join(
+    support,
+    process.platform === "win32" ? "AfterFX.exe" : "After Effects"
+  );
+  const aerender = path.join(
+    support,
+    process.platform === "win32" ? "aerender.exe" : "aerender"
+  );
+
+  fs.mkdirSync(path.join(cwd, ".aurora"), { recursive: true });
+  fs.mkdirSync(support, { recursive: true });
+  fs.writeFileSync(afterfx, "");
+  fs.writeFileSync(aerender, "");
+  fs.writeFileSync(
+    path.join(cwd, ".aurora", "workspace.json"),
+    JSON.stringify({
+      tool_paths: {
+        blender: null,
+        after_effects: support,
+        ffmpeg: null
+      }
+    })
+  );
+
+  const resolved = findAfterEffects({
+    cwd,
+    platform: process.platform,
+    env: {},
+    skipPathLookup: true
+  });
+
+  assert.equal(resolved.afterfx, afterfx);
+  assert.equal(resolved.aerender, aerender);
+});

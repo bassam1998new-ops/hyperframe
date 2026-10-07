@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
+import { configuredToolPath } from "../workspace-settings.mjs";
 
 function findOnPath(command) {
   const finder = process.platform === "win32" ? "where" : "which";
@@ -136,7 +137,15 @@ export function discoverAfterEffectsInstall({
 export function findAfterEffects(options = {}) {
   const platform = options.platform || process.platform;
   const env = options.env || process.env;
-  const configured = configuredCandidates(env, platform);
+  const cwd = options.cwd || process.cwd();
+  const effectiveEnv = {
+    ...env,
+    AURORA_AFTER_EFFECTS_PATH:
+      env.AURORA_AFTER_EFFECTS_PATH ||
+      configuredToolPath("after_effects", cwd) ||
+      undefined
+  };
+  const configured = configuredCandidates(effectiveEnv, platform);
   const onPath = options.skipPathLookup
     ? {}
     : {
@@ -155,8 +164,8 @@ export function findAfterEffects(options = {}) {
   };
 }
 
-export function afterEffectsInfo() {
-  const executables = findAfterEffects();
+export function afterEffectsInfo(cwd = process.cwd()) {
+  const executables = findAfterEffects({ cwd });
   let version = null;
 
   if (executables.aerender) {
@@ -182,7 +191,7 @@ function requireFile(file, cwd, label) {
 
 export function buildAfterEffectsCommand(job, cwd = process.cwd()) {
   if (!job || job.schema_version !== 1) throw new Error("Unsupported After Effects job schema.");
-  const tools = findAfterEffects();
+  const tools = findAfterEffects({ cwd });
 
   if (job.operation === "script") {
     const script = requireFile(job.script, cwd, "After Effects script");
@@ -250,7 +259,7 @@ export function runAfterEffectsJob(jobPath, { cwd = process.cwd(), dryRun = fals
 
   if (dryRun) return { dry_run: true, ...command, job };
 
-  const tools = findAfterEffects();
+  const tools = findAfterEffects({ cwd });
   const realExecutable = command.kind === "aerender" ? tools.aerender : tools.afterfx;
   if (!realExecutable) {
     throw new Error(command.kind === "aerender"

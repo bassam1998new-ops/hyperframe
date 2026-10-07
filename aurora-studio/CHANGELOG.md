@@ -5,6 +5,10 @@ AurorA Studio follows a simple **New / Fixed** release summary so community user
 ## Unreleased
 
 ### New
+- Full Settings workspace with factual tools, runtime, agents, resources, budget and advanced diagnostics.
+- Persistent Blender / After Effects / FFmpeg overrides that control real production execution.
+- Project-local Claude/Codex install, repair and removal controls with pointer/skill/hook health.
+- Budget observe / warn / hard-cap behavior with explicit USD approval threshold.
 - Complete Project Brain UI with audience context, protected claims, recurring content/creative context and provenance.
 - Honest owner/website provenance with no fake website-refresh claims.
 - Full Library detail workflow with approval, tags, quality, source/license metadata and use history.
@@ -36,6 +40,9 @@ AurorA Studio follows a simple **New / Fixed** release summary so community user
 - npm trusted-publishing workflow is prepared but remains fail-closed until public release is explicitly enabled.
 
 ### Fixed
+- Setup reruns now preserve budget policy and explicit production-tool paths.
+- Saved FFmpeg paths now also drive ffprobe review and HyperFrames media execution.
+- Settings path validation fails before persisting budget changes.
 - Changed reviewed files now invalidate stale approval and fail SHA validation before approval/finalization.
 - Review approval cannot apply to a different file than the exact render AurorA reviewed.
 - Asset changes now invalidate stale routing, build plans, reviews, approvals and finalization state before production continues.
