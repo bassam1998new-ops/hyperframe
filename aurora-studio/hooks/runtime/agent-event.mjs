@@ -153,6 +153,10 @@ function summaryFor(event, input, tool, workspacePath) {
       return `${agent} started subagent ${bounded(input.agent_type, 80) || "worker"}`;
     case "SubagentStop":
       return `${agent} subagent finished ${bounded(input.agent_type, 80) || "worker"}`;
+    case "TaskCreated":
+      return `${agent} started task: ${bounded(input.task_subject, 120) || "work item"}`;
+    case "TaskCompleted":
+      return `${agent} completed task: ${bounded(input.task_subject, 120) || "work item"}`;
     case "Stop":
       return `${agent} finished the current turn`;
     case "StopFailure":
@@ -218,6 +222,9 @@ const record = {
   turn_id: bounded(input.turn_id, 160),
   agent_id: bounded(input.agent_id, 160),
   agent_type: bounded(input.agent_type, 120),
+  task_id: bounded(input.task_id, 120),
+  task_subject: bounded(input.task_subject, 160),
+  teammate_name: bounded(input.teammate_name, 120),
   tool_name: tool,
   workspace_path: workspacePath,
   notification_type: bounded(input.notification_type, 80),
