@@ -1159,6 +1159,53 @@ async function waitForStudio(page, diagnostics, label) {
   }
 }
 
+async function settleVisualMedia(page) {
+  await page.evaluate(async () => {
+    const videos = [...document.querySelectorAll("video")];
+    await Promise.all(videos.map(video => new Promise(resolve => {
+      const finish = () => resolve();
+
+      const seekRepresentativeFrame = () => {
+        const duration = Number(video.duration || 0);
+        if (!(duration > 0)) return finish();
+
+        const target = Math.min(
+          Math.max(duration * 0.35, 0.35),
+          Math.max(duration - 0.12, 0)
+        );
+
+        if (!(target > 0)) return finish();
+        if (Math.abs(video.currentTime - target) < 0.05) return finish();
+
+        const timeout = setTimeout(finish, 1200);
+        video.addEventListener("seeked", () => {
+          clearTimeout(timeout);
+          finish();
+        }, { once: true });
+
+        try {
+          video.currentTime = target;
+        } catch {
+          clearTimeout(timeout);
+          finish();
+        }
+      };
+
+      if (video.readyState >= 1) {
+        seekRepresentativeFrame();
+      } else {
+        const timeout = setTimeout(finish, 1600);
+        video.addEventListener("loadedmetadata", () => {
+          clearTimeout(timeout);
+          seekRepresentativeFrame();
+        }, { once: true });
+      }
+    })));
+  });
+
+  await page.waitForTimeout(120);
+}
+
 async function axePage(page, label) {
   await page.addScriptTag({ content: axeSource });
   const result = await page.evaluate(async () => {
@@ -1265,6 +1312,7 @@ async function capture({
     timeout: 20000
   });
   await waitForStudio(page, diagnostics, name);
+  await settleVisualMedia(page);
 
   const metrics = await layoutMetrics(page);
   const accessibility = await axePage(page, name);
