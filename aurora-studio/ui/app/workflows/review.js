@@ -200,7 +200,7 @@ export function createReviewWorkflow({
       compareMode = "result";
     }
 
-    $("[data-review-view]").forEach(button => {
+    $$("[data-review-view]").forEach(button => {
       const selected = button.dataset.reviewView === compareMode;
       button.classList.toggle("active", selected);
       button.setAttribute("aria-selected", selected ? "true" : "false");
@@ -721,7 +721,7 @@ export function createReviewWorkflow({
     }
   }
 
-  const reviewTabs = $("[data-review-view]");
+  const reviewTabs = $$("[data-review-view]");
 
   reviewTabs.forEach((button, index) => {
     button.addEventListener("click", () => {
