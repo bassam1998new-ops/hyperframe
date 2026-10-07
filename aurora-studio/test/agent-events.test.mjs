@@ -328,3 +328,43 @@ test("Claude task lifecycle appears without storing task description", () => {
   assert.equal("task_description" in events[0], false);
   assert.match(events[0].summary, /Build premium hero shot/);
 });
+
+
+test("repetitive agent milestones collapse without hiding count", () => {
+  const activity = agentEventActivity([
+    {
+      schema_version: 1,
+      timestamp: "2026-10-07T08:00:00Z",
+      source: "claude",
+      state: "working",
+      summary: "Claude updated storyboard and build plan",
+      event: "PostToolUse",
+      workspace_path: ".aurora/runs/run-a/build-plan.json",
+      run_id: "run-a"
+    },
+    {
+      schema_version: 1,
+      timestamp: "2026-10-07T08:00:10Z",
+      source: "claude",
+      state: "working",
+      summary: "Claude updated storyboard and build plan",
+      event: "PostToolUse",
+      workspace_path: ".aurora/runs/run-a/build-plan.json",
+      run_id: "run-a"
+    },
+    {
+      schema_version: 1,
+      timestamp: "2026-10-07T08:00:20Z",
+      source: "claude",
+      state: "working",
+      summary: "Claude updated storyboard and build plan",
+      event: "PostToolUse",
+      workspace_path: ".aurora/runs/run-a/build-plan.json",
+      run_id: "run-a"
+    }
+  ], "run-a");
+
+  assert.equal(activity.length, 1);
+  assert.equal(activity[0].count, 3);
+  assert.equal(activity[0].detail, "Claude updated storyboard and build plan");
+});
