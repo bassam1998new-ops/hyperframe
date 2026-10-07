@@ -266,3 +266,37 @@ test("SessionStart presence is recorded even before an AurorA run exists", () =>
   assert.equal(event.run_id, null);
   assert.match(event.summary, /Codex session/);
 });
+
+
+test("agent activity translates run artifacts into human video language", () => {
+  const activity = agentEventActivity([
+    {
+      schema_version: 1,
+      timestamp: "2026-10-07T08:10:00Z",
+      source: "claude",
+      state: "working",
+      summary: "Claude finished file edit · .aurora/runs/run-a/build-plan.json",
+      event: "PostToolUse",
+      tool_name: "Edit",
+      workspace_path: ".aurora/runs/run-a/build-plan.json",
+      run_id: "run-a"
+    },
+    {
+      schema_version: 1,
+      timestamp: "2026-10-07T08:11:00Z",
+      source: "codex",
+      state: "working",
+      summary: "Codex finished file write · .aurora/runs/run-a/review.json",
+      event: "PostToolUse",
+      tool_name: "Write",
+      workspace_path: ".aurora/runs/run-a/review.json",
+      run_id: "run-a"
+    }
+  ], "run-a");
+
+  assert.equal(activity[0].detail, "Codex updated final review");
+  assert.equal(
+    activity[1].detail,
+    "Claude updated storyboard and build plan"
+  );
+});
