@@ -40,8 +40,8 @@
   padding: 0 9px;
 }
 
-.aurora-media-controller media-duration-display,
-.aurora-media-clock {
+.aurora-media-clock,
+.aurora-media-duration {
   min-width: auto;
   padding-inline: 5px;
   color: rgba(232, 230, 244, 0.84);
@@ -72,7 +72,7 @@ media-controller:not(:defined) {
 
 @media (max-width: 620px) {
   .aurora-media-controller media-volume-range,
-  .aurora-media-controller media-duration-display,
+  .aurora-media-duration,
   .aurora-media-speed {
     display: none;
   }
