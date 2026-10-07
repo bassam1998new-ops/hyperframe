@@ -567,3 +567,18 @@ test("UI-20 accessibility contracts remain present", () => {
   assert.ok(settingsCss.includes(".settings-tool-copy .status-main b"));
   assert.ok(settingsCss.includes(".settings-tool-copy .status-main small"));
 });
+
+
+test("Create UI includes Agent Canvas semantic status primitives", () => {
+  const html = fs.readFileSync(path.join(ROOT, "ui", "index.html"), "utf8");
+
+  for (const id of [
+    "agent-worker-chips",
+    "agent-work-block",
+    "agent-work-title",
+    "agent-progress-fill",
+    "agent-attention"
+  ]) {
+    assert.match(html, new RegExp(`id=["']${id}["']`));
+  }
+});
