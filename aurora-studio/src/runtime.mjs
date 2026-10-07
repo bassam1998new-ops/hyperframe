@@ -31,15 +31,20 @@ export function detectMediaRuntime(cwd = process.cwd()) {
     || findOnPath(process.platform === "win32" ? "ffmpeg.exe" : "ffmpeg")
     || findOnPath("ffmpeg");
 
-  let ffprobe = findOnPath(process.platform === "win32" ? "ffprobe.exe" : "ffprobe")
-    || findOnPath("ffprobe");
+  let ffprobe = null;
 
-  if (!ffprobe && ffmpeg) {
+  if (ffmpeg) {
     const sibling = path.join(
       path.dirname(ffmpeg),
       process.platform === "win32" ? "ffprobe.exe" : "ffprobe"
     );
     if (fs.existsSync(sibling)) ffprobe = sibling;
+  }
+
+  if (!ffprobe) {
+    ffprobe =
+      findOnPath(process.platform === "win32" ? "ffprobe.exe" : "ffprobe") ||
+      findOnPath("ffprobe");
   }
 
   return {
