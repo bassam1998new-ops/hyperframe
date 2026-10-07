@@ -520,3 +520,22 @@ test("Updates UI is safety-first and deliberately has no apply endpoint", () => 
   assert.match(updater, /update_apply_not_implemented/);
   assert.match(system, /newer_system_snapshot_preserved/);
 });
+
+
+test("UI browser QA dependencies are pinned and dev-only", () => {
+  const pkg = JSON.parse(read("package.json"));
+  const qa = read("scripts/ui-browser-qa.mjs");
+
+  assert.equal(pkg.devDependencies?.["playwright-core"], "1.63.0");
+  assert.equal(pkg.devDependencies?.["axe-core"], "4.14.0");
+  assert.equal(pkg.dependencies?.["playwright-core"], undefined);
+  assert.equal(pkg.dependencies?.["axe-core"], undefined);
+  assert.equal(pkg.scripts?.["ui:qa"], "node ./scripts/ui-browser-qa.mjs");
+
+  assert.match(qa, /chromium/);
+  assert.match(qa, /axe\.run/);
+  assert.match(qa, /1600/);
+  assert.match(qa, /1280/);
+  assert.match(qa, /430/);
+  assert.match(qa, /overflow_x/);
+});
