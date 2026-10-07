@@ -139,6 +139,9 @@ function render(next) {
   const run = next.active_run;
   const product = next.project?.product || "your project";
 
+  document.body.dataset.runActive =
+    run && run.status !== "completed" ? "true" : "false";
+
   if (!configured) {
     switchView("setup", false);
   } else if (router.currentView === "setup") {
