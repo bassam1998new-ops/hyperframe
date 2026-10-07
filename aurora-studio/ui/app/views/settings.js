@@ -52,7 +52,8 @@ function agentCard(name, label, value) {
     Boolean(value && value.hook);
   const ready =
     Boolean(value && value.complete) &&
-    Boolean(value && value.hook);
+    Boolean(value && value.hook) &&
+    Boolean(value && value.live_hook);
 
   return (
     '<article class="agent-settings-card">' +
@@ -63,7 +64,7 @@ function agentCard(name, label, value) {
             '<b>' + escapeHtml(label) + '</b>' +
             '<small>' +
               (ready
-                ? "AurorA pointer, skills and SessionStart hook are ready."
+                ? "AurorA pointer, skills, context hook and live activity hooks are ready."
                 : hasAnything
                   ? "AurorA integration is partial; reinstall to repair it."
                   : "AurorA integration is not installed for this agent.") +
@@ -75,7 +76,8 @@ function agentCard(name, label, value) {
       '<div class="agent-settings-meta">' +
         '<span>Pointer <b>' + (value && value.pointer ? "Yes" : "No") + '</b></span>' +
         '<span>Skills <b>' + skillCount + "/" + expected + '</b></span>' +
-        '<span>Hook <b>' + (value && value.hook ? "Yes" : "No") + '</b></span>' +
+        '<span>Context <b>' + (value && value.hook ? "Yes" : "No") + '</b></span>' +
+        '<span>Live <b>' + (value && value.live_hook ? "Yes" : "No") + '</b></span>' +
       '</div>' +
       '<div class="agent-settings-actions">' +
         '<button class="aurora-button" type="button" data-agent-action="install" data-agent-target="' +

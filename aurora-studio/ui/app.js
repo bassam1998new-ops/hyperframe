@@ -11,6 +11,7 @@ import { createLibraryWorkflow } from "./app/workflows/library.js";
 import { createReviewWorkflow } from "./app/workflows/review.js";
 import {
   renderActivity,
+  renderAgentPresence,
   renderBoard,
   renderPreview,
   renderTools,
@@ -189,6 +190,7 @@ function render(next) {
   assetWorkflow.sync(next);
   libraryWorkflow.sync(next);
   reviewWorkflow.sync(next);
+  renderAgentPresence(next.agent || null);
   renderActivity(next.activity || []);
   renderUsage(run);
   renderLibraryShelf(
@@ -438,6 +440,19 @@ $("#setup-form").addEventListener("submit", async event => {
   }
 });
 
+function schedulePoll() {
+  clearTimeout(pollTimer);
+
+  const live =
+    Boolean(state?.agent?.bridge_connected) &&
+    ["working", "waiting"].includes(state?.agent?.state);
+
+  pollTimer = setTimeout(async () => {
+    await refresh(false);
+    schedulePoll();
+  }, live ? 1000 : 2500);
+}
+
 async function start() {
   window.__AURORA_STUDIO_READY__ = false;
   window.__AURORA_STUDIO_ERROR__ = null;
@@ -458,8 +473,8 @@ async function start() {
   updateWorkflow.bind();
   await refresh(true);
   initTooltips();
-  pollTimer = setInterval(() => refresh(false), 2500);
+  schedulePoll();
 }
 
-window.addEventListener("beforeunload", () => clearInterval(pollTimer));
+window.addEventListener("beforeunload", () => clearTimeout(pollTimer));
 start();

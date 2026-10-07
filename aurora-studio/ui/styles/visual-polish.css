@@ -1039,3 +1039,108 @@ body[data-run-active="true"] .create-intent-bar {
     min-height: 222px;
   }
 }
+
+
+/* AGENT-01 — compact live Claude/Codex presence in the existing activity rail. */
+.agent-presence {
+  position: relative;
+  z-index: 1;
+  padding: 11px 13px 12px;
+  border-bottom: 1px solid rgba(151, 140, 205, .08);
+  background:
+    linear-gradient(90deg, rgba(118, 74, 246, .045), transparent 72%);
+}
+
+.agent-presence-row {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  margin-top: 8px;
+}
+
+.agent-presence-led {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #595d70;
+}
+
+.agent-presence-led.working {
+  background: var(--aurora-violet);
+  box-shadow: 0 0 10px rgba(139, 92, 255, .72);
+  animation: agent-presence-pulse 1.35s ease-in-out infinite;
+}
+
+.agent-presence-led.waiting {
+  background: var(--aurora-amber);
+  box-shadow: 0 0 10px rgba(241, 189, 56, .52);
+}
+
+.agent-presence-led.error {
+  background: var(--aurora-danger);
+  box-shadow: 0 0 10px rgba(255, 98, 125, .45);
+}
+
+.agent-presence-led.idle,
+.agent-presence-led.ready {
+  background: var(--aurora-green);
+  box-shadow: 0 0 9px rgba(49, 223, 122, .42);
+}
+
+.agent-presence-led.offline {
+  background: #55596b;
+}
+
+.agent-presence-copy {
+  min-width: 0;
+}
+
+.agent-presence-copy strong,
+.agent-presence-copy small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-presence-copy strong {
+  color: #d8d7e3;
+  font-size: 9.5px;
+  font-weight: 680;
+}
+
+.agent-presence-copy small {
+  margin-top: 3px;
+  color: #7f8297;
+  font-size: 8px;
+}
+
+.agent-presence-state {
+  color: #777b91;
+  font-size: 7px;
+  font-weight: 850;
+  letter-spacing: .11em;
+}
+
+.agent-presence[data-state="working"] .agent-presence-state {
+  color: #aa83ff;
+}
+
+.agent-presence[data-state="waiting"] .agent-presence-state {
+  color: var(--aurora-amber);
+}
+
+.agent-presence[data-state="error"] .agent-presence-state {
+  color: var(--aurora-danger);
+}
+
+.agent-presence[data-state="idle"] .agent-presence-state,
+.agent-presence[data-state="ready"] .agent-presence-state {
+  color: var(--aurora-green);
+}
+
+@keyframes agent-presence-pulse {
+  0%, 100% { opacity: .55; transform: scale(.86); }
+  50% { opacity: 1; transform: scale(1.08); }
+}

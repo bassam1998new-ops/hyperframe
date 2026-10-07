@@ -22,6 +22,11 @@ import { listReferences } from "./brain.mjs";
 import { agentInstructionStatus } from "./agent-install.mjs";
 import { agentHookStatus } from "./hook-install.mjs";
 import {
+  agentEventActivity,
+  readAgentEvents,
+  summarizeAgentPresence
+} from "./agent-events.mjs";
+import {
   defaultBudgetPolicy,
   workspaceToolPaths
 } from "./workspace-settings.mjs";
@@ -698,7 +703,12 @@ function referenceRows(cwd) {
     });
 }
 
-function agentIntegrationStatus(cwd, run) {
+function agentIntegrationStatus(
+  cwd,
+  run,
+  presence,
+  hookStatus
+) {
   const claude = fs.existsSync(
     path.join(cwd, ".claude", "skills", "aurora-direct", "SKILL.md")
   );
@@ -706,17 +716,33 @@ function agentIntegrationStatus(cwd, run) {
     path.join(cwd, ".agents", "skills", "aurora-direct", "SKILL.md")
   );
 
+  const bridgeReady = Boolean(
+    hookStatus?.claude_live ||
+    hookStatus?.codex_live
+  );
+
   return {
-    bridge_connected: false,
+    bridge_ready: bridgeReady,
+    bridge_connected: Boolean(presence?.connected),
+    state: presence?.state || "offline",
+    source: presence?.source || null,
+    summary: presence?.summary || null,
+    tool_name: presence?.tool_name || null,
+    session_id: presence?.session_id || null,
+    run_id: presence?.run_id || null,
+    last_event_at: presence?.last_event_at || null,
     claude_installed: claude,
     codex_installed: codex,
-    handoff: run
-      ? {
-          run_id: run.id,
-          message:
-            `Continue AurorA Studio run ${run.id}. Read .aurora/AGENT.md and the run artifacts, then continue from stage ${run.state.current_stage}.`
-        }
-      : null
+    claude_live: Boolean(hookStatus?.claude_live),
+    codex_live: Boolean(hookStatus?.codex_live),
+    handoff:
+      run && !presence?.connected
+        ? {
+            run_id: run.id,
+            message:
+              `Continue AurorA Studio run ${run.id}. Read .aurora/AGENT.md and the run artifacts, then continue from stage ${run.state.current_stage}.`
+          }
+        : null
   };
 }
 
@@ -774,13 +800,18 @@ export function buildStudioSnapshot(cwd = process.cwd()) {
   const revisions = run ? revisionRows(run.id, cwd) : [];
   const learning = run ? readLearningReview(run.id, cwd) : null;
 
+  const hookStatus = agentHookStatus(cwd);
+  const agentEvents = readAgentEvents(cwd, { limit: 120 });
+  const presence = summarizeAgentPresence(agentEvents);
+
   const activity = [
+    ...agentEventActivity(agentEvents, run?.id || null),
     ...checkpointActivity(run),
     ...decisionActivity(run)
   ]
     .filter(item => item.at)
     .sort((a, b) => String(b.at).localeCompare(String(a.at)))
-    .slice(0, 8);
+    .slice(0, 12);
 
   const tools = liveToolStatus(cwd, workspace);
   const runtime = runtimeStatus(cwd);
@@ -788,9 +819,13 @@ export function buildStudioSnapshot(cwd = process.cwd()) {
   const updateSafety = updateSafetyPlan({ cwd });
   const system = systemStatus(cwd);
   const obsidian = (workspace?.integrations || []).find(item => item.id === "obsidian") || null;
-  const agent = agentIntegrationStatus(cwd, run);
+  const agent = agentIntegrationStatus(
+    cwd,
+    run,
+    presence,
+    hookStatus
+  );
   const instructionStatus = agentInstructionStatus(cwd);
-  const hookStatus = agentHookStatus(cwd);
   const toolPaths = workspaceToolPaths(cwd);
   const providers = listProviders(cwd).map(provider => ({
     id: provider.id,
@@ -841,13 +876,16 @@ export function buildStudioSnapshot(cwd = process.cwd()) {
         expected_skill_count: instructionStatus.expected_skill_count,
         claude: {
           ...instructionStatus.claude,
-          hook: Boolean(hookStatus.claude)
+          hook: Boolean(hookStatus.claude),
+          live_hook: Boolean(hookStatus.claude_live)
         },
         codex: {
           ...instructionStatus.codex,
-          hook: Boolean(hookStatus.codex)
+          hook: Boolean(hookStatus.codex),
+          live_hook: Boolean(hookStatus.codex_live)
         },
-        hook_runtime: Boolean(hookStatus.runtime)
+        hook_runtime: Boolean(hookStatus.runtime),
+        live_hook_runtime: Boolean(hookStatus.event_runtime)
       },
       paths: {
         workspace_root: cwd,

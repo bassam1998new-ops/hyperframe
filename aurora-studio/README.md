@@ -87,14 +87,34 @@ The package remains private during foundation work. The final npm package/scope 
 
 Do not store passwords, cookies or API secrets there.
 
-## Hooks
-AurorA keeps hooks deliberately small:
-- SessionStart context refresh for Claude/Codex
-- preflight validation
-- post-approval finalize/learning
-- post-update validation when the updater is enabled
+## Hooks and live agent activity
 
-No hook runs on every tool call.
+AurorA keeps agent integration project-local and optional.
+
+Setup can install:
+- SessionStart context refresh for Claude/Codex
+- small native AurorA skills
+- lightweight **async observation hooks** for agent/tool lifecycle events
+
+When an AurorA production run is active, Studio can show near-real-time:
+- Claude/Codex working or idle
+- current tool category
+- subagent start/finish
+- permission/owner-attention state
+- completed/failed tool activity
+
+The bridge writes only sanitized metadata to:
+
+`.aurora/agent-events.jsonl`
+
+It does **not** persist:
+- full prompts
+- shell commands
+- tool input/output
+- passwords, tokens, cookies or browser session data
+- paths outside the workspace
+
+Detailed tool activity is ignored when no AurorA production run is active. If the installed agent/runtime does not fire a hook, Studio still works normally through its existing run/checkpoint files.
 
 ## Community install target
 
