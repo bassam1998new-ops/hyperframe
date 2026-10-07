@@ -1075,12 +1075,88 @@ function configureWorkspace(cwd, ffmpeg) {
   return { refId };
 }
 
-async function waitForStudio(page) {
-  await page.waitForFunction(() => {
-    const text = document.querySelector("#tool-summary")?.textContent || "";
-    return text && !text.includes("Reading workspace");
-  });
-  await page.waitForTimeout(220);
+async function waitForStudio(page, diagnostics, label) {
+  try {
+    await page.waitForFunction(() => {
+      const status = document.documentElement.dataset.studioReady;
+      return status === "true" || status === "error";
+    }, {
+      timeout: 20000
+    });
+
+    const status = await page.evaluate(() => ({
+      ready: document.documentElement.dataset.studioReady,
+      error:
+        document.documentElement.dataset.studioError ||
+        window.__AURORA_STUDIO_ERROR__ ||
+        null,
+      configured:
+        document.body.classList.contains("setup-mode")
+          ? false
+          : null,
+      hash: location.hash,
+      title: document.title
+    }));
+
+    if (status.ready !== "true") {
+      throw new Error(
+        `AurorA Studio reported startup error for ${label}: ${status.error || "unknown error"}`
+      );
+    }
+
+    await page.waitForTimeout(220);
+    return status;
+  } catch (error) {
+    const failureFile = path.join(
+      SCREENSHOTS,
+      `${label}-startup-failure.png`
+    );
+
+    try {
+      await page.screenshot({
+        path: failureFile,
+        fullPage: false,
+        animations: "disabled"
+      });
+    } catch {}
+
+    const browserState = await page.evaluate(() => ({
+      url: location.href,
+      hash: location.hash,
+      title: document.title,
+      ready: document.documentElement.dataset.studioReady || null,
+      error:
+        document.documentElement.dataset.studioError ||
+        window.__AURORA_STUDIO_ERROR__ ||
+        null,
+      body_class: document.body?.className || null,
+      tool_summary:
+        document.querySelector("#tool-summary")?.textContent || null,
+      active_view:
+        document.querySelector("[data-view-panel].active")
+          ?.getAttribute("data-view-panel") || null
+    })).catch(() => null);
+
+    const payload = {
+      label,
+      message: error.message,
+      browser_state: browserState,
+      diagnostics
+    };
+
+    writeJson(
+      path.join(OUTPUT, `${label}-startup-failure.json`),
+      payload
+    );
+
+    throw new Error(
+      [
+        error.message,
+        "Startup diagnostics:",
+        JSON.stringify(payload, null, 2)
+      ].join("\n")
+    );
+  }
 }
 
 async function axePage(page, label) {
@@ -1148,10 +1224,47 @@ async function capture({
   });
 
   const page = await context.newPage();
-  await page.goto(url + "#" + hash, {
-    waitUntil: "domcontentloaded"
+  const diagnostics = {
+    console: [],
+    page_errors: [],
+    request_failures: [],
+    bad_responses: []
+  };
+
+  page.on("console", message => {
+    if (["error", "warning"].includes(message.type())) {
+      diagnostics.console.push({
+        type: message.type(),
+        text: message.text()
+      });
+    }
   });
-  await waitForStudio(page);
+
+  page.on("pageerror", error => {
+    diagnostics.page_errors.push(error.message);
+  });
+
+  page.on("requestfailed", request => {
+    diagnostics.request_failures.push({
+      url: request.url(),
+      failure: request.failure()?.errorText || "unknown"
+    });
+  });
+
+  page.on("response", response => {
+    if (response.status() >= 400) {
+      diagnostics.bad_responses.push({
+        status: response.status(),
+        url: response.url()
+      });
+    }
+  });
+
+  await page.goto(url + "#" + hash, {
+    waitUntil: "domcontentloaded",
+    timeout: 20000
+  });
+  await waitForStudio(page, diagnostics, name);
 
   const metrics = await layoutMetrics(page);
   const accessibility = await axePage(page, name);
