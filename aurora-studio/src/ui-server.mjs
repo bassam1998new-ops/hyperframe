@@ -52,6 +52,10 @@ import {
   normalizeToolPaths,
   updateStudioSettings
 } from "./workspace-settings.mjs";
+import {
+  backupWorkspaceState,
+  updateSafetyPlan
+} from "./update.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const UI_ROOT = path.resolve(HERE, "../ui");
@@ -1518,6 +1522,35 @@ export async function startStudioUiServer({
           ...result,
           state: buildStudioSnapshot(cwd)
         });
+      }
+
+      if (req.method === "POST" && url.pathname === "/api/update-plan") {
+        const body = await readBody(req);
+        const target = Number(body.target_workspace_schema_version || 0) || undefined;
+
+        const plan = updateSafetyPlan({
+          cwd,
+          ...(target ? { targetWorkspaceSchemaVersion: target } : {})
+        });
+
+        return json(res, 200, {
+          ok: true,
+          plan
+        });
+      }
+
+      if (req.method === "POST" && url.pathname === "/api/update-backup") {
+        try {
+          const backup = backupWorkspaceState(cwd);
+
+          return json(res, 200, {
+            ok: true,
+            backup,
+            state: buildStudioSnapshot(cwd)
+          });
+        } catch (error) {
+          return json(res, 400, { error: error.message });
+        }
       }
 
       if (req.method === "POST" && url.pathname === "/api/update-check") {

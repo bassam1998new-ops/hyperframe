@@ -75,6 +75,8 @@ export async function checkForUpdate(options = {}) {
     notes: remote.manifest.notes || { new: [], fixed: [] },
     public_install_ready: Boolean(remote.manifest.public_install_ready),
     package_name: remote.manifest.package_name || null,
+    workspace_schema_version:
+      Number(remote.manifest.workspace_schema_version || 0) || null,
     install_command:
       remote.manifest.public_install_ready && remote.manifest.package_name
         ? `npm install -g ${remote.manifest.package_name}@${remote.manifest.latest_version}`
@@ -125,11 +127,25 @@ export function backupWorkspaceState(cwd = process.cwd()) {
     if (copyFileIfExists(path.join(root, name), path.join(dir, name))) copied.push(name);
   }
 
-  for (const folder of ["references", "library"]) {
+  for (const folder of ["references", "library", "styles"]) {
     const source = path.join(root, folder);
     if (!fs.existsSync(source)) continue;
     fs.cpSync(source, path.join(dir, folder), { recursive: true });
     copied.push(folder + "/");
+  }
+
+  const runsSource = path.join(root, "runs");
+  if (fs.existsSync(runsSource)) {
+    const runsTarget = path.join(dir, "runs");
+    fs.cpSync(runsSource, runsTarget, {
+      recursive: true,
+      filter: source => {
+        const relative = path.relative(runsSource, source);
+        if (!relative) return true;
+        return !relative.split(path.sep).includes("temp");
+      }
+    });
+    copied.push("runs/");
   }
 
   return { backup_dir: dir, copied };
@@ -187,5 +203,140 @@ export function planWorkspaceMigration({
     current_version: current,
     target_version: targetVersion,
     steps: []
+  };
+}
+
+
+export function listWorkspaceBackups(cwd = process.cwd()) {
+  const root = backupRoot(cwd);
+  if (!fs.existsSync(root)) return [];
+
+  return fs.readdirSync(root, { withFileTypes: true })
+    .filter(entry => entry.isDirectory())
+    .map(entry => {
+      const dir = path.join(root, entry.name);
+      const stat = fs.statSync(dir);
+
+      return {
+        id: entry.name,
+        backup_dir: dir,
+        created_at: stat.mtime.toISOString()
+      };
+    })
+    .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+}
+
+export function activeProductionRuns(cwd = process.cwd()) {
+  const root = path.join(auroraDir(cwd), "runs");
+  if (!fs.existsSync(root)) return [];
+
+  return fs.readdirSync(root, { withFileTypes: true })
+    .filter(entry => entry.isDirectory())
+    .flatMap(entry => {
+      const stateFile = path.join(root, entry.name, "state.json");
+      if (!fs.existsSync(stateFile)) return [];
+
+      try {
+        const state = readJson(stateFile);
+        if (state.status === "completed") return [];
+
+        return [{
+          run_id: state.run_id || entry.name,
+          task: state.task || entry.name,
+          status: state.status || "unknown",
+          current_stage: state.current_stage || null,
+          updated_at: state.updated_at || null
+        }];
+      } catch {
+        return [{
+          run_id: entry.name,
+          task: entry.name,
+          status: "invalid_state",
+          current_stage: null,
+          updated_at: null
+        }];
+      }
+    })
+    .sort((a, b) =>
+      String(b.updated_at || "").localeCompare(String(a.updated_at || ""))
+    );
+}
+
+export function updateSafetyPlan({
+  cwd = process.cwd(),
+  targetWorkspaceSchemaVersion = localRelease().workspace_schema_version,
+  manifest = null
+} = {}) {
+  const local = localRelease();
+  const targetSchema =
+    Number(
+      targetWorkspaceSchemaVersion ||
+      manifest?.workspace_schema_version ||
+      local.workspace_schema_version
+    ) || local.workspace_schema_version;
+
+  const migration = planWorkspaceMigration({
+    cwd,
+    targetVersion: targetSchema
+  });
+  const active_runs = activeProductionRuns(cwd);
+  const backups = listWorkspaceBackups(cwd);
+  const publicInstallReady =
+    manifest?.public_install_ready ??
+    local.public_install_ready ??
+    false;
+  const packageName =
+    manifest?.package_name ||
+    local.package_name ||
+    null;
+
+  const blockers = [];
+
+  if (active_runs.length) {
+    blockers.push({
+      code: "active_production",
+      message: "Finish or finalize active production before applying an AurorA update."
+    });
+  }
+
+  if (migration.blocked) {
+    blockers.push({
+      code: "workspace_migration_blocked",
+      message:
+        migration.reason === "workspace_newer_than_cli"
+          ? "This workspace is newer than the installed AurorA package."
+          : migration.reason === "workspace_not_configured"
+            ? "AurorA workspace is not configured."
+            : "No safe workspace migration path exists for this update."
+    });
+  }
+
+  if (!publicInstallReady || !packageName) {
+    blockers.push({
+      code: "public_package_not_ready",
+      message: "AurorA public package/update apply is not enabled yet."
+    });
+  }
+
+  blockers.push({
+    code: "update_apply_not_implemented",
+    message: "This build can safely check, plan and back up updates, but does not apply package updates yet."
+  });
+
+  return {
+    current_version: local.latest_version,
+    target_workspace_schema_version: targetSchema,
+    migration,
+    active_runs,
+    latest_backup: backups[0] || null,
+    backup_count: backups.length,
+    public_install_ready: Boolean(publicInstallReady),
+    package_name: packageName,
+    safe_to_prepare:
+      active_runs.length === 0 &&
+      !migration.blocked,
+    apply_supported: false,
+    can_apply: false,
+    blockers
   };
 }

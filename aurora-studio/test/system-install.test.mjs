@@ -86,3 +86,35 @@ test("sync from portable runtime source would be a no-op boundary", () => {
   const metadata = JSON.parse(fs.readFileSync(path.join(result.system_dir, "system.json"), "utf8"));
   assert.equal(metadata.managed, true);
 });
+
+
+test("newer managed system snapshot is never downgraded by an older package", () => {
+  const cwd = temp();
+  const system = path.join(cwd, ".aurora", "system");
+
+  fs.mkdirSync(system, { recursive: true });
+  fs.writeFileSync(
+    path.join(system, "system.json"),
+    JSON.stringify({
+      schema_version: 1,
+      studio_version: "99.0.0",
+      synced_at: "2026-10-07T00:00:00Z",
+      managed: true
+    })
+  );
+  fs.writeFileSync(path.join(system, "future-marker.txt"), "keep");
+
+  const before = systemStatus(cwd);
+  assert.equal(before.installed, true);
+  assert.equal(before.system_newer_than_package, true);
+  assert.equal(before.needs_sync, false);
+
+  const result = syncSystemKnowledge(cwd);
+  assert.equal(result.no_op, true);
+  assert.equal(result.reason, "newer_system_snapshot_preserved");
+  assert.equal(result.studio_version, "99.0.0");
+  assert.equal(
+    fs.readFileSync(path.join(system, "future-marker.txt"), "utf8"),
+    "keep"
+  );
+});

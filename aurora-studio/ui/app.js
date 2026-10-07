@@ -32,6 +32,7 @@ import {
 } from "./app/views/settings.js";
 import { createSettingsWorkflow } from "./app/workflows/settings.js";
 import { renderUpdates } from "./app/views/updates.js";
+import { createUpdateWorkflow } from "./app/workflows/updates.js";
 import {
   daypart,
   money,
@@ -48,7 +49,6 @@ let projectDirty = false;
 let settingsDirty = false;
 let libraryFilter = "all";
 let libraryQuery = "";
-let remoteUpdate = null;
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -119,6 +119,14 @@ const reviewWorkflow = createReviewWorkflow({
 
 
 const settingsWorkflow = createSettingsWorkflow({
+  api,
+  getState: () => state,
+  onState: next => render(next),
+  toast
+});
+
+
+const updateWorkflow = createUpdateWorkflow({
   api,
   getState: () => state,
   onState: next => render(next),
@@ -197,7 +205,12 @@ function render(next) {
     diagnostics: settingsWorkflow.diagnostics,
     developerMode: settingsWorkflow.developerMode
   });
-  renderUpdates(next, remoteUpdate);
+  renderUpdates(next, {
+    remoteUpdate: updateWorkflow.remoteUpdate,
+    safetyPlan: updateWorkflow.safetyPlan,
+    hyperframesUpdate: updateWorkflow.hyperframesUpdate,
+    dismissedVersion: updateWorkflow.dismissedVersion
+  });
 }
 
 async function refresh(showError = false) {
@@ -370,26 +383,6 @@ $("#settings-save").addEventListener("click", async () => {
   }
 });
 
-$("#update-check").addEventListener("click", async () => {
-  if (busy || !state?.configured) return;
-  busy = true;
-  $("#update-check").textContent = "Checking…";
-  try {
-    const result = await api("/api/update-check", {
-      method: "POST",
-      body: "{}"
-    });
-    remoteUpdate = result.update;
-    renderUpdates(state, remoteUpdate);
-    toast(remoteUpdate?.update_available ? "AurorA update available." : "AurorA is up to date.");
-  } catch (error) {
-    toast(error.message, true);
-  } finally {
-    busy = false;
-    $("#update-check").textContent = "Check for update";
-  }
-});
-
 $("#setup-form").addEventListener("submit", async event => {
   event.preventDefault();
   if (busy) return;
@@ -442,6 +435,7 @@ async function start() {
   router.setInitial(router.initialFromLocation());
   switchView(router.currentView, false);
   settingsWorkflow.bind();
+  updateWorkflow.bind();
   await refresh(true);
   initTooltips();
   pollTimer = setInterval(() => refresh(false), 2500);

@@ -14,8 +14,8 @@ Do not start a later wave before the current wave passes its package/Windows/Ubu
 | UI-15 | Render + review | **Complete ✅** |
 | UI-16 | Library full | **Complete ✅** |
 | UI-17 | Project Brain | **Complete ✅** |
-| UI-18 | Settings | **Implemented — CI pending** |
-| UI-19 | Updates | Planned |
+| UI-18 | Settings | **Complete ✅** |
+| UI-19 | Updates | **Implemented — CI pending** |
 | UI-20 | Mobile + accessibility + visual regression | Planned |
 
 ## UI-10 delivered
@@ -306,6 +306,41 @@ Do not start a later wave before the current wave passes its package/Windows/Ubu
 - Claude/Codex install/remove/status tests green
 - Settings tool actions are allowlisted
 - Settings workflow/styles included in portable package
+- Windows + Ubuntu full suite green
+- package audit 0 findings
+- installed-package smoke green
+
+
+## UI-19 delivered
+
+- Hermes-style AurorA version/status presentation
+- real remote update metadata check
+- local update safety plan
+- active production blocks update preparation
+- workspace migration compatibility check
+- real workspace backup before future updates
+- backup includes project/library/references/styles/run evidence
+- run-scoped temp is excluded from update backups
+- backup history and latest backup status
+- managed-system downgrade protection
+- old package cannot overwrite a newer portable `.aurora/system`
+- explicit disabled Update now while package apply is unsupported
+- no `/api/update-apply` endpoint
+- local “Maybe later” preference only
+- HyperFrames version/compatibility shown separately
+- separate real HyperFrames update check
+- no silent HyperFrames update during production
+
+## Gate before UI-20
+
+- update metadata schema test green
+- active-run safety blocker test green
+- migration blocker test green
+- backup evidence/history test green
+- managed-system downgrade protection test green
+- browser update plan/backup tests green
+- no-apply browser contract test green
+- Updates workflow/styles included in portable package
 - Windows + Ubuntu full suite green
 - package audit 0 findings
 - installed-package smoke green
