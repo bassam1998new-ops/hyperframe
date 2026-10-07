@@ -94,3 +94,49 @@ jobs:
 
       - name: Release readiness status
         run: npm run release:status
+
+
+  visual_qa:
+    name: Studio visual / accessibility QA
+    needs:
+      - test
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: aurora-studio
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Use Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          package-manager-cache: false
+
+      - name: Install UI QA dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Ensure Chrome and FFmpeg
+        run: |
+          command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser
+          if ! command -v ffmpeg >/dev/null 2>&1 || ! command -v ffprobe >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y ffmpeg
+          fi
+          ffmpeg -version | head -n 1
+          ffprobe -version | head -n 1
+
+      - name: Render canonical Studio viewports and run axe
+        run: npm run ui:qa
+
+      - name: Upload Studio QA screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aurora-studio-ui-qa
+          path: aurora-studio/artifacts/ui-qa/
+          if-no-files-found: error
+          retention-days: 14
