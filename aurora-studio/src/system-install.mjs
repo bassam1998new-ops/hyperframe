@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { compareVersions } from "./update.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = path.resolve(HERE, "..");
@@ -61,6 +62,34 @@ export function syncSystemKnowledge(cwd = process.cwd()) {
   fs.mkdirSync(root, { recursive: true });
 
   const target = systemDir(cwd);
+
+  const existingMetadata = path.join(target, "system.json");
+  if (
+    fs.existsSync(existingMetadata) &&
+    path.resolve(PACKAGE_ROOT) !== path.resolve(target)
+  ) {
+    try {
+      const existing = readJson(existingMetadata);
+      const installedVersion = String(existing.studio_version || "");
+      const currentVersion = packageVersion();
+
+      if (
+        installedVersion &&
+        compareVersions(installedVersion, currentVersion) > 0
+      ) {
+        return {
+          system_dir: target,
+          studio_version: installedVersion,
+          package_version: currentVersion,
+          items: SYSTEM_ITEMS,
+          no_op: true,
+          reason: "newer_system_snapshot_preserved"
+        };
+      }
+    } catch {
+      // Normal sync below repairs invalid managed metadata.
+    }
+  }
 
   if (path.resolve(PACKAGE_ROOT) === path.resolve(target)) {
     const status = systemStatus(cwd);
@@ -130,13 +159,18 @@ export function systemStatus(cwd = process.cwd()) {
 
   const metadata = readJson(metadataFile);
   const current = packageVersion();
+  const installed = metadata.studio_version || null;
+  const comparison = installed
+    ? compareVersions(current, installed)
+    : 1;
 
   return {
     installed: true,
     system_dir: target,
-    installed_version: metadata.studio_version || null,
+    installed_version: installed,
     package_version: current,
-    needs_sync: metadata.studio_version !== current,
+    needs_sync: comparison > 0,
+    system_newer_than_package: comparison < 0,
     synced_at: metadata.synced_at || null
   };
 }
