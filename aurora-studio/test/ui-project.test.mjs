@@ -185,3 +185,61 @@ test("invalid website text stays editable context but is not promoted to provena
     await ui.close();
   }
 });
+
+
+test("first-run Studio setup records owner and website provenance without claiming a website refresh", async () => {
+  const cwd = temp();
+
+  const ui = await startStudioUiServer({
+    cwd,
+    port: 0,
+    open: false,
+    cliPath: CLI
+  });
+
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:${ui.port}/api/setup`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Aurora-Token": ui.token
+        },
+        body: JSON.stringify({
+          product: "Setup Product",
+          purpose: "launch videos",
+          website: "https://example.com/setup",
+          mode: "direct",
+          install_hyperframes: false,
+          install_agents: false,
+          resources: {}
+        })
+      }
+    );
+
+    assert.equal(response.status, 200);
+
+    const project = readProject(cwd);
+    const owner = project.sources.find(
+      source =>
+        source.type === "owner" &&
+        source.value === "studio-setup"
+    );
+    const website = project.sources.find(
+      source =>
+        source.type === "website" &&
+        source.value === "https://example.com/setup"
+    );
+
+    assert.ok(owner);
+    assert.match(owner.note, /initial Project Brain/i);
+    assert.ok(owner.checked_at);
+
+    assert.ok(website);
+    assert.equal(website.checked_at, null);
+    assert.match(website.note, /has not automatically re-read/i);
+  } finally {
+    await ui.close();
+  }
+});
