@@ -76,10 +76,10 @@ export function updateBudgetPolicy(
   input,
   cwd = process.cwd()
 ) {
-  const workspace = readWorkspaceSettings(cwd);
-  workspace.budget = normalizeBudgetPolicy(input);
-  writeWorkspaceSettings(workspace, cwd);
-  return workspace.budget;
+  return updateStudioSettings(
+    { budget: input },
+    cwd
+  ).budget;
 }
 
 export function workspaceToolPaths(cwd = process.cwd()) {
@@ -122,13 +122,16 @@ function normalizePathValue(value, cwd) {
   return resolved;
 }
 
-export function updateToolPaths(
-  input,
-  cwd = process.cwd()
+
+export function normalizeToolPaths(
+  input = {},
+  cwd = process.cwd(),
+  current = {}
 ) {
-  const workspace = readWorkspaceSettings(cwd);
   const next = {
-    ...(workspace.tool_paths || {})
+    blender: current.blender || null,
+    after_effects: current.after_effects || null,
+    ffmpeg: current.ffmpeg || null
   };
 
   for (const [key, value] of Object.entries(input || {})) {
@@ -139,12 +142,53 @@ export function updateToolPaths(
     next[key] = normalizePathValue(value, cwd);
   }
 
-  workspace.tool_paths = {
+  return {
     blender: next.blender || null,
     after_effects: next.after_effects || null,
     ffmpeg: next.ffmpeg || null
   };
+}
+
+export function updateStudioSettings(
+  { budget = null, tool_paths = null } = {},
+  cwd = process.cwd()
+) {
+  const workspace = readWorkspaceSettings(cwd);
+
+  if (budget) {
+    workspace.budget = normalizeBudgetPolicy(budget);
+  } else if (!workspace.budget) {
+    workspace.budget = defaultBudgetPolicy();
+  }
+
+  if (tool_paths) {
+    workspace.tool_paths = normalizeToolPaths(
+      tool_paths,
+      cwd,
+      workspace.tool_paths || {}
+    );
+  } else {
+    workspace.tool_paths = normalizeToolPaths(
+      {},
+      cwd,
+      workspace.tool_paths || {}
+    );
+  }
 
   writeWorkspaceSettings(workspace, cwd);
-  return workspace.tool_paths;
+
+  return {
+    budget: workspace.budget,
+    tool_paths: workspace.tool_paths
+  };
+}
+
+export function updateToolPaths(
+  input,
+  cwd = process.cwd()
+) {
+  return updateStudioSettings(
+    { tool_paths: input },
+    cwd
+  ).tool_paths;
 }
