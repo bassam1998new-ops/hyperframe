@@ -12,8 +12,8 @@ Do not start a later wave before the current wave passes its package/Windows/Ubu
 | UI-13 | Storyboard / build board | Complete ✅ |
 | UI-14 | Asset workflow | **Complete ✅** |
 | UI-15 | Render + review | **Complete ✅** |
-| UI-16 | Library full | **Implemented — CI pending** |
-| UI-17 | Project Brain | Planned |
+| UI-16 | Library full | **Complete ✅** |
+| UI-17 | Project Brain | **Implemented — CI pending** |
 | UI-18 | Settings | Planned |
 | UI-19 | Updates | Planned |
 | UI-20 | Mobile + accessibility + visual regression | Planned |
@@ -231,6 +231,43 @@ Do not start a later wave before the current wave passes its package/Windows/Ubu
 - factual use-history snapshot test green
 - browser Library workflow test green
 - Library workflow/styles included in portable package
+- Windows + Ubuntu full suite green
+- package audit 0 findings
+- installed-package smoke green
+
+
+## UI-17 delivered
+
+- complete stable Product context
+- audience groups
+- audience knowledge level
+- audience priorities
+- offer / positioning
+- protected product claims
+- brand personality / colors / fonts / logo paths / avoid rules
+- languages / channels / default formats / recurring series
+- preferred / avoid moods
+- recurring creative constraints
+- stable owner notes
+- provenance overview
+- owner provenance from Studio edits
+- website provenance only for valid http(s) URLs
+- first-run setup provenance
+- no false claim that Studio re-read the website
+- provenance source cards
+- protected-claims visual treatment
+- per-field Reset controls that stay local until Save
+- dirty-state Save feedback
+- backward-compatible optional audience_context schema
+
+## Gate before UI-18
+
+- Project Brain default/schema tests green
+- provenance upsert tests green
+- complete browser Project save test green
+- invalid website provenance test green
+- first-run setup provenance test green
+- Project styles included in portable package
 - Windows + Ubuntu full suite green
 - package audit 0 findings
 - installed-package smoke green
