@@ -777,6 +777,9 @@ export function buildStudioSnapshot(cwd = process.cwd()) {
   const system = systemStatus(cwd);
   const obsidian = (workspace?.integrations || []).find(item => item.id === "obsidian") || null;
   const agent = agentIntegrationStatus(cwd, run);
+  const instructionStatus = agentInstructionStatus(cwd);
+  const hookStatus = agentHookStatus(cwd);
+  const toolPaths = workspaceToolPaths(cwd);
   const providers = listProviders(cwd).map(provider => ({
     id: provider.id,
     name: provider.name,
