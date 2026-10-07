@@ -389,7 +389,11 @@
             </div>
 
             <section class="agent-presence" id="agent-presence">
-              <div class="section-label">AGENT</div>
+              <div class="agent-presence-head">
+                <div class="section-label">AGENT CANVAS</div>
+                <div class="agent-worker-chips" id="agent-worker-chips"></div>
+              </div>
+
               <div class="agent-presence-row">
                 <span class="agent-presence-led" id="agent-presence-led"></span>
                 <div class="agent-presence-copy">
@@ -397,6 +401,29 @@
                   <small id="agent-presence-detail">Claude/Codex activity will appear here.</small>
                 </div>
                 <span class="agent-presence-state" id="agent-presence-state">OFF</span>
+              </div>
+
+              <div class="agent-work-block" id="agent-work-block" hidden>
+                <div class="agent-work-copy">
+                  <span>NOW</span>
+                  <strong id="agent-work-title">No active production</strong>
+                  <small id="agent-work-detail"></small>
+                </div>
+
+                <div class="agent-progress-row" id="agent-progress-row">
+                  <div class="agent-progress-track" aria-hidden="true">
+                    <span id="agent-progress-fill"></span>
+                  </div>
+                  <small id="agent-progress-label">0 of 0 stages</small>
+                </div>
+              </div>
+
+              <div class="agent-attention" id="agent-attention" hidden>
+                <span class="agent-attention-dot"></span>
+                <div>
+                  <strong id="agent-attention-title">Needs you</strong>
+                  <small id="agent-attention-detail"></small>
+                </div>
               </div>
             </section>
 
