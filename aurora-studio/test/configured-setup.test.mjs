@@ -112,3 +112,48 @@ test("configured setup preserves omitted existing resources", () => {
   assert.equal(workspace.resources.elevenlabs, true);
   assert.equal(workspace.default_mode, "direct");
 });
+
+
+test("configured setup reruns preserve budget and tool path settings", () => {
+  const cwd = temp();
+  const blender = path.join(cwd, "Blender");
+  const ffmpeg = path.join(cwd, "ffmpeg");
+
+  fs.mkdirSync(blender);
+  fs.writeFileSync(ffmpeg, "");
+
+  writeConfiguredWorkspace({
+    product: "Settings",
+    mode: "direct",
+    agents: "none",
+    install_hyperframes: false
+  }, { cwd });
+
+  const workspaceFile = path.join(cwd, ".aurora", "workspace.json");
+  const before = JSON.parse(fs.readFileSync(workspaceFile, "utf8"));
+  before.budget = {
+    mode: "cap",
+    cap_usd: 42,
+    approval_threshold_usd: 2
+  };
+  before.tool_paths = {
+    blender,
+    after_effects: null,
+    ffmpeg
+  };
+  fs.writeFileSync(workspaceFile, JSON.stringify(before, null, 2));
+
+  writeConfiguredWorkspace({
+    product: "Settings",
+    agents: "none",
+    install_hyperframes: false,
+    resources: {
+      google_flow: true
+    }
+  }, { cwd });
+
+  const after = JSON.parse(fs.readFileSync(workspaceFile, "utf8"));
+  assert.deepEqual(after.budget, before.budget);
+  assert.deepEqual(after.tool_paths, before.tool_paths);
+  assert.equal(after.resources.google_flow, true);
+});
