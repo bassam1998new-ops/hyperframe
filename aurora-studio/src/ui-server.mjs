@@ -11,6 +11,7 @@ import {
   createUrlReference,
   storeReferenceUpload
 } from "./reference-files.mjs";
+import { upsertProjectSource } from "./brain.mjs";
 import {
   addBuildPlanShot,
   updateBuildPlanShot,
@@ -1229,6 +1230,34 @@ export async function startStudioUiServer({
             return json(res, 400, {
               error: result.stderr || `Could not update project field: ${field}`
             });
+          }
+        }
+
+        if (Object.keys(changes).length > 0) {
+          upsertProjectSource({
+            type: "owner",
+            value: "studio-ui",
+            checked_at: new Date().toISOString(),
+            note: "Project Brain updated by owner in AurorA Studio."
+          }, cwd);
+
+          if (Object.prototype.hasOwnProperty.call(changes, "website")) {
+            const website = String(changes.website || "").trim();
+            if (website) {
+              try {
+                const parsed = new URL(website);
+                if (["http:", "https:"].includes(parsed.protocol)) {
+                  upsertProjectSource({
+                    type: "website",
+                    value: parsed.toString(),
+                    checked_at: null,
+                    note: "Website provided by owner; Studio has not automatically re-read it."
+                  }, cwd);
+                }
+              } catch {
+                // Website text remains editable project context; invalid URLs are not provenance links.
+              }
+            }
           }
         }
 
