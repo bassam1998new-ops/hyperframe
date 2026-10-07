@@ -155,6 +155,59 @@
           "type": "boolean"
         }
       }
+    },
+    "budget": {
+      "type": "object",
+      "required": [
+        "mode",
+        "cap_usd",
+        "approval_threshold_usd"
+      ],
+      "properties": {
+        "mode": {
+          "enum": [
+            "observe",
+            "warn",
+            "cap"
+          ]
+        },
+        "cap_usd": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "approval_threshold_usd": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "tool_paths": {
+      "type": "object",
+      "properties": {
+        "blender": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "after_effects": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "ffmpeg": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
     }
   },
   "additionalProperties": true
