@@ -33,9 +33,28 @@ test("hook installer preserves existing Claude settings and is idempotent", () =
   const config = JSON.parse(fs.readFileSync(path.join(cwd, ".claude", "settings.json"), "utf8"));
   assert.deepEqual(config.permissions, { allow: ["Read"] });
   const handlers = config.hooks.SessionStart.flatMap(group => group.hooks);
-  assert.equal(handlers.filter(h => String(h.command).includes(".aurora/hooks/session-start.mjs")).length, 1);
-  assert.equal(handlers.filter(h => h.command === "echo existing").length, 1);
-  assert.ok(fs.existsSync(path.join(cwd, ".aurora", "hooks", "session-start.mjs")));
+  assert.equal(
+    handlers.filter(h =>
+      String(h.command).includes(".aurora/hooks/session-start.mjs")
+    ).length,
+    1
+  );
+  assert.equal(
+    handlers.filter(h =>
+      String(h.command).includes(".aurora/hooks/agent-event.mjs")
+    ).length,
+    1
+  );
+  assert.equal(
+    handlers.filter(h => h.command === "echo existing").length,
+    1
+  );
+  assert.ok(
+    fs.existsSync(path.join(cwd, ".aurora", "hooks", "session-start.mjs"))
+  );
+  assert.ok(
+    fs.existsSync(path.join(cwd, ".aurora", "hooks", "agent-event.mjs"))
+  );
 });
 
 test("hook installer preserves existing Codex hooks", () => {
@@ -49,9 +68,22 @@ test("hook installer preserves existing Codex hooks", () => {
 
   installAgentHooks("codex", cwd);
   const config = JSON.parse(fs.readFileSync(path.join(cwd, ".codex", "hooks.json"), "utf8"));
-  assert.equal(config.hooks.Stop[0].hooks[0].command, "echo stop");
-  assert.equal(config.hooks.SessionStart.length, 1);
+  assert.equal(
+    config.hooks.Stop
+      .flatMap(group => group.hooks)
+      .filter(handler => handler.command === "echo stop")
+      .length,
+    1
+  );
+  assert.equal(config.hooks.SessionStart.length, 2);
   assert.ok(config.hooks.SessionStart[0].hooks[0].commandWindows);
+  assert.ok(
+    config.hooks.PostToolUse
+      .flatMap(group => group.hooks)
+      .some(handler =>
+        String(handler.command).includes(".aurora/hooks/agent-event.mjs")
+      )
+  );
 });
 
 test("remove hooks removes only AurorA handlers", () => {
@@ -145,31 +177,102 @@ test("agent hook status reports Claude Codex and runtime independently", () => {
 
   assert.deepEqual(agentHookStatus(cwd), {
     runtime: false,
+    event_runtime: false,
     claude: false,
-    codex: false
+    codex: false,
+    claude_live: false,
+    codex_live: false
   });
 
   installAgentHooks("claude", cwd);
 
   assert.deepEqual(agentHookStatus(cwd), {
     runtime: true,
+    event_runtime: true,
     claude: true,
-    codex: false
+    codex: false,
+    claude_live: true,
+    codex_live: false
   });
 
   installAgentHooks("codex", cwd);
 
   assert.deepEqual(agentHookStatus(cwd), {
     runtime: true,
+    event_runtime: true,
     claude: true,
-    codex: true
+    codex: true,
+    claude_live: true,
+    codex_live: true
   });
 
   removeAgentHooks("claude", cwd);
 
   assert.deepEqual(agentHookStatus(cwd), {
     runtime: true,
+    event_runtime: true,
     claude: false,
-    codex: true
+    codex: true,
+    claude_live: false,
+    codex_live: true
   });
+});
+
+
+test("live hooks are asynchronous and observation-only", () => {
+  const cwd = temp();
+  installAgentHooks("all", cwd);
+
+  for (const file of [
+    path.join(cwd, ".claude", "settings.json"),
+    path.join(cwd, ".codex", "hooks.json")
+  ]) {
+    const config = JSON.parse(fs.readFileSync(file, "utf8"));
+    const handlers = Object.values(config.hooks || {})
+      .flatMap(groups => Array.isArray(groups) ? groups : [])
+      .flatMap(group => Array.isArray(group.hooks) ? group.hooks : [])
+      .filter(handler =>
+        String(handler.command || "").includes("agent-event.mjs")
+      );
+
+    assert.ok(handlers.length >= 5);
+    assert.ok(handlers.every(handler => handler.async === true));
+    assert.ok(handlers.every(handler => handler.type === "command"));
+  }
+});
+
+test("removing AurorA hooks preserves unrelated user hooks across events", () => {
+  const cwd = temp();
+  fs.mkdirSync(path.join(cwd, ".claude"), { recursive: true });
+  fs.writeFileSync(
+    path.join(cwd, ".claude", "settings.json"),
+    JSON.stringify({
+      hooks: {
+        Stop: [{
+          hooks: [{ type: "command", command: "echo user-stop" }]
+        }],
+        PostToolUse: [{
+          hooks: [{ type: "command", command: "echo user-post" }]
+        }]
+      }
+    })
+  );
+
+  installAgentHooks("claude", cwd);
+  removeAgentHooks("claude", cwd);
+
+  const config = JSON.parse(
+    fs.readFileSync(path.join(cwd, ".claude", "settings.json"), "utf8")
+  );
+
+  const commands = Object.values(config.hooks || {})
+    .flatMap(groups => Array.isArray(groups) ? groups : [])
+    .flatMap(group => Array.isArray(group.hooks) ? group.hooks : [])
+    .map(handler => handler.command);
+
+  assert.ok(commands.includes("echo user-stop"));
+  assert.ok(commands.includes("echo user-post"));
+  assert.ok(!commands.some(command =>
+    String(command).includes(".aurora/hooks/")
+  ));
 });
