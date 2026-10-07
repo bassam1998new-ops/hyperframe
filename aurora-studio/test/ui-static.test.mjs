@@ -29,6 +29,7 @@ test("browser UI JavaScript modules have valid syntax", () => {
     "ui/app/workflows/assets.js",
     "ui/app/workflows/library.js",
     "ui/app/workflows/review.js",
+    "ui/app/workflows/settings.js",
     "ui/app/views/create.js",
     "ui/app/views/library.js",
     "ui/app/views/project.js",
@@ -429,4 +430,49 @@ test("Complete Project Brain UI exposes stable context provenance and safe reset
   assert.match(css, /\.project-overview-grid/);
   assert.match(css, /\.project-source-item/);
   assert.match(css, /\.claims-field/);
+});
+
+
+test("Full Settings UI exposes factual tools agents budget and advanced controls", () => {
+  const html = read("ui/index.html");
+  const app = read("ui/app.js");
+  const view = read("ui/app/views/settings.js");
+  const workflow = read("ui/app/workflows/settings.js");
+  const server = read("src/ui-server.mjs");
+  const settings = read("src/workspace-settings.mjs");
+
+  assert.match(html, /id="settings-agents"/);
+  assert.match(html, /id="budget-mode"/);
+  assert.match(html, /name="budget_threshold"/);
+  assert.match(html, /name="budget_cap"/);
+  assert.match(html, /name="tool_path_blender"/);
+  assert.match(html, /name="tool_path_after_effects"/);
+  assert.match(html, /name="tool_path_ffmpeg"/);
+  assert.match(html, /id="settings-system-sync"/);
+  assert.match(html, /id="settings-developer-mode"/);
+  assert.match(html, /id="settings-raw-diagnostics"/);
+
+  assert.match(app, /createSettingsWorkflow/);
+  assert.match(app, /settingsChanges/);
+  assert.match(app, /\/api\/settings/);
+
+  assert.match(view, /tested_version/);
+  assert.match(view, /expected_skill_count/);
+  assert.match(view, /approval_threshold_usd/);
+  assert.match(view, /tool_path_/);
+
+  assert.match(workflow, /\/api\/tool-action/);
+  assert.match(workflow, /\/api\/agent-action/);
+  assert.match(workflow, /\/api\/system-sync/);
+  assert.match(workflow, /aurora:developer-mode/);
+
+  assert.match(server, /\/api\/settings/);
+  assert.match(server, /\/api\/tool-action/);
+  assert.match(server, /\/api\/agent-action/);
+  assert.match(server, /\/api\/system-sync/);
+  assert.doesNotMatch(server, /body\.command/);
+
+  assert.match(settings, /normalizeBudgetPolicy/);
+  assert.match(settings, /normalizeToolPaths/);
+  assert.match(settings, /updateStudioSettings/);
 });
