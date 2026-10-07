@@ -21,8 +21,9 @@ import {
   renderLibraryShelf
 } from "./app/views/library.js";
 import {
-  fillProjectForm,
-  projectChanges
+  projectChanges,
+  renderProjectMeta,
+  resetProjectField
 } from "./app/views/project.js";
 import {
   renderSettings,
@@ -180,7 +181,7 @@ function render(next) {
     mediaUrl,
     onOpen: id => libraryWorkflow.open(id)
   });
-  fillProjectForm(next.project || {}, { dirty: projectDirty });
+  renderProjectMeta(next.project || {}, { dirty: projectDirty });
   renderSettings(next, { dirty: settingsDirty });
   renderUpdates(next, remoteUpdate);
 }
@@ -294,6 +295,16 @@ $$(".filter-button").forEach(button => {
 
 $("#project-form").addEventListener("input", () => {
   projectDirty = true;
+  document.body.dataset.projectDirty = "true";
+});
+
+document.querySelectorAll("[data-project-reset]").forEach(button => {
+  button.addEventListener("click", () => {
+    if (resetProjectField(button.dataset.projectReset)) {
+      projectDirty = true;
+      document.body.dataset.projectDirty = "true";
+    }
+  });
 });
 
 $("#project-save").addEventListener("click", async () => {
@@ -305,6 +316,7 @@ $("#project-save").addEventListener("click", async () => {
       body: JSON.stringify({ changes: projectChanges() })
     });
     projectDirty = false;
+    document.body.dataset.projectDirty = "false";
     render(result.state);
     toast("Project brain updated.");
   } catch (error) {
