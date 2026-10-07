@@ -285,6 +285,70 @@ export function renderBoard(run, mediaUrl) {
   `).join("");
 }
 
+export function renderAgentPresence(agent) {
+  const root = $("#agent-presence");
+  if (!root) return;
+
+  const led = $("#agent-presence-led");
+  const title = $("#agent-presence-title");
+  const detail = $("#agent-presence-detail");
+  const state = $("#agent-presence-state");
+
+  const source =
+    agent?.source === "claude"
+      ? "Claude"
+      : agent?.source === "codex"
+        ? "Codex"
+        : null;
+
+  const connected = Boolean(agent?.bridge_connected);
+  const ready = Boolean(agent?.bridge_ready);
+  const status = agent?.state || "offline";
+
+  root.dataset.state = connected ? status : ready ? "ready" : "offline";
+  led.className = "agent-presence-led " + (
+    connected
+      ? status
+      : ready
+        ? "ready"
+        : "offline"
+  );
+
+  if (connected) {
+    title.textContent =
+      source
+        ? source + " · " + titleCase(status)
+        : "Agent · " + titleCase(status);
+
+    detail.textContent =
+      agent?.summary ||
+      (agent?.tool_name
+        ? "Current tool: " + titleCase(agent.tool_name)
+        : "Live agent activity connected.");
+
+    state.textContent =
+      status === "waiting"
+        ? "NEEDS YOU"
+        : status === "working"
+          ? "LIVE"
+          : titleCase(status).toUpperCase();
+    return;
+  }
+
+  if (ready) {
+    title.textContent = "Agent bridge ready";
+    detail.textContent =
+      "Start Claude or Codex in this workspace to see live activity.";
+    state.textContent = "READY";
+    return;
+  }
+
+  title.textContent = "Agent bridge not installed";
+  detail.textContent =
+    "Install Claude/Codex integration in Settings.";
+  state.textContent = "OFF";
+}
+
 export function renderActivity(activity) {
   const list = $("#activity-list");
   if (!activity?.length) {
