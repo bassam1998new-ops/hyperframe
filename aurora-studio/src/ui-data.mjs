@@ -4,7 +4,10 @@ import { hyperframesStatus } from "./tool-install.mjs";
 import { findBlender } from "./adapters/blender.mjs";
 import { findAfterEffects } from "./adapters/after-effects.mjs";
 import { runtimeStatus } from "./runtime.mjs";
-import { localRelease } from "./update.mjs";
+import {
+  localRelease,
+  updateSafetyPlan
+} from "./update.mjs";
 import { systemStatus } from "./system-install.mjs";
 import {
   validateReviewReportFile
@@ -774,6 +777,7 @@ export function buildStudioSnapshot(cwd = process.cwd()) {
   const tools = liveToolStatus(cwd, workspace);
   const runtime = runtimeStatus(cwd);
   const release = localRelease();
+  const updateSafety = updateSafetyPlan({ cwd });
   const system = systemStatus(cwd);
   const obsidian = (workspace?.integrations || []).find(item => item.id === "obsidian") || null;
   const agent = agentIntegrationStatus(cwd, run);
@@ -857,8 +861,11 @@ export function buildStudioSnapshot(cwd = process.cwd()) {
       version: release.latest_version,
       channel: release.channel,
       public_install_ready: Boolean(release.public_install_ready),
+      package_name: release.package_name || null,
+      workspace_schema_version: release.workspace_schema_version || null,
       notes: release.notes || { new: [], fixed: [] }
     },
+    updates: updateSafety,
     stats: {
       finals: receipts.length,
       library_total: library.length,
