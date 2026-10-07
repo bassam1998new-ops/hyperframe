@@ -33,6 +33,20 @@ function setupWorkspace(cwd) {
   );
 }
 
+function addActiveRun(cwd, runId = "run-live") {
+  const dir = path.join(cwd, ".aurora", "runs", runId);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(
+    path.join(dir, "state.json"),
+    JSON.stringify({
+      run_id: runId,
+      status: "in_progress",
+      current_stage: "build"
+    })
+  );
+  return runId;
+}
+
 function runHook(cwd, source, payload) {
   installAgentHooks(source === "claude" ? "claude" : "codex", cwd);
   const hook = path.join(cwd, ".aurora", "hooks", "agent-event.mjs");
@@ -50,6 +64,7 @@ function runHook(cwd, source, payload) {
 test("agent event hook stores safe metadata without prompt command or output", () => {
   const cwd = temp();
   setupWorkspace(cwd);
+  addActiveRun(cwd);
 
   const result = runHook(cwd, "claude", {
     cwd,
@@ -87,6 +102,7 @@ test("agent event hook stores safe metadata without prompt command or output", (
 test("agent event hook refuses to persist paths outside workspace", () => {
   const cwd = temp();
   setupWorkspace(cwd);
+  addActiveRun(cwd);
 
   const outside = path.join(path.dirname(cwd), "private.txt");
   fs.writeFileSync(outside, "secret");
@@ -169,7 +185,7 @@ test("agent event activity is safe and run-aware", () => {
       source: "claude",
       state: "working",
       summary: "Claude using file read",
-      event: "PreToolUse",
+      event: "PostToolUse",
       run_id: "run-a"
     },
     {
@@ -212,4 +228,41 @@ test("one agent ending does not hide another connected agent", () => {
   assert.equal(presence.state, "working");
   assert.equal(presence.agents.claude.connected, false);
   assert.equal(presence.agents.codex.connected, true);
+});
+
+
+test("tool activity is ignored when no AurorA run is active", () => {
+  const cwd = temp();
+  setupWorkspace(cwd);
+
+  const result = runHook(cwd, "claude", {
+    cwd,
+    hook_event_name: "PreToolUse",
+    session_id: "session-code",
+    tool_name: "Edit",
+    tool_input: {
+      file_path: "src/unrelated-code.js"
+    }
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(readAgentEvents(cwd).length, 0);
+});
+
+test("SessionStart presence is recorded even before an AurorA run exists", () => {
+  const cwd = temp();
+  setupWorkspace(cwd);
+
+  const result = runHook(cwd, "codex", {
+    cwd,
+    hook_event_name: "SessionStart",
+    session_id: "session-ready",
+    source: "startup"
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  const [event] = readAgentEvents(cwd);
+  assert.equal(event.event, "SessionStart");
+  assert.equal(event.run_id, null);
+  assert.match(event.summary, /Codex session/);
 });
