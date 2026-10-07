@@ -453,47 +453,179 @@
       </section>
 
       <section class="view" data-view-panel="project">
-        <div class="view-header">
+        <div class="view-header project-view-header">
           <div>
             <span class="eyebrow">PROJECT BRAIN</span>
             <h1>Teach AurorA once.</h1>
-            <p>Stable product truth, audience and creative preferences reused across future videos.</p>
+            <p>Stable product truth, audience context and creative rules reused across future videos.</p>
           </div>
           <button class="primary-button" id="project-save" type="button">Save project</button>
         </div>
 
-        <form class="project-grid" id="project-form">
-          <section class="panel form-panel">
-            <div class="panel-head"><span class="eyebrow">PRODUCT</span></div>
+        <section class="project-overview-grid">
+          <article class="panel project-overview-card">
+            <span class="eyebrow">BRAIN STATUS</span>
+            <div class="project-overview-metrics">
+              <div><span>SOURCES</span><strong id="project-source-count">0</strong></div>
+              <div><span>PROTECTED CLAIMS</span><strong id="project-claim-count">0</strong></div>
+              <div><span>LAST UPDATE</span><strong id="project-updated-at">—</strong></div>
+            </div>
+          </article>
+
+          <article class="panel project-source-card">
+            <div class="panel-head">
+              <div>
+                <span class="eyebrow">PROVENANCE</span>
+                <strong>Where AurorA learned this project</strong>
+              </div>
+            </div>
+            <div class="project-source-list" id="project-source-list">
+              <div class="aurora-empty-state compact">No provenance sources recorded yet.</div>
+            </div>
+          </article>
+        </section>
+
+        <form class="project-brain-grid" id="project-form">
+          <section class="panel form-panel project-section">
+            <div class="panel-head">
+              <div><span class="eyebrow">PRODUCT</span><strong>What we are making videos for</strong></div>
+            </div>
             <div class="form-body">
-              <label>Product / service<input name="product" /></label>
-              <label>Website<input name="website" /></label>
-              <label>Main video purpose<textarea name="purpose" rows="3"></textarea></label>
-              <label>Audience<input name="audience" placeholder="Founders, marketers, HR leaders…" /></label>
-              <label>Offer<input name="offer" /></label>
-              <label>Positioning<textarea name="positioning" rows="3"></textarea></label>
+              <label>
+                <span class="field-label-row">Product / service <button type="button" data-project-reset="product">Reset</button></span>
+                <input name="product" />
+              </label>
+              <label>
+                <span class="field-label-row">Website <button type="button" data-project-reset="website">Reset</button></span>
+                <input name="website" />
+              </label>
+              <label class="span-two">
+                <span class="field-label-row">Main video purpose <button type="button" data-project-reset="purpose">Reset</button></span>
+                <textarea name="purpose" rows="3"></textarea>
+              </label>
+              <label>
+                <span class="field-label-row">Offer <button type="button" data-project-reset="offer">Reset</button></span>
+                <input name="offer" />
+              </label>
+              <label>
+                <span class="field-label-row">Positioning <button type="button" data-project-reset="positioning">Reset</button></span>
+                <textarea name="positioning" rows="3"></textarea>
+              </label>
+              <label class="span-two claims-field">
+                <span class="field-label-row">Protected claims <button type="button" data-project-reset="claims_to_protect">Reset</button></span>
+                <textarea
+                  name="claims_to_protect"
+                  rows="3"
+                  placeholder="Claims or facts AurorA must not distort, comma separated"
+                ></textarea>
+                <small>These are treated as product truth to protect during reference adaptation.</small>
+              </label>
             </div>
           </section>
 
-          <section class="panel form-panel">
-            <div class="panel-head"><span class="eyebrow">BRAND</span></div>
+          <section class="panel form-panel project-section">
+            <div class="panel-head">
+              <div><span class="eyebrow">AUDIENCE</span><strong>Who this needs to move</strong></div>
+            </div>
             <div class="form-body">
-              <label>Personality<input name="brand.personality" placeholder="premium, intelligent, calm" /></label>
-              <label>Colors<input name="brand.colors" placeholder="#0B2D4A, #6FC1C8" /></label>
-              <label>Fonts<input name="brand.fonts" /></label>
-              <label>Logo paths<input name="brand.logo_paths" /></label>
-              <label>Avoid<textarea name="brand.avoid" rows="3" placeholder="no stock look, no noisy motion…"></textarea></label>
+              <label class="span-two">
+                <span class="field-label-row">Audience groups <button type="button" data-project-reset="audience">Reset</button></span>
+                <input name="audience" placeholder="Founders, marketers, HR leaders" />
+              </label>
+              <label>
+                <span class="field-label-row">Knowledge level <button type="button" data-project-reset="audience_context.knowledge_level">Reset</button></span>
+                <input
+                  name="audience_context.knowledge_level"
+                  placeholder="Beginner, informed, expert…"
+                />
+              </label>
+              <label>
+                <span class="field-label-row">What they care about <button type="button" data-project-reset="audience_context.priorities">Reset</button></span>
+                <input
+                  name="audience_context.priorities"
+                  placeholder="Speed, trust, cost, control"
+                />
+              </label>
             </div>
           </section>
 
-          <section class="panel form-panel">
-            <div class="panel-head"><span class="eyebrow">CONTENT & CREATIVE</span></div>
+          <section class="panel form-panel project-section">
+            <div class="panel-head">
+              <div><span class="eyebrow">BRAND</span><strong>Identity AurorA must preserve</strong></div>
+            </div>
             <div class="form-body">
-              <label>Languages<input name="content.languages" placeholder="English, Arabic" /></label>
-              <label>Channels<input name="content.channels" placeholder="Instagram, TikTok, YouTube" /></label>
-              <label>Preferred moods<input name="creative.preferred_moods" /></label>
-              <label>Avoid moods<input name="creative.avoid_moods" /></label>
-              <label>Recurring constraints<textarea name="creative.recurring_constraints" rows="3"></textarea></label>
+              <label>
+                <span class="field-label-row">Personality <button type="button" data-project-reset="brand.personality">Reset</button></span>
+                <input name="brand.personality" placeholder="premium, intelligent, calm" />
+              </label>
+              <label>
+                <span class="field-label-row">Colors <button type="button" data-project-reset="brand.colors">Reset</button></span>
+                <input name="brand.colors" placeholder="#0B2D4A, #6FC1C8" />
+              </label>
+              <label>
+                <span class="field-label-row">Fonts <button type="button" data-project-reset="brand.fonts">Reset</button></span>
+                <input name="brand.fonts" />
+              </label>
+              <label>
+                <span class="field-label-row">Logo paths <button type="button" data-project-reset="brand.logo_paths">Reset</button></span>
+                <input name="brand.logo_paths" />
+              </label>
+              <label class="span-two">
+                <span class="field-label-row">Avoid <button type="button" data-project-reset="brand.avoid">Reset</button></span>
+                <textarea name="brand.avoid" rows="3" placeholder="No stock look, no noisy motion…"></textarea>
+              </label>
+            </div>
+          </section>
+
+          <section class="panel form-panel project-section">
+            <div class="panel-head">
+              <div><span class="eyebrow">CONTENT</span><strong>Recurring publishing context</strong></div>
+            </div>
+            <div class="form-body">
+              <label>
+                <span class="field-label-row">Languages <button type="button" data-project-reset="content.languages">Reset</button></span>
+                <input name="content.languages" placeholder="English, Arabic" />
+              </label>
+              <label>
+                <span class="field-label-row">Channels <button type="button" data-project-reset="content.channels">Reset</button></span>
+                <input name="content.channels" placeholder="Instagram, TikTok, YouTube" />
+              </label>
+              <label>
+                <span class="field-label-row">Default formats <button type="button" data-project-reset="content.default_formats">Reset</button></span>
+                <input name="content.default_formats" placeholder="9:16 reels, 16:9 explainers" />
+              </label>
+              <label>
+                <span class="field-label-row">Recurring series <button type="button" data-project-reset="content.recurring_series">Reset</button></span>
+                <input name="content.recurring_series" placeholder="Product demos, founder notes" />
+              </label>
+            </div>
+          </section>
+
+          <section class="panel form-panel project-section">
+            <div class="panel-head">
+              <div><span class="eyebrow">CREATIVE</span><strong>Stable taste, not one-video choices</strong></div>
+            </div>
+            <div class="form-body">
+              <label>
+                <span class="field-label-row">Preferred moods <button type="button" data-project-reset="creative.preferred_moods">Reset</button></span>
+                <input name="creative.preferred_moods" />
+              </label>
+              <label>
+                <span class="field-label-row">Avoid moods <button type="button" data-project-reset="creative.avoid_moods">Reset</button></span>
+                <input name="creative.avoid_moods" />
+              </label>
+              <label class="span-two">
+                <span class="field-label-row">Recurring constraints <button type="button" data-project-reset="creative.recurring_constraints">Reset</button></span>
+                <textarea name="creative.recurring_constraints" rows="3"></textarea>
+              </label>
+              <label class="span-two">
+                <span class="field-label-row">Owner notes <button type="button" data-project-reset="notes">Reset</button></span>
+                <textarea
+                  name="notes"
+                  rows="3"
+                  placeholder="Stable context worth remembering across future videos"
+                ></textarea>
+              </label>
             </div>
           </section>
         </form>

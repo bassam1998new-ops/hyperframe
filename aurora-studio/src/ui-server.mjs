@@ -11,6 +11,7 @@ import {
   createUrlReference,
   storeReferenceUpload
 } from "./reference-files.mjs";
+import { upsertProjectSource } from "./brain.mjs";
 import {
   addBuildPlanShot,
   updateBuildPlanShot,
@@ -96,6 +97,8 @@ const PROJECT_FIELDS = new Set([
   "website",
   "purpose",
   "audience",
+  "audience_context.knowledge_level",
+  "audience_context.priorities",
   "offer",
   "positioning",
   "brand.personality",
@@ -105,9 +108,13 @@ const PROJECT_FIELDS = new Set([
   "brand.avoid",
   "content.languages",
   "content.channels",
+  "content.default_formats",
+  "content.recurring_series",
   "creative.preferred_moods",
   "creative.avoid_moods",
-  "creative.recurring_constraints"
+  "creative.recurring_constraints",
+  "claims_to_protect",
+  "notes"
 ]);
 
 const RESOURCE_FIELDS = new Set([
@@ -1226,6 +1233,34 @@ export async function startStudioUiServer({
           }
         }
 
+        if (Object.keys(changes).length > 0) {
+          upsertProjectSource({
+            type: "owner",
+            value: "studio-ui",
+            checked_at: new Date().toISOString(),
+            note: "Project Brain updated by owner in AurorA Studio."
+          }, cwd);
+
+          if (Object.prototype.hasOwnProperty.call(changes, "website")) {
+            const website = String(changes.website || "").trim();
+            if (website) {
+              try {
+                const parsed = new URL(website);
+                if (["http:", "https:"].includes(parsed.protocol)) {
+                  upsertProjectSource({
+                    type: "website",
+                    value: parsed.toString(),
+                    checked_at: null,
+                    note: "Website provided by owner; Studio has not automatically re-read it."
+                  }, cwd);
+                }
+              } catch {
+                // Website text remains editable project context; invalid URLs are not provenance links.
+              }
+            }
+          }
+        }
+
         return json(res, 200, {
           ok: true,
           state: buildStudioSnapshot(cwd)
@@ -1297,6 +1332,32 @@ export async function startStudioUiServer({
           agents: body.install_agents === false ? "none" : "all",
           install_hyperframes: body.install_hyperframes !== false
         });
+
+        if (result.ok) {
+          upsertProjectSource({
+            type: "owner",
+            value: "studio-setup",
+            checked_at: new Date().toISOString(),
+            note: "Initial Project Brain supplied by owner during AurorA Studio setup."
+          }, cwd);
+
+          const website = String(body.website || "").trim();
+          if (website) {
+            try {
+              const parsed = new URL(website);
+              if (["http:", "https:"].includes(parsed.protocol)) {
+                upsertProjectSource({
+                  type: "website",
+                  value: parsed.toString(),
+                  checked_at: null,
+                  note: "Website provided during setup; Studio has not automatically re-read it."
+                }, cwd);
+              }
+            } catch {
+              // Keep editable website text, but do not promote invalid URLs to provenance.
+            }
+          }
+        }
 
         return json(res, result.ok ? 200 : 400, {
           ...result,

@@ -5,6 +5,8 @@ AurorA Studio follows a simple **New / Fixed** release summary so community user
 ## Unreleased
 
 ### New
+- Complete Project Brain UI with audience context, protected claims, recurring content/creative context and provenance.
+- Honest owner/website provenance with no fake website-refresh claims.
 - Full Library detail workflow with approval, tags, quality, source/license metadata and use history.
 - Approved/Pending/Templates filters and safe tracked-item Reveal / Use in run actions.
 - Focused final Review workspace with Result / Reference / Side-by-side comparison.

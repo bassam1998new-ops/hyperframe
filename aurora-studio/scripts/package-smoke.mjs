@@ -128,6 +128,7 @@ try {
     path.join(workspace, ".aurora", "system", "ui", "app", "workflows", "review.js"),
     path.join(workspace, ".aurora", "system", "ui", "styles", "assets.css"),
     path.join(workspace, ".aurora", "system", "ui", "styles", "library.css"),
+    path.join(workspace, ".aurora", "system", "ui", "styles", "project.css"),
     path.join(workspace, ".aurora", "system", "ui", "styles", "review.css"),
     path.join(workspace, ".aurora", "system", "ui", "styles", "tokens.css"),
     path.join(workspace, ".aurora", "system", "ui", "styles", "components.css"),

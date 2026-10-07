@@ -100,6 +100,7 @@ const required = [
   "ui/styles/media-player.css",
   "ui/styles/assets.css",
   "ui/styles/library.css",
+  "ui/styles/project.css",
   "ui/styles/review.css",
   "ui/styles/views.css",
   "ui/styles/responsive.css",
