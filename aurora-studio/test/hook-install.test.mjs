@@ -4,7 +4,11 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
-import { installAgentHooks, removeAgentHooks } from "../src/hook-install.mjs";
+import {
+  installAgentHooks,
+  removeAgentHooks,
+  agentHookStatus
+} from "../src/hook-install.mjs";
 
 function temp() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "aurora-hooks-"));
@@ -133,4 +137,39 @@ test("Codex hook command runs from workspace cwd and returns context", () => {
   const output = JSON.parse(result.stdout);
   assert.equal(output.hookSpecificOutput.hookEventName, "SessionStart");
   assert.match(output.hookSpecificOutput.additionalContext, /Hook Product/);
+});
+
+
+test("agent hook status reports Claude Codex and runtime independently", () => {
+  const cwd = temp();
+
+  assert.deepEqual(agentHookStatus(cwd), {
+    runtime: false,
+    claude: false,
+    codex: false
+  });
+
+  installAgentHooks("claude", cwd);
+
+  assert.deepEqual(agentHookStatus(cwd), {
+    runtime: true,
+    claude: true,
+    codex: false
+  });
+
+  installAgentHooks("codex", cwd);
+
+  assert.deepEqual(agentHookStatus(cwd), {
+    runtime: true,
+    claude: true,
+    codex: true
+  });
+
+  removeAgentHooks("claude", cwd);
+
+  assert.deepEqual(agentHookStatus(cwd), {
+    runtime: true,
+    claude: false,
+    codex: true
+  });
 });
