@@ -1695,3 +1695,75 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* UI-20 desktop reference-fit:
+   Keep preview + storyboard + activity + reusable shelf visible together,
+   matching the approved 1600×1000 Studio composition. */
+@media (min-width: 1321px) and (min-height: 860px) {
+  .agent-handoff {
+    min-height: 52px;
+    padding: 8px 14px;
+  }
+
+  .agent-handoff p {
+    max-width: 880px;
+    margin-top: 3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .workspace-grid {
+    height: clamp(430px, 45vh, 465px);
+  }
+
+  .preview-panel,
+  .board-panel,
+  .activity-panel {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .preview-panel {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .preview-stage {
+    flex: 1;
+    min-height: 0;
+    aspect-ratio: auto;
+  }
+
+  .preview-caption {
+    flex: 0 0 auto;
+    min-height: 64px;
+    padding-block: 11px;
+  }
+
+  .panel-head {
+    min-height: 44px;
+    padding-block: 10px;
+  }
+
+  .library-panel {
+    margin-top: 10px;
+  }
+
+  .library-panel .panel-head {
+    min-height: 42px;
+  }
+
+  .library-grid {
+    padding: 10px 13px 12px;
+  }
+
+  .library-thumb {
+    height: 70px;
+  }
+
+  .library-body {
+    padding: 8px 10px 9px;
+  }
+}
