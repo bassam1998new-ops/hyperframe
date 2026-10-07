@@ -1333,6 +1333,32 @@ export async function startStudioUiServer({
           install_hyperframes: body.install_hyperframes !== false
         });
 
+        if (result.ok) {
+          upsertProjectSource({
+            type: "owner",
+            value: "studio-setup",
+            checked_at: new Date().toISOString(),
+            note: "Initial Project Brain supplied by owner during AurorA Studio setup."
+          }, cwd);
+
+          const website = String(body.website || "").trim();
+          if (website) {
+            try {
+              const parsed = new URL(website);
+              if (["http:", "https:"].includes(parsed.protocol)) {
+                upsertProjectSource({
+                  type: "website",
+                  value: parsed.toString(),
+                  checked_at: null,
+                  note: "Website provided during setup; Studio has not automatically re-read it."
+                }, cwd);
+              }
+            } catch {
+              // Keep editable website text, but do not promote invalid URLs to provenance.
+            }
+          }
+        }
+
         return json(res, result.ok ? 200 : 400, {
           ...result,
           state: buildStudioSnapshot(cwd)
