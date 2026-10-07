@@ -388,3 +388,45 @@ test("Full Library UI exposes tracked detail approval history and safe actions",
   assert.match(css, /\.library-detail-drawer/);
   assert.match(css, /\.library-use-history/);
 });
+
+
+test("Complete Project Brain UI exposes stable context provenance and safe reset controls", () => {
+  const html = read("ui/index.html");
+  const app = read("ui/app.js");
+  const view = read("ui/app/views/project.js");
+  const css = read("ui/styles/project.css");
+  const server = read("src/ui-server.mjs");
+  const brain = read("src/brain.mjs");
+
+  assert.match(html, /id="project-source-list"/);
+  assert.match(html, /id="project-claim-count"/);
+  assert.match(html, /name="claims_to_protect"/);
+  assert.match(html, /name="audience_context\.knowledge_level"/);
+  assert.match(html, /name="audience_context\.priorities"/);
+  assert.match(html, /name="content\.default_formats"/);
+  assert.match(html, /name="content\.recurring_series"/);
+  assert.match(html, /name="notes"/);
+  assert.match(html, /data-project-reset="claims_to_protect"/);
+
+  assert.match(app, /renderProjectMeta/);
+  assert.match(app, /resetProjectField/);
+  assert.match(app, /dataset\.projectDirty/);
+
+  assert.match(view, /project\.sources/);
+  assert.match(view, /safeHttp/);
+  assert.match(view, /Project source/);
+  assert.match(view, /resetProjectField/);
+
+  assert.match(server, /audience_context\.knowledge_level/);
+  assert.match(server, /claims_to_protect/);
+  assert.match(server, /content\.default_formats/);
+  assert.match(server, /upsertProjectSource/);
+  assert.match(server, /has not automatically re-read/);
+
+  assert.match(brain, /audience_context/);
+  assert.match(brain, /upsertProjectSource/);
+
+  assert.match(css, /\.project-overview-grid/);
+  assert.match(css, /\.project-source-item/);
+  assert.match(css, /\.claims-field/);
+});
