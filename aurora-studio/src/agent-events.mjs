@@ -35,19 +35,14 @@ function ageMs(value, now) {
   return Math.max(0, now - parsed);
 }
 
-export function summarizeAgentPresence(
-  events,
+function summarizeOneAgent(
+  latest,
   {
-    now = Date.now(),
-    connectedWindowMs = 15 * 60 * 1000,
-    workingWindowMs = 90 * 1000
-  } = {}
+    now,
+    connectedWindowMs,
+    workingWindowMs
+  }
 ) {
-  const ordered = (events || [])
-    .slice()
-    .sort((a, b) => String(b.timestamp || "").localeCompare(String(a.timestamp || "")));
-
-  const latest = ordered[0] || null;
   if (!latest) {
     return {
       connected: false,
@@ -63,10 +58,19 @@ export function summarizeAgentPresence(
 
   const age = ageMs(latest.timestamp, now);
   const explicitOffline = latest.state === "offline";
-  const connected = !explicitOffline && age <= connectedWindowMs;
+  const connected =
+    !explicitOffline &&
+    age <= connectedWindowMs;
 
-  let state = connected ? latest.state || "idle" : "offline";
-  if (connected && state === "working" && age > workingWindowMs) {
+  let state = connected
+    ? latest.state || "idle"
+    : "offline";
+
+  if (
+    connected &&
+    state === "working" &&
+    age > workingWindowMs
+  ) {
     state = "idle";
   }
 
@@ -79,6 +83,69 @@ export function summarizeAgentPresence(
     run_id: latest.run_id || null,
     session_id: latest.session_id || null,
     last_event_at: latest.timestamp || null
+  };
+}
+
+export function summarizeAgentPresence(
+  events,
+  {
+    now = Date.now(),
+    connectedWindowMs = 15 * 60 * 1000,
+    workingWindowMs = 90 * 1000
+  } = {}
+) {
+  const ordered = (events || [])
+    .slice()
+    .sort((a, b) =>
+      String(b.timestamp || "")
+        .localeCompare(String(a.timestamp || ""))
+    );
+
+  const latestBySource = new Map();
+  for (const item of ordered) {
+    const source = item.source || "agent";
+    if (!latestBySource.has(source)) {
+      latestBySource.set(source, item);
+    }
+  }
+
+  const options = {
+    now,
+    connectedWindowMs,
+    workingWindowMs
+  };
+
+  const perAgent = [...latestBySource.values()]
+    .map(item => summarizeOneAgent(item, options));
+
+  const connected = perAgent
+    .filter(item => item.connected)
+    .sort((a, b) => {
+      const priority = value =>
+        value.state === "waiting"
+          ? 3
+          : value.state === "working"
+            ? 2
+            : 1;
+
+      const diff = priority(b) - priority(a);
+      if (diff) return diff;
+
+      return String(b.last_event_at || "")
+        .localeCompare(String(a.last_event_at || ""));
+    });
+
+  const selected =
+    connected[0] ||
+    summarizeOneAgent(ordered[0] || null, options);
+
+  return {
+    ...selected,
+    agents: Object.fromEntries(
+      perAgent
+        .filter(item => item.source)
+        .map(item => [item.source, item])
+    )
   };
 }
 
