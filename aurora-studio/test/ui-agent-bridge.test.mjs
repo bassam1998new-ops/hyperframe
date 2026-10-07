@@ -60,13 +60,13 @@ test("Studio shows recent live agent event in presence and activity", () => {
       schema_version: 1,
       timestamp: new Date().toISOString(),
       source: "claude",
-      event: "PreToolUse",
+      event: "PostToolUse",
       state: "working",
       session_id: "session-live",
       tool_name: "Edit",
       workspace_path: "src/app.js",
       run_id: null,
-      summary: "Claude using file edit · src/app.js"
+      summary: "Claude finished file edit · src/app.js"
     }) + "\n"
   );
 
@@ -81,5 +81,5 @@ test("Studio shows recent live agent event in presence and activity", () => {
   const live = snapshot.activity.find(item => item.type === "agent_event");
   assert.ok(live);
   assert.equal(live.title, "Claude");
-  assert.match(live.detail, /file edit/);
+  assert.match(live.detail, /finished file edit/);
 });
