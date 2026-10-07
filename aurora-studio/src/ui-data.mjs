@@ -773,7 +773,9 @@ function humanAttention(run, presence) {
       title: "Agent needs you",
       detail:
         presence.summary ||
-        "Claude or Codex is waiting for input or permission."
+        "Claude or Codex is waiting for input or permission.",
+      action: null,
+      action_label: null
     };
   }
 
@@ -784,18 +786,36 @@ function humanAttention(run, presence) {
   if (checkpoint?.status !== "awaiting_human") return null;
 
   const copy = {
-    concept: ["Choose a direction", "Director mode is waiting for your concept choice."],
-    approval: ["Approve the final render", "The reviewed result is waiting for owner approval."],
-    post_render_review: ["Review needs attention", "AurorA found something that needs a decision before approval."]
+    concept: {
+      title: "Choose a direction",
+      detail: "Director mode is waiting for your concept choice.",
+      action: "concepts",
+      action_label: "Open concepts"
+    },
+    approval: {
+      title: "Approve the final render",
+      detail: "The reviewed result is waiting for owner approval.",
+      action: "approval",
+      action_label: "Review & approve"
+    },
+    post_render_review: {
+      title: "Review needs attention",
+      detail: "AurorA found something that needs a decision before approval.",
+      action: "review",
+      action_label: "Open review"
+    }
   };
 
-  const [title, detail] =
-    copy[stage] || ["Your input is needed", "AurorA paused this run for a human decision."];
+  const item = copy[stage] || {
+    title: "Your input is needed",
+    detail: "AurorA paused this run for a human decision.",
+    action: null,
+    action_label: null
+  };
 
   return {
     kind: "run",
-    title,
-    detail
+    ...item
   };
 }
 
