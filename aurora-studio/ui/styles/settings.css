@@ -59,6 +59,28 @@
   min-width: 0;
 }
 
+.settings-tool-copy .status-main > div {
+  min-width: 0;
+}
+
+.settings-tool-copy .status-main b,
+.settings-tool-copy .status-main small {
+  display: block;
+}
+
+.settings-tool-copy .status-main b {
+  color: var(--aurora-text-soft);
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.settings-tool-copy .status-main small {
+  margin-top: 4px;
+  color: var(--aurora-muted);
+  font-size: 8px;
+  line-height: 1.35;
+}
+
 .settings-tool-copy p {
   max-width: 520px;
   margin: 7px 0 0 17px;
