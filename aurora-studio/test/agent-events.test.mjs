@@ -300,3 +300,31 @@ test("agent activity translates run artifacts into human video language", () => 
     "Claude updated storyboard and build plan"
   );
 });
+
+
+test("Claude task lifecycle appears without storing task description", () => {
+  const cwd = temp();
+  setupWorkspace(cwd);
+  addActiveRun(cwd);
+
+  const result = runHook(cwd, "claude", {
+    cwd,
+    hook_event_name: "TaskCreated",
+    session_id: "session-task",
+    task_id: "task-42",
+    task_subject: "Build premium hero shot",
+    task_description: "This long private description should not be persisted",
+    teammate_name: "motion-worker"
+  });
+
+  assert.equal(result.status, 0);
+
+  const events = readAgentEvents(cwd);
+  assert.equal(events.length, 1);
+  assert.equal(events[0].event, "TaskCreated");
+  assert.equal(events[0].task_id, "task-42");
+  assert.equal(events[0].task_subject, "Build premium hero shot");
+  assert.equal(events[0].teammate_name, "motion-worker");
+  assert.equal("task_description" in events[0], false);
+  assert.match(events[0].summary, /Build premium hero shot/);
+});
