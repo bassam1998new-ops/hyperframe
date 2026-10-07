@@ -703,6 +703,132 @@ function referenceRows(cwd) {
     });
 }
 
+function semanticRunWork(run) {
+  if (!run) {
+    return {
+      title: "No active production",
+      detail: "Start a run to give Claude or Codex a video job.",
+      stage: null
+    };
+  }
+
+  const stage = run.state?.current_stage || null;
+  const labels = {
+    understand: ["Understanding the project", "Reading project context and reference evidence."],
+    concept: ["Developing creative directions", "Preparing distinct concepts for Director mode."],
+    mood: ["Locking the creative direction", "Turning the approved concept into a production mood contract."],
+    assets: ["Planning and sourcing assets", "Checking reusable assets before building anything new."],
+    routing: ["Choosing production engines", "Matching the job to HyperFrames, Blender and optional finishing tools."],
+    build_plan: ["Planning shots and handoffs", "Assigning each build unit to the right engine."],
+    build: ["Building the video", "Producing shots, motion, 3D and reusable outputs."],
+    pre_render_review: ["Checking before render", "Catching known problems before spending final render time."],
+    render: ["Rendering the output", "Producing the current video render."],
+    post_render_review: ["Reviewing the final render", "Checking technical quality, creative fit and asset safety."],
+    approval: ["Waiting for final approval", "The reviewed render is ready for the owner decision."],
+    finalize: ["Saving the approved result", "Preserving the final video and approved learning."]
+  };
+
+  const [title, detail] =
+    labels[stage] || ["Continuing production", "AurorA is progressing through the current run."];
+
+  return { title, detail, stage };
+}
+
+function runProgress(run) {
+  if (!run) {
+    return {
+      completed: 0,
+      total: 0,
+      percent: 0,
+      label: "No active run"
+    };
+  }
+
+  const stages = run.plan?.stages || [];
+  const completed = stages.filter(stage => {
+    const status =
+      run.state?.checkpoints?.[stage.id]?.status ||
+      stage.status;
+    return ["completed", "skipped"].includes(status);
+  }).length;
+
+  const total = stages.length;
+  const percent =
+    total > 0
+      ? Math.max(0, Math.min(100, Math.round((completed / total) * 100)))
+      : 0;
+
+  return {
+    completed,
+    total,
+    percent,
+    label: total ? `${completed} of ${total} stages` : "Run stages unavailable"
+  };
+}
+
+function humanAttention(run, presence) {
+  if (presence?.state === "waiting") {
+    return {
+      kind: "agent",
+      title: "Agent needs you",
+      detail:
+        presence.summary ||
+        "Claude or Codex is waiting for input or permission."
+    };
+  }
+
+  if (!run) return null;
+
+  const stage = run.state?.current_stage;
+  const checkpoint = run.state?.checkpoints?.[stage];
+  if (checkpoint?.status !== "awaiting_human") return null;
+
+  const copy = {
+    concept: ["Choose a direction", "Director mode is waiting for your concept choice."],
+    approval: ["Approve the final render", "The reviewed result is waiting for owner approval."],
+    post_render_review: ["Review needs attention", "AurorA found something that needs a decision before approval."]
+  };
+
+  const [title, detail] =
+    copy[stage] || ["Your input is needed", "AurorA paused this run for a human decision."];
+
+  return {
+    kind: "run",
+    title,
+    detail
+  };
+}
+
+function agentWorkers(presence) {
+  const priority = value =>
+    value.state === "waiting"
+      ? 4
+      : value.state === "working"
+        ? 3
+        : value.state === "error"
+          ? 2
+          : value.connected
+            ? 1
+            : 0;
+
+  return Object.values(presence?.agents || {})
+    .map(item => ({
+      source: item.source || "agent",
+      connected: Boolean(item.connected),
+      state: item.state || "offline",
+      summary: item.summary || null,
+      tool_name: item.tool_name || null,
+      workspace_path: item.workspace_path || null,
+      last_event_at: item.last_event_at || null
+    }))
+    .sort((a, b) => {
+      const diff = priority(b) - priority(a);
+      if (diff) return diff;
+      return String(b.last_event_at || "")
+        .localeCompare(String(a.last_event_at || ""));
+    });
+}
+
 function agentIntegrationStatus(
   cwd,
   run,
@@ -721,6 +847,11 @@ function agentIntegrationStatus(
     hookStatus?.codex_live
   );
 
+  const work = semanticRunWork(run);
+  const progress = runProgress(run);
+  const workers = agentWorkers(presence);
+  const attention = humanAttention(run, presence);
+
   return {
     bridge_ready: bridgeReady,
     bridge_connected: Boolean(presence?.connected),
@@ -728,6 +859,8 @@ function agentIntegrationStatus(
     source: presence?.source || null,
     summary: presence?.summary || null,
     tool_name: presence?.tool_name || null,
+    workspace_path: presence?.workspace_path || null,
+    event: presence?.event || null,
     session_id: presence?.session_id || null,
     run_id: presence?.run_id || null,
     last_event_at: presence?.last_event_at || null,
@@ -735,6 +868,16 @@ function agentIntegrationStatus(
     codex_installed: codex,
     claude_live: Boolean(hookStatus?.claude_live),
     codex_live: Boolean(hookStatus?.codex_live),
+    workers,
+    work: {
+      ...work,
+      detail:
+        presence?.connected && presence?.summary
+          ? presence.summary
+          : work.detail
+    },
+    progress,
+    attention,
     handoff:
       run && !presence?.connected
         ? {
