@@ -125,7 +125,7 @@ The V1 Studio uses real workspace state across five simple views:
 - **Library** — searchable tracked assets/styles across engines
 - **Project** — editable product brain, audience, brand and creative preferences
 - **Settings** — live tool/runtime health, Claude/Codex integration, optional resources, budget guardrails and advanced path overrides
-- **Updates** — local release notes and real update check
+- **Updates** — real release check, update-safety blockers, workspace backup and separate HyperFrames update status; package apply stays disabled until the public updater is safe
 
 A short first-run setup screen appears only when the workspace is not configured.
 
