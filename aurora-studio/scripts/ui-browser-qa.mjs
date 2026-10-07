@@ -614,10 +614,11 @@ function clearAgentEvents(cwd) {
 
 function writeLiveAgentFixture(cwd) {
   const file = path.join(cwd, ".aurora", "agent-events.jsonl");
+  const now = Date.now();
   const events = [
     {
       schema_version: 1,
-      timestamp: timestamp(20),
+      timestamp: new Date(now - 1000).toISOString(),
       source: "claude",
       event: "SessionStart",
       state: "working",
@@ -633,7 +634,7 @@ function writeLiveAgentFixture(cwd) {
     },
     {
       schema_version: 1,
-      timestamp: timestamp(21),
+      timestamp: new Date(now).toISOString(),
       source: "claude",
       event: "PreToolUse",
       state: "working",
