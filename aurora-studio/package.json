@@ -17,7 +17,8 @@
     "validate": "node ./bin/aurora-studio.mjs validate",
     "release:status": "node ./bin/aurora-studio.mjs release status",
     "release:gate": "node ./bin/aurora-studio.mjs release gate",
-    "ui": "node ./bin/aurora-studio.mjs ui"
+    "ui": "node ./bin/aurora-studio.mjs ui",
+    "ui:qa": "node ./scripts/ui-browser-qa.mjs"
   },
   "engines": {
     "node": ">=22"
@@ -61,5 +62,9 @@
     "@floating-ui/dom": "1.8.0",
     "media-chrome": "4.19.3",
     "sortablejs": "1.15.7"
+  },
+  "devDependencies": {
+    "playwright-core": "1.63.0",
+    "axe-core": "4.14.0"
   }
 }
