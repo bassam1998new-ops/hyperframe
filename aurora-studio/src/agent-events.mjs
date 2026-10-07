@@ -213,14 +213,14 @@ export function agentEventActivity(events, runId = null) {
     "UserPromptSubmit"
   ]);
 
-  return (events || [])
+  const mapped = (events || [])
     .filter(item =>
       (!runId || !item.run_id || item.run_id === runId) &&
       !hiddenFromHistory.has(item.event)
     )
     .slice()
     .reverse()
-    .slice(0, 20)
+    .slice(0, 60)
     .map(item => ({
       type: "agent_event",
       title: item.source === "claude"
@@ -241,6 +241,32 @@ export function agentEventActivity(events, runId = null) {
       event: item.event || null,
       tool_name: item.tool_name || null,
       source: item.source || null,
-      run_id: item.run_id || null
+      run_id: item.run_id || null,
+      count: 1
     }));
+
+  const coalesced = [];
+  for (const item of mapped) {
+    const previous = coalesced[coalesced.length - 1];
+    const same =
+      previous &&
+      previous.source === item.source &&
+      previous.status === item.status &&
+      previous.detail === item.detail;
+
+    const withinWindow =
+      same &&
+      Number.isFinite(Date.parse(previous.at || "")) &&
+      Number.isFinite(Date.parse(item.at || "")) &&
+      Math.abs(Date.parse(previous.at) - Date.parse(item.at)) <= 45_000;
+
+    if (withinWindow) {
+      previous.count += 1;
+      continue;
+    }
+
+    coalesced.push(item);
+  }
+
+  return coalesced.slice(0, 20);
 }
