@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { resolveHyperframesBinary } from "./tool-install.mjs";
+import { hyperframesStatus } from "./tool-install.mjs";
 import { findBlender } from "./adapters/blender.mjs";
 import { findAfterEffects } from "./adapters/after-effects.mjs";
 import { runtimeStatus } from "./runtime.mjs";
@@ -16,6 +16,12 @@ import {
   readRevisions
 } from "./revisions.mjs";
 import { listReferences } from "./brain.mjs";
+import { agentInstructionStatus } from "./agent-install.mjs";
+import { agentHookStatus } from "./hook-install.mjs";
+import {
+  defaultBudgetPolicy,
+  workspaceToolPaths
+} from "./workspace-settings.mjs";
 import {
   conceptDirectionLocked,
   readConceptSet
@@ -704,7 +710,7 @@ function agentIntegrationStatus(cwd, run) {
 }
 
 function liveToolStatus(cwd, workspace) {
-  const hf = resolveHyperframesBinary(cwd);
+  const hf = hyperframesStatus(cwd);
   const blender = findBlender({ cwd });
   const ae = findAfterEffects({ cwd });
 
@@ -716,21 +722,26 @@ function liveToolStatus(cwd, workspace) {
       name: fallback.get("hyperframe")?.name || "HyperFrames",
       available: Boolean(hf.available),
       required: true,
-      source: hf.source || null
+      source: hf.source || null,
+      version: hf.version || null,
+      tested_version: hf.tested_version || null,
+      compatible: hf.compatible
     },
     {
       id: "blender",
       name: fallback.get("blender")?.name || "Blender",
       available: Boolean(blender),
       required: false,
-      source: blender ? "detected" : null
+      source: blender ? "detected" : null,
+      executable: blender || null
     },
     {
       id: "after_effects",
       name: fallback.get("after_effects")?.name || "After Effects",
       available: Boolean(ae.afterfx || ae.aerender),
       required: false,
-      source: ae.afterfx || ae.aerender ? "detected" : null
+      source: ae.afterfx || ae.aerender ? "detected" : null,
+      executable: ae.aerender || ae.afterfx || null
     }
   ];
 }
@@ -808,6 +819,29 @@ export function buildStudioSnapshot(cwd = process.cwd()) {
     tools,
     runtime,
     system,
+    settings: {
+      budget: workspace?.budget || defaultBudgetPolicy(),
+      tool_paths: toolPaths,
+      agents: {
+        expected_skill_count: instructionStatus.expected_skill_count,
+        claude: {
+          ...instructionStatus.claude,
+          hook: Boolean(hookStatus.claude)
+        },
+        codex: {
+          ...instructionStatus.codex,
+          hook: Boolean(hookStatus.codex)
+        },
+        hook_runtime: Boolean(hookStatus.runtime)
+      },
+      paths: {
+        workspace_root: cwd,
+        aurora_root: path.join(cwd, ".aurora"),
+        hyperframes_logs: path.join(cwd, ".aurora", "runs"),
+        blender_logs: path.join(cwd, ".aurora", "blender", "logs"),
+        after_effects_logs: path.join(cwd, ".aurora", "after-effects", "logs")
+      }
+    },
     integrations: {
       obsidian: {
         available: Boolean(obsidian?.available),
