@@ -548,3 +548,451 @@
     min-height: 260px;
   }
 }
+
+
+/* UI-20 reference fidelity pass — applied after screenshot inspection. */
+
+body {
+  background:
+    radial-gradient(circle at 7% 8%, rgba(83, 53, 208, .16), transparent 24%),
+    radial-gradient(circle at 92% 10%, rgba(37, 71, 190, .10), transparent 26%),
+    linear-gradient(180deg, #05060e 0%, #03040a 100%);
+}
+
+.studio-shell {
+  margin: 20px;
+  min-height: calc(100vh - 40px);
+  border-radius: 30px;
+  border-color: rgba(155, 136, 243, .38);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(105, 68, 255, .075), transparent 25%),
+    radial-gradient(circle at 87% 10%, rgba(38, 81, 202, .045), transparent 22%),
+    linear-gradient(180deg, rgba(7, 8, 19, .98), rgba(4, 5, 12, .99));
+  box-shadow:
+    0 34px 100px rgba(0, 0, 0, .56),
+    0 0 0 1px rgba(95, 68, 208, .045),
+    inset 0 1px 0 rgba(255,255,255,.035);
+}
+
+.nav-rail {
+  background:
+    linear-gradient(180deg, rgba(15, 16, 34, .975), rgba(7, 8, 20, .95));
+  border-right-color: rgba(150, 132, 238, .16);
+}
+
+.nav-item {
+  color: #a9a9bc;
+}
+
+.nav-item.active {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(132, 82, 255, .22), transparent 65%),
+    linear-gradient(180deg, rgba(112, 70, 232, .19), rgba(55, 42, 117, .18));
+  border-color: rgba(143, 98, 255, .42);
+  box-shadow:
+    0 0 28px rgba(89, 52, 222, .13),
+    inset 0 1px 0 rgba(255,255,255,.025);
+}
+
+.studio-main {
+  padding: 17px 18px 20px;
+}
+
+.topbar {
+  min-height: 52px;
+  margin-bottom: 12px;
+  gap: 18px;
+}
+
+.crumb,
+.run-pill,
+.prompt-bar {
+  border-color: rgba(159, 140, 237, .27);
+  background:
+    linear-gradient(180deg, rgba(16, 17, 33, .94), rgba(8, 9, 21, .94));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.02),
+    0 8px 26px rgba(0,0,0,.10);
+}
+
+.crumb {
+  min-height: 37px;
+  display: inline-flex;
+  align-items: center;
+  padding-inline: 14px;
+}
+
+.studio-mark strong {
+  font-size: 15px;
+}
+
+.status-line {
+  color: #9da0b5;
+}
+
+.run-pill {
+  min-height: 37px;
+  padding-inline: 14px;
+}
+
+.prompt-bar {
+  height: 39px;
+}
+
+.hero-strip {
+  min-height: 78px;
+  padding: 2px 3px 13px;
+}
+
+.hero-orb {
+  width: 58px;
+  height: 58px;
+}
+
+.hero-copy h1 {
+  font-size: clamp(24px, 2.05vw, 30px);
+  line-height: 1.06;
+  letter-spacing: -.046em;
+}
+
+.hero-copy p {
+  margin-top: 8px;
+  color: #a0a2b5;
+  font-size: 12px;
+}
+
+.metric {
+  min-width: 78px;
+  padding: 10px 12px;
+  border-color: rgba(156, 137, 231, .18);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.032), rgba(255,255,255,.014));
+}
+
+.metric span {
+  color: #85889e;
+}
+
+.metric strong {
+  font-size: 15px;
+}
+
+.mode-switch {
+  border-color: rgba(156, 137, 231, .21);
+  background: rgba(9, 10, 23, .92);
+}
+
+.mode-switch button {
+  min-width: 58px;
+}
+
+.mode-switch button.active {
+  background:
+    linear-gradient(135deg, #8459ff, #6840e8);
+  box-shadow:
+    0 6px 18px rgba(74, 45, 189, .28),
+    inset 0 1px 0 rgba(255,255,255,.10);
+}
+
+/* When a run is active, mirror the reference: preview/board begin immediately
+   below the hero instead of keeping setup controls in the main vertical flow. */
+body[data-run-active="true"] .create-intent-bar {
+  display: none;
+}
+
+@media (min-width: 761px) {
+  body[data-run-active="true"] .agent-handoff {
+    display: none !important;
+  }
+}
+
+.panel {
+  border-color: rgba(162, 143, 244, .23);
+  background:
+    radial-gradient(circle at 88% 0%, rgba(122, 79, 255, .055), transparent 32%),
+    linear-gradient(180deg, rgba(17, 19, 37, .91), rgba(7, 8, 19, .95));
+  box-shadow:
+    0 15px 42px rgba(0,0,0,.18),
+    inset 0 1px 0 rgba(255,255,255,.028);
+}
+
+.panel-head {
+  min-height: 48px;
+  padding: 12px 15px;
+  border-bottom-color: rgba(159, 140, 239, .14);
+}
+
+.panel-head strong {
+  font-size: 11.5px;
+}
+
+.eyebrow,
+.section-label {
+  color: #9899ad;
+  font-size: 8.5px;
+}
+
+.workspace-grid {
+  grid-template-columns:
+    minmax(0, 1.34fr)
+    minmax(410px, .92fr)
+    minmax(236px, .46fr);
+  gap: 12px;
+}
+
+.preview-panel,
+.board-panel,
+.concepts-panel,
+.activity-panel {
+  min-height: 478px;
+}
+
+.preview-stage {
+  background:
+    radial-gradient(ellipse at 50% 43%, rgba(101, 54, 235, .19), transparent 30%),
+    radial-gradient(ellipse at 68% 37%, rgba(26, 112, 220, .11), transparent 27%),
+    linear-gradient(180deg, #070817 0%, #04050d 100%);
+}
+
+.preview-empty {
+  background:
+    radial-gradient(ellipse at 50% 42%, rgba(111, 59, 250, .29), transparent 27%),
+    radial-gradient(ellipse at 67% 35%, rgba(39, 118, 236, .16), transparent 24%),
+    radial-gradient(ellipse at 38% 70%, rgba(29, 82, 196, .12), transparent 34%),
+    conic-gradient(from 225deg at 55% 48%, rgba(107, 55, 255, .10), rgba(28, 112, 218, .04), rgba(6,7,18,0), rgba(107,55,255,.10)),
+    linear-gradient(180deg, #0a0b20 0%, #050611 100%);
+}
+
+.preview-empty::before {
+  position: absolute;
+  inset: -18%;
+  content: "";
+  pointer-events: none;
+  opacity: .52;
+  background:
+    radial-gradient(circle at 24% 38%, rgba(122, 84, 255, .34) 0 1px, transparent 1.8px),
+    radial-gradient(circle at 61% 22%, rgba(100, 190, 255, .28) 0 1px, transparent 1.6px),
+    radial-gradient(circle at 78% 58%, rgba(158, 111, 255, .24) 0 1px, transparent 1.5px);
+  background-size: 39px 39px, 53px 53px, 67px 67px;
+  filter: blur(.1px);
+  transform: rotate(-8deg);
+}
+
+.aurora-scene {
+  width: min(56%, 430px);
+}
+
+.scene-glow {
+  inset: 16%;
+  background:
+    radial-gradient(circle, rgba(126, 81, 255, .48), rgba(43, 101, 255, .12) 44%, transparent 71%);
+  filter: blur(8px);
+}
+
+.scene-orbit {
+  border-color: rgba(155, 123, 255, .42);
+}
+
+.orbit-two {
+  border-color: rgba(67, 190, 255, .22);
+}
+
+.scene-word {
+  color: rgba(239, 236, 255, .92);
+  font-size: clamp(24px, 3.2vw, 44px);
+  text-shadow:
+    0 0 32px rgba(139, 92, 255, .46),
+    0 0 60px rgba(55, 116, 255, .12);
+}
+
+.preview-empty-copy {
+  left: 24px;
+  bottom: 18px;
+}
+
+.preview-empty-copy strong {
+  font-size: 12.5px;
+}
+
+.preview-empty-copy span {
+  color: #9295a9;
+  font-size: 10px;
+}
+
+.preview-caption {
+  min-height: 68px;
+  padding: 13px 17px;
+}
+
+.preview-caption h2 {
+  font-size: 14.5px;
+}
+
+.route-chip,
+.tool-chip,
+.engine-chip,
+.quality-chip {
+  border-color: rgba(146, 119, 255, .28);
+  background: rgba(118, 74, 246, .09);
+  color: #c3bed9;
+}
+
+.board-list {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.006), rgba(255,255,255,0));
+}
+
+.storyboard-row {
+  grid-template-columns: 24px 104px minmax(0, 1fr) auto;
+  min-height: 88px;
+  padding: 9px 11px;
+  gap: 11px;
+}
+
+.storyboard-row:hover {
+  background:
+    linear-gradient(90deg, rgba(121, 77, 247, .075), transparent 72%);
+}
+
+.shot-thumb {
+  width: 104px;
+  height: 60px;
+  border-radius: 9px;
+  border-color: rgba(166, 148, 244, .22);
+  box-shadow:
+    0 8px 22px rgba(0,0,0,.16),
+    inset 0 1px 0 rgba(255,255,255,.025);
+}
+
+.storyboard-title-line strong {
+  font-size: 10.5px;
+  line-height: 1.35;
+}
+
+.storyboard-meta {
+  font-size: 7.5px;
+}
+
+.activity-panel {
+  background:
+    linear-gradient(180deg, rgba(15, 17, 33, .93), rgba(7, 8, 18, .97));
+}
+
+.tool-health {
+  padding: 14px 13px 12px;
+}
+
+.tool-chip {
+  min-height: 24px;
+  padding-inline: 8px;
+}
+
+.activity-item {
+  min-height: 64px;
+  padding: 12px 13px;
+}
+
+.activity-item strong {
+  font-size: 9.5px;
+}
+
+.activity-item p {
+  color: #85889d;
+  font-size: 8.5px;
+}
+
+.usage-card {
+  padding: 13px;
+}
+
+.library-panel {
+  margin-top: 12px;
+}
+
+.library-grid {
+  gap: 10px;
+  padding: 12px;
+}
+
+.library-card {
+  min-height: 142px;
+  border-color: rgba(162, 143, 244, .20);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.029), rgba(255,255,255,.012));
+  box-shadow: 0 10px 26px rgba(0,0,0,.10);
+}
+
+.library-thumb {
+  height: 102px;
+}
+
+.library-body {
+  padding: 9px 10px 10px;
+}
+
+.library-body strong {
+  font-size: 10.5px;
+}
+
+.library-body p {
+  color: #7e8196;
+  font-size: 8px;
+}
+
+/* Desktop should feel like a deliberate editing surface, not a long form. */
+@media (min-width: 1321px) {
+  .activity-panel {
+    min-height: 478px;
+  }
+
+  .library-grid {
+    grid-template-columns: repeat(7, minmax(142px, 1fr));
+  }
+}
+
+@media (max-width: 1320px) and (min-width: 981px) {
+  .workspace-grid {
+    grid-template-columns: minmax(0, 1.16fr) minmax(370px, .84fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .studio-shell {
+    margin: 8px;
+    min-height: calc(100vh - 16px);
+    border-radius: 22px;
+  }
+
+  body[data-run-active="true"] .create-intent-bar {
+    display: none;
+  }
+
+  .hero-copy h1 {
+    font-size: 19px;
+  }
+
+  .agent-handoff {
+    margin-bottom: 8px;
+    border-color: rgba(139, 92, 255, .24);
+  }
+
+  .preview-empty {
+    background:
+      radial-gradient(ellipse at 54% 43%, rgba(111, 59, 250, .27), transparent 29%),
+      radial-gradient(ellipse at 68% 35%, rgba(39, 118, 236, .13), transparent 25%),
+      linear-gradient(180deg, #090a1d 0%, #050611 100%);
+  }
+
+  .storyboard-row {
+    grid-template-columns: 22px 82px minmax(0, 1fr);
+  }
+
+  .shot-thumb {
+    width: 82px;
+    height: 50px;
+  }
+
+  .library-thumb {
+    height: 88px;
+  }
+}
