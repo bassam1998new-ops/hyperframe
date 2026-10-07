@@ -192,6 +192,21 @@ if (!workspace || workspace.studio !== "AurorA Studio") process.exit(0);
 const event = bounded(input.hook_event_name, 80) || "Unknown";
 const tool = bounded(input.tool_name, 120);
 const workspacePath = safeWorkspacePath(cwd, input.tool_input || {});
+const runId = activeRun(cwd);
+
+const lifecycleWithoutRun = new Set([
+  "SessionStart",
+  "SessionEnd",
+  "Stop",
+  "StopFailure",
+  "Interrupt"
+]);
+
+// Keep the bridge project-local without turning Studio into a log of
+// unrelated coding work in the same repository.
+if (!runId && !lifecycleWithoutRun.has(event)) {
+  process.exit(0);
+}
 
 const record = {
   schema_version: 1,
@@ -206,7 +221,7 @@ const record = {
   tool_name: tool,
   workspace_path: workspacePath,
   notification_type: bounded(input.notification_type, 80),
-  run_id: activeRun(cwd),
+  run_id: runId,
   summary: summaryFor(event, input, tool, workspacePath)
 };
 
