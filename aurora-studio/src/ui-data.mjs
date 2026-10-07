@@ -705,8 +705,8 @@ function agentIntegrationStatus(cwd, run) {
 
 function liveToolStatus(cwd, workspace) {
   const hf = resolveHyperframesBinary(cwd);
-  const blender = findBlender();
-  const ae = findAfterEffects();
+  const blender = findBlender({ cwd });
+  const ae = findAfterEffects({ cwd });
 
   const fallback = new Map((workspace?.tools || []).map(tool => [tool.id, tool]));
 
@@ -761,7 +761,7 @@ export function buildStudioSnapshot(cwd = process.cwd()) {
     .slice(0, 8);
 
   const tools = liveToolStatus(cwd, workspace);
-  const runtime = runtimeStatus();
+  const runtime = runtimeStatus(cwd);
   const release = localRelease();
   const system = systemStatus(cwd);
   const obsidian = (workspace?.integrations || []).find(item => item.id === "obsidian") || null;
