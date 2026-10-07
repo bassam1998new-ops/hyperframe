@@ -885,26 +885,99 @@
       </section>
 
       <section class="view" data-view-panel="updates">
-        <div class="view-header">
+        <div class="view-header updates-header">
           <div>
             <span class="eyebrow">UPDATES</span>
             <h1>Small updates. Clear changes.</h1>
-            <p>AurorA never silently upgrades HyperFrames or rewrites project memory mid-production.</p>
+            <p>
+              AurorA checks releases separately from HyperFrames, protects active work,
+              and never silently rewrites project memory.
+            </p>
           </div>
-          <button class="primary-button" id="update-check" type="button">Check for update</button>
+
+          <button
+            class="primary-button"
+            id="update-check"
+            type="button"
+          >
+            Check for updates
+          </button>
         </div>
 
-        <section class="update-layout">
-          <div class="panel update-hero">
-            <div class="update-logo brand-orb"></div>
-            <div>
-              <span class="eyebrow">AURORA STUDIO</span>
-              <h2 id="update-version">Version —</h2>
-              <p id="update-state">Current local release information.</p>
+        <section class="updates-hero-grid">
+          <article class="panel update-hero update-hero-v2">
+            <div class="update-identity">
+              <div class="update-logo brand-orb"></div>
+              <div>
+                <span class="eyebrow">AURORA STUDIO</span>
+                <h2 id="update-version">Version —</h2>
+                <p id="update-state">Current local release information.</p>
+              </div>
             </div>
-          </div>
 
-          <div class="panel update-notes">
+            <div class="update-hero-status">
+              <span
+                class="update-status-badge"
+                id="update-availability-badge"
+              >
+                Not checked
+              </span>
+
+              <div class="update-hero-actions">
+                <button
+                  class="aurora-button"
+                  data-variant="primary"
+                  id="update-apply"
+                  type="button"
+                  disabled
+                  data-tooltip="AurorA package updates are not applied automatically in this build."
+                >
+                  Update now
+                </button>
+
+                <button
+                  class="text-button"
+                  id="update-later"
+                  type="button"
+                  hidden
+                >
+                  Maybe later
+                </button>
+              </div>
+            </div>
+          </article>
+
+          <article class="panel update-safety-panel">
+            <div class="panel-head">
+              <div>
+                <span class="eyebrow">UPDATE SAFETY</span>
+                <strong id="update-safety-title">Checking local readiness</strong>
+              </div>
+              <span class="settings-inline-note" id="update-safety-summary">
+                Local only
+              </span>
+            </div>
+
+            <div class="update-safety-list" id="update-safety-list"></div>
+
+            <div class="update-backup-row">
+              <div>
+                <span class="section-label">WORKSPACE BACKUP</span>
+                <p id="update-backup-state">No backup information yet.</p>
+              </div>
+              <button
+                class="aurora-button"
+                id="update-backup"
+                type="button"
+              >
+                Back up workspace
+              </button>
+            </div>
+          </article>
+        </section>
+
+        <section class="updates-detail-grid">
+          <article class="panel update-notes update-notes-v2">
             <div class="note-column">
               <span class="section-label">NEW</span>
               <ul id="update-new"></ul>
@@ -913,8 +986,75 @@
               <span class="section-label">FIXED</span>
               <ul id="update-fixed"></ul>
             </div>
-          </div>
+          </article>
+
+          <article class="panel hyperframes-update-panel">
+            <div class="panel-head">
+              <div>
+                <span class="eyebrow">HYPERFRAMES</span>
+                <strong>Core updates stay separate</strong>
+              </div>
+              <button
+                class="text-button"
+                id="hyperframes-update-check"
+                type="button"
+              >
+                Check HyperFrames
+              </button>
+            </div>
+
+            <div class="hyperframes-version-grid">
+              <div>
+                <span>Installed</span>
+                <strong id="hyperframes-current-version">—</strong>
+              </div>
+              <div>
+                <span>AurorA tested</span>
+                <strong id="hyperframes-tested-version">—</strong>
+              </div>
+              <div>
+                <span>Compatibility</span>
+                <strong id="hyperframes-compatibility">—</strong>
+              </div>
+            </div>
+
+            <div
+              class="hyperframes-update-result"
+              id="hyperframes-update-result"
+            >
+              HyperFrames is never silently upgraded during an active project.
+            </div>
+          </article>
         </section>
+
+        <article class="panel update-explainer">
+          <div class="update-explainer-item">
+            <span class="update-step-number">1</span>
+            <div>
+              <b>Check</b>
+              <p>Read public New / Fixed release metadata.</p>
+            </div>
+          </div>
+
+          <div class="update-explainer-item">
+            <span class="update-step-number">2</span>
+            <div>
+              <b>Protect</b>
+              <p>Block unsafe active-run or migration states and create a backup.</p>
+            </div>
+          </div>
+
+          <div class="update-explainer-item">
+            <span class="update-step-number">3</span>
+            <div>
+              <b>Apply later</b>
+              <p>
+                Package apply remains disabled until the public npm identity and safe updater
+                are explicitly enabled.
+              </p>
+            </div>
+          </div>
+        </article>
       </section>
 
       <section class="view" data-view-panel="setup">
