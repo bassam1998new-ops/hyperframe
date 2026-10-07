@@ -186,3 +186,30 @@ test("agent event activity is safe and run-aware", () => {
   assert.equal(activity[0].title, "Claude");
   assert.equal(activity[0].run_id, "run-a");
 });
+
+
+test("one agent ending does not hide another connected agent", () => {
+  const now = Date.parse("2026-10-07T08:30:00Z");
+
+  const presence = summarizeAgentPresence([
+    {
+      timestamp: "2026-10-07T08:29:55Z",
+      source: "claude",
+      state: "offline",
+      summary: "Claude session ended"
+    },
+    {
+      timestamp: "2026-10-07T08:29:50Z",
+      source: "codex",
+      state: "working",
+      summary: "Codex using file edit",
+      tool_name: "Edit"
+    }
+  ], { now });
+
+  assert.equal(presence.connected, true);
+  assert.equal(presence.source, "codex");
+  assert.equal(presence.state, "working");
+  assert.equal(presence.agents.claude.connected, false);
+  assert.equal(presence.agents.codex.connected, true);
+});
