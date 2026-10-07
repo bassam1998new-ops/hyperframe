@@ -6,6 +6,7 @@ AurorA Studio follows a simple **New / Fixed** release summary so community user
 
 ### New
 - Compact semantic Agent Canvas for live Claude Code / Codex work: multi-agent presence, video-task status, run progress and Needs-you state.
+- A connected agent is distinguished from a claimed production run, so Studio keeps the handoff visible until Claude/Codex actually touches the run.
 - Claude TaskCreated / TaskCompleted observation without persisting task descriptions.
 - Honest Complete / Partial / Deferred product-status documentation.
 - Near-real-time Claude/Codex activity appears inside the Studio Activity rail.
